@@ -25,6 +25,7 @@ import { useAuth } from '@/features/auth/use-auth'
 import { adminApi, ApiError, buildApiUrl, WEB_API_PREFIX } from '@/api/client'
 import { useSubmitSkillReport } from '@/features/report/use-skill-reports'
 import { SecurityAuditSummary } from '@/features/security-audit/security-audit-summary'
+import { VersionCommentsSection } from '@/features/comments'
 import { formatLocalDateTime } from '@/shared/lib/date-time'
 import { incrementSkillDownloadCount } from '@/shared/lib/skill-download-cache'
 import { getSkillSquareSearch, normalizeSkillDetailReturnTo } from '@/shared/lib/skill-navigation'
@@ -995,6 +996,18 @@ export function SkillDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {selectedVersionEntry && (
+          <Card className="mt-8 p-6">
+            <h3 className="mb-4 text-base font-semibold text-foreground">
+              {t('comments.section.title')}
+            </h3>
+            <VersionCommentsSection
+              versionId={selectedVersionEntry.id}
+              canPost={Boolean(user)}
+            />
+          </Card>
+        )}
       </div>
 
       {/* Sidebar */}

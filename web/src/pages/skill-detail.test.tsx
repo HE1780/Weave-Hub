@@ -79,6 +79,10 @@ vi.mock('@/features/skill/markdown-renderer', () => ({
   MarkdownRenderer: () => <div>markdown</div>,
 }))
 
+vi.mock('@/features/comments', () => ({
+  VersionCommentsSection: () => <div>comments-section</div>,
+}))
+
 vi.mock('@/features/skill/file-tree', () => ({
   FileTree: () => <div>files</div>,
 }))
