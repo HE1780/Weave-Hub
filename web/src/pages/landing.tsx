@@ -138,6 +138,17 @@ export function LandingPage() {
             {t('landing.hero.exploreSkills')}
           </Link>
           <Link
+            to="/agents"
+            className="px-8 py-3.5 rounded-xl text-base font-medium border transition-colors"
+            style={{
+              background: 'hsl(var(--secondary))',
+              borderColor: 'hsl(var(--muted-foreground))',
+              color: 'hsl(var(--muted-foreground))',
+            }}
+          >
+            {t('landing.hero.browseAgents')}
+          </Link>
+          <Link
             to="/dashboard/publish"
             className="px-8 py-3.5 rounded-xl text-base font-medium border transition-colors"
             style={{
