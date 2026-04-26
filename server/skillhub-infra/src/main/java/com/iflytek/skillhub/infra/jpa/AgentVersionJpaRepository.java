@@ -16,6 +16,9 @@ public interface AgentVersionJpaRepository
         extends JpaRepository<AgentVersion, Long>, AgentVersionRepository {
 
     @Override
+    List<AgentVersion> findByIdIn(List<Long> ids);
+
+    @Override
     Optional<AgentVersion> findByAgentIdAndVersion(Long agentId, String version);
 
     @Override

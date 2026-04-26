@@ -104,16 +104,43 @@ class AgentReviewControllerTest {
     }
 
     @Test
-    void list_returns_page_for_admin() throws Exception {
+    void list_returns_enriched_page_for_admin() throws Exception {
         when(reviewService.listForReviewer(eq(1L), eq(AgentReviewTaskStatus.PENDING), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(pending(100L)), PageRequest.of(0, 20), 1));
+        when(agentVersionRepository.findByIdIn(List.of(70L)))
+                .thenReturn(List.of(version(70L, 7L)));
+        when(agentRepository.findByIdIn(List.of(7L)))
+                .thenReturn(List.of(agent(7L, 1L, "agent-a")));
+        when(namespaceRepository.findByIdIn(List.of(1L)))
+                .thenReturn(List.of(ns(1L, "global")));
 
         mockMvc.perform(withRoles(get("/api/web/agents/reviews")
                         .param("namespaceId", "1"), Map.of(1L, NamespaceRole.ADMIN))
                         .with(authentication(auth("admin-1", Set.of()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.items[0].id").value(100));
+                .andExpect(jsonPath("$.data.items[0].id").value(100))
+                .andExpect(jsonPath("$.data.items[0].agentSlug").value("agent-a"))
+                .andExpect(jsonPath("$.data.items[0].agentNamespace").value("global"))
+                .andExpect(jsonPath("$.data.items[0].agentVersion").value("1.0.0"));
+    }
+
+    @Test
+    void list_falls_back_to_nulls_when_version_or_agent_orphaned() throws Exception {
+        when(reviewService.listForReviewer(eq(1L), eq(AgentReviewTaskStatus.PENDING), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(pending(100L)), PageRequest.of(0, 20), 1));
+        when(agentVersionRepository.findByIdIn(List.of(70L))).thenReturn(List.of());
+        when(namespaceRepository.findByIdIn(List.of(1L)))
+                .thenReturn(List.of(ns(1L, "global")));
+
+        mockMvc.perform(withRoles(get("/api/web/agents/reviews")
+                        .param("namespaceId", "1"), Map.of(1L, NamespaceRole.ADMIN))
+                        .with(authentication(auth("admin-1", Set.of()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(100))
+                .andExpect(jsonPath("$.data.items[0].agentNamespace").value("global"))
+                .andExpect(jsonPath("$.data.items[0].agentSlug").doesNotExist())
+                .andExpect(jsonPath("$.data.items[0].agentVersion").doesNotExist());
     }
 
     @Test

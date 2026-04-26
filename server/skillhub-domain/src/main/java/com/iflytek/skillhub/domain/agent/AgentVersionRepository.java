@@ -10,6 +10,8 @@ public interface AgentVersionRepository {
 
     Optional<AgentVersion> findById(Long id);
 
+    List<AgentVersion> findByIdIn(List<Long> ids);
+
     Optional<AgentVersion> findByAgentIdAndVersion(Long agentId, String version);
 
     List<AgentVersion> findByAgentIdOrderBySubmittedAtDesc(Long agentId);

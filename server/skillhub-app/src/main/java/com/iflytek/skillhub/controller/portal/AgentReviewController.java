@@ -29,8 +29,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping({"/api/v1/agents/reviews", "/api/web/agents/reviews"})
@@ -75,11 +77,38 @@ public class AgentReviewController extends BaseApiController {
                 principal.platformRoles(),
                 PageRequest.of(Math.max(page, 0), safeSize));
 
+        List<AgentReviewTaskResponse> items = hydrate(result.getContent());
+
         return ok("response.success.read", new PageResponse<>(
-                result.getContent().stream().map(AgentReviewTaskResponse::from).toList(),
+                items,
                 result.getTotalElements(),
                 result.getNumber(),
                 result.getSize()));
+    }
+
+    private List<AgentReviewTaskResponse> hydrate(List<AgentReviewTask> tasks) {
+        if (tasks.isEmpty()) {
+            return List.of();
+        }
+        List<Long> versionIds = tasks.stream().map(AgentReviewTask::getAgentVersionId).distinct().toList();
+        Map<Long, AgentVersion> versionsById = agentVersionRepository.findByIdIn(versionIds).stream()
+                .collect(Collectors.toMap(AgentVersion::getId, v -> v));
+        List<Long> agentIds = versionsById.values().stream()
+                .map(AgentVersion::getAgentId).distinct().toList();
+        Map<Long, Agent> agentsById = agentIds.isEmpty()
+                ? Map.of()
+                : agentRepository.findByIdIn(agentIds).stream()
+                        .collect(Collectors.toMap(Agent::getId, a -> a));
+        List<Long> namespaceIds = tasks.stream().map(AgentReviewTask::getNamespaceId).distinct().toList();
+        Map<Long, String> namespaceSlugById = namespaceRepository.findByIdIn(namespaceIds).stream()
+                .collect(Collectors.toMap(Namespace::getId, Namespace::getSlug));
+
+        return tasks.stream().map(task -> {
+            AgentVersion version = versionsById.get(task.getAgentVersionId());
+            Agent agent = version == null ? null : agentsById.get(version.getAgentId());
+            String namespaceSlug = namespaceSlugById.get(task.getNamespaceId());
+            return AgentReviewTaskResponse.enriched(task, agent, version, namespaceSlug);
+        }).toList();
     }
 
     @GetMapping("/{taskId}")
