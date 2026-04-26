@@ -249,3 +249,74 @@ cd web && pnpm typecheck   # only registry-skill.tsx errors remain (pre-existing
 5. agent-detail.tsx 里 "not found" 和 "network error" 共用同一条 `agents.loadError`，等真后端接入后区分。
 
 **关键架构决策**：mock-vs-API 切换面在 `useAgents.queryFn` 和 `useAgentDetail.queryFn` 两个函数体内，符合计划承诺的"换后端只动一处"。
+
+---
+
+## 2026-04-27 — Agent publish & review pipeline · Phase E (Tasks 25–30)
+
+**Plan:** `docs/plans/2026-04-27-agent-publish-review-pipeline.md` (Phase E)
+**Branch:** `main`
+**Range:** `7036273b` (My Agents tab, last Phase D commit) → `c77dc275` (Hero dropdown)
+
+### What shipped (6 commits)
+
+```
+c77dc275 feat(web): split Hero Publish CTA into Skill/Agent dropdown
+aaa9cc16 feat(web): switch agent-detail route to /agents/$namespace/$slug
+ee032449 feat(web): AgentReviewDetailPage with approve/reject controls
+1a098375 feat(web): AgentReviewsPage (reviewer inbox)
+2aca5015 feat(web): add agent review query and mutation hooks
+(plus: Task 30 memo commit)
+```
+
+End-to-end Agent flow now closed: publish → review inbox → review detail (with soul.md + workflow.yaml visible) → approve/reject → public list. Hero offers dropdown CTA for both Publish Skill and Publish Agent.
+
+### Test counts
+
+- Web: 606 → **627 passing** (+21 new). 202 files, 0 failures.
+- Backend: **broken baseline (see follow-up #1)** — did not run as part of this session.
+- Typecheck: only pre-existing `registry-skill.tsx` errors.
+- Lint: only pre-existing `registry-skill.tsx` warnings.
+
+### Spec divergences from the plan (all intentional)
+
+1. **Task 27 added a backend endpoint** — `GET /api/web/agents/reviews/{taskId}/detail` (also `/api/v1`). Phase C plan Task 16 created the `AgentReviewVersionDetailResponse` DTO but Task 17 never wired a controller to return it. The reviewer detail screen needs agent metadata + soul.md + workflow.yaml in one shot, so this commit closes that wiring. Service.getById was already in place; controller picks up `AgentRepository`/`AgentVersionRepository`/`NamespaceRepository` to assemble the joined response. Security policy gained two `*/detail` entries because the existing `/reviews/*` rule is single-segment and doesn't cross the next slash.
+
+2. **Task 26 took a simpler shape than skills' reviews page** — agent review API requires `namespaceId`, so the inbox UI is built around a namespace selector (filtered to OWNER/ADMIN namespaces) instead of the global SKILL_ADMIN tab + namespace tab combo. Less code, fewer special cases. Dashboard sidebar grew an `Agent Reviews` card gated on the same role check.
+
+3. **Task 28 made `/agents/$name` a redirect** — old route became `beforeLoad` redirect to `/agents/global/$name` so any cached/external links still resolve; canonical URL is now `/agents/$namespace/$slug`. `useAgentDetail` takes both segments. `AgentSummary.namespace` was added so cards can build the canonical URL without re-fetching. Distinguishes "no published version" (new i18n key) from generic load errors.
+
+4. **mock-agents.ts deleted** — no remaining importers; backend is the source of truth. Tests still mock the hooks (`useAgents`, `useAgentDetail`) directly.
+
+5. **Review-detail page renders soul/workflow as `<pre>` blocks, not markdown.** Workflow is YAML (not markdown), and the reviewer needs to see soul exactly as the runtime will read it. Skipping the markdown renderer also avoids the XSS concern entirely on this surface.
+
+### Known gaps and follow-ups (in priority order)
+
+1. **🔥 Backend test baseline is broken (Phase A–D regression).** `mvn test -pl skillhub-app` produces **241 ApplicationContext load failures across 456 tests**. Root cause: `AgentJpaRepository` / `AgentVersionJpaRepository` / `AgentReviewTaskJpaRepository` exist in `skillhub-infra` but the test context can't autowire `AgentRepository` etc. — bean type resolution fails for the agent JPA chain. Verified this is pre-existing on `main` HEAD before any Phase E changes (stashed Phase E modifications and reproduced). Phase E added the `/detail` controller wiring but **deliberately did NOT add a new controller test** because it would just join the broken baseline. **Next step**: a separate session needs to repair JPA scanning/wiring for the agent module — likely an `@EnableJpaRepositories(basePackages = ...)` in skillhub-app that doesn't include the new `com.iflytek.skillhub.infra.jpa` agent files, or a config issue around how agent repositories were added relative to skill repositories.
+
+2. **No real integration test for the agent review approve/reject lifecycle.** Carried over from the comments-session pattern — the codebase has no `@SpringBootTest` precedent that drives real repos through the controller layer for these workflows. Worth a separate spec.
+
+3. **Backend AgentControllerTest, AgentReviewControllerTest, AgentPublishControllerTest** — 7 + 4 + ~4 tests assuming the agent JPA wiring works; will pass once #1 is fixed.
+
+4. **`/agents/$name` redirect uses hardcoded `'global'` namespace.** Fine for now (single-tenant deployments use `global`); when multi-namespace publishing surfaces, the legacy redirect needs a backend lookup or graceful 404 instead.
+
+5. **AgentReviewsPage doesn't show agent name/version in the row** — only task ID and version ID. Backend list response is the bare task row; to enrich, either (a) the list endpoint joins agent metadata (mirrors `ReviewTaskResponse` carrying `skillSlug`), or (b) the page does N+1 fetches client-side. Both are scope creep for v1.
+
+6. **No browser smoke test was performed.** The plan's Task 30 step calls for a manual walkthrough. Skipped because no live backend was running in this session and the backend baseline is broken (see #1). Verified via 627/627 unit tests + typecheck.
+
+7. **`window.confirm` not used** — review actions go through `<ConfirmDialog>` matching the skill-review pattern.
+
+### How to resume
+
+```bash
+cd /Users/lydoc/projectscoding/skillhub
+git status   # branch: main, 6 commits ahead of origin/main since 7036273b
+cd web && pnpm vitest run                       # 627/627 passing
+cd web && pnpm typecheck                        # only registry-skill.tsx errors remain (pre-existing)
+# Backend: SEE FOLLOW-UP #1 — server tests are NOT runnable on main HEAD; fix that first.
+```
+
+If continuing the agent rollout, the natural next stops are:
+- Repair backend test baseline (follow-up #1) so agent controller tests are runnable.
+- Surface review-task list rows with agent slug + version (follow-up #5).
+- Wire `Agents Frontend MVP` follow-ups #1–#4 (keyboard-nav `<Link>`s, shared `createWrapper`, etc).

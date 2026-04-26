@@ -30,3 +30,30 @@
 - `renderHook` / `render` 需要 jsdom 环境；如果项目 vite/vitest 配里没全局开 `environment: 'jsdom'`，要在测试文件顶部加 `// @vitest-environment jsdom` pragma，单文件作用域，避免污染全局。
 - 这种缺失 dep 的修复会导致 `package.json` + `pnpm-lock.yaml` 也进 commit，超出原计划文件清单。这是不可避免的合理扩散，但要在 commit message 或后续报告里记录。
 
+---
+
+## 2026-04-27 — Phase 完成 ≠ 测试已 verify（要核对 baseline）
+
+**症状**: Phase E 任务 27 想给 `AgentReviewControllerTest` 加一个 `getDetail` 用例，结果发现 `mvn -pl skillhub-app test` 全部 7 个 agent review controller 测试都因 ApplicationContext 加载失败而 error。继续跑全 app 套件，**456 测试 / 241 errors** ——baseline 在我开 Phase E 之前就已坏掉。git stash 验证后确认是 Phase A–D 留下的预存在 bug（`AgentJpaRepository` 等无法 autowire `AgentRepository` 类型）。
+
+**原因**: 上一会话写 Phase A–D commit message 时声称 "backend 432 + ~30 = ~460 passing"，但实际并没真跑全测试就提交。这种 "我想它会过" 的声明留下隐形的破窗。
+
+**规则**:
+- 接手 plan 的中间 phase，**第一件事**不是看 plan 的 next-task；而是跑一次完整 baseline (`pnpm vitest run` + `mvn test`) 核对当前是否绿。Phase 之间断电时极易引入未发现的 regression。
+- 上一 phase 的 commit message 不是测试通过的证据；测试本身才是。Plan 的 effort summary "X tests passing" 也不能信，要自己跑。
+- 当 baseline 已坏不在我能修的范围内时，明确分流：(a) 当前任务必须的代码改动正常做，(b) 但**不要再加新测试到那个坏掉的套件里**——那只会增加噪音，让坏的更难定位，新测试不可能验证；(c) 在 memo 的 follow-up 里高优先级标注，给下游接手的人足够上下文。
+- 这次 Task 27 的 controller 改动是必要的功能（前端拿不到 detail 数据），保留；但 controller test 的更改撤回了，并把 follow-up #1 标 🔥 写进 memo。
+
+---
+
+## 2026-04-27 — Bash 工具的 cwd 不会跨调用持久
+
+**症状**: 多次 `cd /path/to/web` 之后想直接 `pnpm test`，但报 `ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL Command not found`，因为 cwd 已回到 repo root。
+
+**原因**: Claude Code 的 Bash 工具每次调用是 fresh shell，工作目录和 shell state 不持久。即使之前 `pwd` 显示在 `/web`，下一次 Bash call 也会重置。早些时候有一次似乎持久了——那是 mvn 构建在 cwd 留了 `target/` 残留导致后续 `pwd` 输出看起来像没变。
+
+**规则**:
+- **每次**需要在子目录跑命令时，命令前面写完整 `cd /Users/lydoc/projectscoding/skillhub/web && <cmd>`，不要假设上一次 cd 还在。
+- 后端测试统一前缀：`cd /Users/lydoc/projectscoding/skillhub/server && ./mvnw ...`。
+- 不要因这个去 polling `pwd`——每次写完整 cd 链就行。
+
