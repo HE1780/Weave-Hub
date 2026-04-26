@@ -14,14 +14,16 @@
 4. **fork 与 upstream 隔离**:每条 backlog 标注 ADR 0003 子条款 (§1.1 / §1.2 / §1.3),
    不属于 fork 路线的工作直接拒绝纳入
 
-## 当前快照(2026-04-27)
+## 当前快照(2026-04-27 22:00 后,Phase E follow-ups 全部收尾后)
 
-测试 baseline:backend 455/455,web 627/627,typecheck/lint 仅 registry-skill.tsx 预存在错误。
+测试 baseline:backend **460/460**,web **631/631**,typecheck/lint 仅 registry-skill.tsx 预存在错误。
 
 代码层面已完成的部分(不再是 backlog 项):
 
-- Agent 后端:数据库 / 实体 / 解析器 / 校验器 / 可见性 / publish service / review service / 通知 / public read endpoints
-- Agent 前端:列表页 / 详情页 / 发布页 / My Agents / 审核 inbox + 详情 / 8 个 hooks
+- Agent 后端:数据库 / 实体 / 解析器 / 校验器 / 可见性 / publish service / review service / 通知 / public read endpoints / `/detail` 端点已有 controller test
+- Agent 前端:列表页 / 详情页 / 发布页 / My Agents / 审核 inbox + 详情 / 8 个 hooks(已统一用 `createWrapper` helper)
+- AgentReviewsPage 行展示 agent slug + version(原 P1-1 已完成)
+- AgentCard 用 TanStack `<Link>`(支持 cmd-click / 中键 / 右键打开新标签)
 - Hero CTA:已拆 dropdown(发布 Skill / 发布 Agent)
 - Tech Weave 字体三联:Syne / IBM Plex Sans / JetBrains Mono 已接入
 
@@ -111,14 +113,10 @@ P0-1 完成后,把 landing 页结构完成最后一步。
 
 ## P1 — 完成 P0 后启动(单点依赖)
 
-### P1-1: AgentReviewsPage 行展示 agent slug + version
+### ~~P1-1: AgentReviewsPage 行展示 agent slug + version~~ ✅ 已完成
 
-**ADR 0003 §1.1** · 估时 ~0.5 天 · 前端 + 后端 list 端点小调
-
-[memo.md follow-up #5](../../memo/memo.md) 已记。后端 review list 响应增加 `agentSlug` + `agentVersion`
-(JOIN agent + agent_version 一次),前端表格列加两栏。
-
-依赖:无技术依赖,但建议 P0-2 后做(P0-2 改了 list endpoint,review list 也是 list 模式,统一改风格)。
+由 commit `074c1002` (Phase E follow-ups sweep) 收尾。后端 review list 已 JOIN agent + version
+返回 `agentSlug` + `agentVersion`,前端表格列已加。原依赖关系作废。
 
 ---
 
