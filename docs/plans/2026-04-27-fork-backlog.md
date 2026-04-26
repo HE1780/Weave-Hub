@@ -55,10 +55,13 @@
 
 ## P0 — 立即可启动(无前置依赖)
 
-### P0-1a: WeaveHub design tokens + glass-morphism 体系迁移 🔄
+### ~~P0-1a: WeaveHub design tokens + glass-morphism 体系迁移~~ ✅ 已完成 (2026-04-27)
 
-**ADR 0003 §1.2** · 估时 ~1.5 天 · 纯前端 · token 层
-**Plan:** [docs/plans/2026-04-27-weavehub-tokens.md](2026-04-27-weavehub-tokens.md) (2026-04-27 written)
+**ADR 0003 §1.2** · 实际 ~2 小时(subagent-driven) · 纯前端 · token 层
+**Plan:** [docs/plans/2026-04-27-weavehub-tokens.md](2026-04-27-weavehub-tokens.md)
+**Range:** `30c05d89` → `d4583420` (9 commits)
+**Tests:** 631 → 635 passing(+4 from card.test.tsx)
+**Memo:** see `memo/memo.md` 2026-04-27 P0-1a session entry for divergences and known gaps
 
 承接 [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)
 §4.1。**只动 design system 层,不动版面**。提交后全站颜色变绿、卡片变玻璃感,但布局不动。

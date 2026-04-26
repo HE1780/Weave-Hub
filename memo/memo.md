@@ -402,3 +402,99 @@ cd web && pnpm vitest run                       # 631/631 passing
 cd web && pnpm tsc --noEmit                     # only registry-skill.tsx errors remain (pre-existing)
 cd server && ./mvnw test                        # 460/460 passing — RUN FROM ROOT
 ```
+
+---
+
+## 2026-04-27 — P0-1a: WeaveHub design tokens migrated
+
+**Plan:** [docs/plans/2026-04-27-weavehub-tokens.md](../docs/plans/2026-04-27-weavehub-tokens.md)
+**Spec:** [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md) §2 + §4.1
+**ADR clause:** [ADR 0003](../docs/adr/0003-fork-scope-and-upstream-boundary.md) §1.2
+**Branch:** `main`
+**Range:** `30c05d89` → `d4583420` (9 commits, all on top of plan commit `79483ce3`)
+**Method:** subagent-driven (spec + code-quality two-stage review per task)
+
+### What shipped (9 commits)
+
+```
+d4583420 feat(web): migrate AgentCard to glass-card visual
+762b74fe feat(web): migrate SkillCard to glass-card visual
+17872a11 feat(web): add opt-in glass prop to base Card
+0362c05c feat(web): migrate Button default variant to btn-primary semantic class
+5b069ed0 feat(web): expose brand-50..700 palette in tailwind theme
+31cd3540 feat(web): add glass-card, btn-primary/secondary, nav-chip utility classes
+2a796667 feat(web): drop Syne/IBM Plex Sans heading fallbacks (use Inter)
+24b0c2de feat(web): switch brand color palette from indigo/violet to weavehub green
+30c05d89 chore(web): add motion dependency for upcoming weavehub animations
+```
+
+End-to-end token layer migrated: brand palette indigo+violet → green-monochrome (`#34a853` / `#2c8e46` / `#23743a`),
+heading font fallback `Syne / IBM Plex Sans` → `Inter`, 4 new utility classes (`.glass-card` / `.btn-primary` /
+`.btn-secondary` / `.nav-chip` + modifiers), tailwind exposes `bg-brand-500` etc., Button default uses semantic
+`btn-primary` class, base Card has opt-in `glass` prop with 4 new tests, SkillCard / AgentCard migrated to
+`<Card glass>`. `motion` 12.38.0 installed for P0-1b.
+
+### Tests
+
+- Web: 631 → **635 passing** (+4 from new card.test.tsx)
+- Backend: 460 (unchanged, untouched)
+- Typecheck: only pre-existing `registry-skill.tsx` errors
+- Lint: 3 warnings (2 in `registry-skill.tsx` pre-existing + 1 in `web/weavehub---知连/src/App.tsx` —
+  this is the user-provided reference prototype, not project code; should be ignored via `.eslintrc.cjs`
+  `ignorePatterns` in a separate small commit if/when we need lint to be clean again. **Not introduced by P0-1a.**)
+
+### Visual delta
+
+- All purple/indigo gradients → green via single token (`--brand-gradient`)
+- 14 downstream `bg-brand-gradient` / `text-brand-gradient` references auto-recolored, no class renames
+- SkillCard / AgentCard now glass-morphism (translucent white + backdrop-blur + rounded-3xl + hover lift)
+- Default Button variant simpler: 1 semantic class instead of 4 compound utilities
+- `--radius` bumped from `0.75rem` → `1rem` (rounded-lg etc. all scale up)
+
+### Spec divergences (intentional)
+
+1. **`web/index.html` font links not changed** — they were already correct (only Inter+JetBrains Mono loaded).
+   Plan's Task 2 mentioned changing them; turned out unneeded.
+2. **`web/index.html <title>` stays `SkillHub`** — title rename is in P0-1b, per spec §3.7.
+3. **`web/src/app/layout.tsx` nav not yet migrated to `nav-chip` class** — current nav still uses
+   `bg-brand-gradient pill` style which auto-recolors green. Class swap moved to P0-1b's nav-link reshuffle
+   (cleaner to do in one shot).
+4. **8 `brand-gradient` files mentioned in spec actually grep to 14 references in 7 files** — handled
+   by single-token redefinition, no per-file edits needed.
+5. **`motion` resolved to ^12.38.0**, not ^11.x as plan guessed. Motion 12 has no breaking changes for
+   our future use.
+6. **`card.test.tsx`** (.tsx not .ts as plan said) — JSX requires .tsx (per memo/lessons.md
+   2026-04-26 entry).
+
+### Known gaps for P0-1b
+
+1. Site name still says "SkillHub" — P0-1b will change to "知连 WeaveHub"
+2. Landing page nine-section structure unchanged — P0-1b rewrites to weavehub 4-section IA
+3. Nav links / chip migration — P0-1b
+4. `motion/react` installed but not used — P0-1b consumes it
+5. The `Card glass` prop is only adopted by SkillCard + AgentCard so far. Other Card consumers
+   (workflow-steps, landing-channels, landing-quick-start, skeleton-loader, landing.tsx) still default
+   to plain solid `rounded-xl bg-card`. P0-1b will sweep landing-* components and decide per-component
+   whether to opt in.
+
+### How to resume (for P0-1b)
+
+```bash
+cd /Users/lydoc/projectscoding/skillhub
+git status   # branch: main, P0-1a complete
+cd web && pnpm vitest run   # 635/635 passing
+cd web && pnpm tsc --noEmit # only registry-skill.tsx errors (pre-existing)
+```
+
+Before starting P0-1b, **start the dev server and visually confirm P0-1a output**:
+
+```bash
+cd web && pnpm dev
+```
+
+Walk: `/` (landing — 颜色变绿,卡片有 glass 感), `/search`, `/agents`, login button, /dashboard/publish.
+If anything looks broken, the cause is almost certainly in commits `24b0c2de` (palette) or `31cd3540`
+(utility classes). Roll back individual commits if needed; each task is its own atomic commit.
+
+After visual confirmation, invoke `superpowers:writing-plans` against spec §4.2 to expand P0-1b into
+an executable plan.
