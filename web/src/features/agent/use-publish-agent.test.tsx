@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
+import { createWrapper } from '@/shared/test/create-wrapper'
 import { usePublishAgent } from './use-publish-agent'
 
 const publishMock = vi.fn()
@@ -13,11 +12,6 @@ vi.mock('@/api/client', () => ({
 }))
 
 beforeEach(() => publishMock.mockReset())
-
-function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
-}
 
 describe('usePublishAgent', () => {
   it('forwards namespace, file, and visibility to agentsApi.publish', async () => {
@@ -32,7 +26,7 @@ describe('usePublishAgent', () => {
     })
     const file = new File([new Uint8Array([1, 2, 3])], 'a.zip', { type: 'application/zip' })
 
-    const { result } = renderHook(() => usePublishAgent(), { wrapper })
+    const { result } = renderHook(() => usePublishAgent(), { wrapper: createWrapper() })
     await act(async () => {
       await result.current.mutateAsync({ namespace: 'global', file, visibility: 'PRIVATE' })
     })
@@ -46,7 +40,7 @@ describe('usePublishAgent', () => {
     publishMock.mockRejectedValueOnce(new Error('Forbidden'))
     const file = new File([new Uint8Array([1])], 'b.zip')
 
-    const { result } = renderHook(() => usePublishAgent(), { wrapper })
+    const { result } = renderHook(() => usePublishAgent(), { wrapper: createWrapper() })
     await act(async () => {
       try {
         await result.current.mutateAsync({ namespace: 'global', file, visibility: 'PUBLIC' })

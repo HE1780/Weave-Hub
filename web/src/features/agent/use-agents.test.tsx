@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
+import { createWrapper } from '@/shared/test/create-wrapper'
 import { useAgents } from './use-agents'
 
 const listMock = vi.fn()
@@ -13,11 +12,6 @@ vi.mock('@/api/client', () => ({
 }))
 
 beforeEach(() => listMock.mockReset())
-
-function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
-}
 
 describe('useAgents', () => {
   it('maps backend AgentDto rows into AgentSummary', async () => {
@@ -41,7 +35,7 @@ describe('useAgents', () => {
       size: 50,
     })
 
-    const { result } = renderHook(() => useAgents(), { wrapper })
+    const { result } = renderHook(() => useAgents(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.data).toHaveLength(1)
@@ -55,7 +49,7 @@ describe('useAgents', () => {
   it('returns empty list when backend has no agents', async () => {
     listMock.mockResolvedValueOnce({ items: [], total: 0, page: 0, size: 50 })
 
-    const { result } = renderHook(() => useAgents(), { wrapper })
+    const { result } = renderHook(() => useAgents(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(result.current.data).toEqual([])

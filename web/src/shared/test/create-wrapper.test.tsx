@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { useQuery } from '@tanstack/react-query'
-import { createWrapper } from './create-wrapper'
+import { createWrapper, createWrapperWithClient } from './create-wrapper'
 
 describe('createWrapper', () => {
   it('provides a QueryClient so useQuery can run inside renderHook', async () => {
@@ -31,5 +31,13 @@ describe('createWrapper', () => {
     )
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect((result.current.error as Error).message).toBe('boom')
+  })
+
+  it('createWrapperWithClient exposes the client for cache spies', () => {
+    const { Wrapper, client } = createWrapperWithClient()
+    const spy = vi.spyOn(client, 'invalidateQueries')
+    expect(typeof Wrapper).toBe('function')
+    client.invalidateQueries({ queryKey: ['x'] })
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['x'] })
   })
 })

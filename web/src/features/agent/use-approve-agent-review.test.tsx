@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
+import { createWrapperWithClient } from '@/shared/test/create-wrapper'
 import { useApproveAgentReview } from './use-approve-agent-review'
 
 const approveMock = vi.fn()
@@ -15,11 +14,8 @@ vi.mock('@/api/client', () => ({
 beforeEach(() => approveMock.mockReset())
 
 function makeWrapper() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const { Wrapper, client } = createWrapperWithClient()
   const invalidateSpy = vi.spyOn(client, 'invalidateQueries')
-  function Wrapper({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>
-  }
   return { Wrapper, invalidateSpy }
 }
 

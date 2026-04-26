@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
+import { createWrapper } from '@/shared/test/create-wrapper'
 import { useAgentDetail } from './use-agent-detail'
 
 const getMock = vi.fn()
@@ -22,11 +21,6 @@ beforeEach(() => {
   listVersionsMock.mockReset()
   getVersionMock.mockReset()
 })
-
-function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
-}
 
 const sampleWorkflow = `
 steps:
@@ -60,7 +54,7 @@ describe('useAgentDetail', () => {
       workflowYaml: sampleWorkflow,
     })
 
-    const { result } = renderHook(() => useAgentDetail('global', 'agent-a'), { wrapper })
+    const { result } = renderHook(() => useAgentDetail('global', 'agent-a'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.data?.name).toBe('agent-a')
@@ -81,14 +75,14 @@ describe('useAgentDetail', () => {
         packageSizeBytes: 1, manifestYaml: null, soulMd: null, workflowYaml: null },
     ])
 
-    const { result } = renderHook(() => useAgentDetail('global', 'agent-b'), { wrapper })
+    const { result } = renderHook(() => useAgentDetail('global', 'agent-b'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
   })
 
   it('errors when backend returns 404 for the agent', async () => {
     getMock.mockRejectedValueOnce(new Error('not found'))
 
-    const { result } = renderHook(() => useAgentDetail('global', 'does-not-exist'), { wrapper })
+    const { result } = renderHook(() => useAgentDetail('global', 'does-not-exist'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
   })
 
@@ -111,7 +105,7 @@ describe('useAgentDetail', () => {
       manifestYaml: null, soulMd: null, workflowYaml: null,
     })
 
-    const { result } = renderHook(() => useAgentDetail('global', 'agent-c'), { wrapper })
+    const { result } = renderHook(() => useAgentDetail('global', 'agent-c'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.data?.workflow).toBeUndefined()

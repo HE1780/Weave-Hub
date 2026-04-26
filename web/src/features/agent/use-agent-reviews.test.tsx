@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
+import { createWrapper } from '@/shared/test/create-wrapper'
 import { useAgentReviews } from './use-agent-reviews'
 
 const listMock = vi.fn()
@@ -13,11 +12,6 @@ vi.mock('@/api/client', () => ({
 }))
 
 beforeEach(() => listMock.mockReset())
-
-function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
-}
 
 describe('useAgentReviews', () => {
   it('returns paginated review tasks for the namespace', async () => {
@@ -40,7 +34,7 @@ describe('useAgentReviews', () => {
       size: 20,
     })
 
-    const { result } = renderHook(() => useAgentReviews(10, 'PENDING'), { wrapper })
+    const { result } = renderHook(() => useAgentReviews(10, 'PENDING'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(listMock).toHaveBeenCalledWith({
@@ -55,12 +49,12 @@ describe('useAgentReviews', () => {
   })
 
   it('does not fire the request when namespaceId is missing', () => {
-    renderHook(() => useAgentReviews(undefined), { wrapper })
+    renderHook(() => useAgentReviews(undefined), { wrapper: createWrapper() })
     expect(listMock).not.toHaveBeenCalled()
   })
 
   it('does not fire when caller passes enabled=false', () => {
-    renderHook(() => useAgentReviews(10, 'PENDING', 0, 20, false), { wrapper })
+    renderHook(() => useAgentReviews(10, 'PENDING', 0, 20, false), { wrapper: createWrapper() })
     expect(listMock).not.toHaveBeenCalled()
   })
 })

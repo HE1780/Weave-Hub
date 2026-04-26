@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
+import { createWrapper } from '@/shared/test/create-wrapper'
 import { useAgentReviewDetail } from './use-agent-review-detail'
 
 const getDetailMock = vi.fn()
@@ -14,11 +13,6 @@ vi.mock('@/api/client', () => ({
 
 beforeEach(() => getDetailMock.mockReset())
 
-function wrapper({ children }: { children: ReactNode }) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>
-}
-
 describe('useAgentReviewDetail', () => {
   it('fetches the full review payload for a valid task id', async () => {
     getDetailMock.mockResolvedValueOnce({
@@ -27,7 +21,7 @@ describe('useAgentReviewDetail', () => {
       version: { id: 5, version: '1.0.0', soulMd: 'soul', workflowYaml: 'steps: []' },
     })
 
-    const { result } = renderHook(() => useAgentReviewDetail(1), { wrapper })
+    const { result } = renderHook(() => useAgentReviewDetail(1), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(getDetailMock).toHaveBeenCalledWith(1)
@@ -36,7 +30,7 @@ describe('useAgentReviewDetail', () => {
   })
 
   it('does not fetch when taskId is 0', () => {
-    renderHook(() => useAgentReviewDetail(0), { wrapper })
+    renderHook(() => useAgentReviewDetail(0), { wrapper: createWrapper() })
     expect(getDetailMock).not.toHaveBeenCalled()
   })
 })
