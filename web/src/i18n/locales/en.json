@@ -1405,5 +1405,36 @@
       "report": "Report Notifications",
       "reportDesc": "Notify on report submission or resolution"
     }
+  },
+  "comments": {
+    "empty": "No comments yet. Be the first to add a change note.",
+    "composer": {
+      "placeholder": "Add a comment (markdown supported)",
+      "submit": "Post",
+      "preview": "Preview",
+      "write": "Write"
+    },
+    "action": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "pin": "Pin",
+      "unpin": "Unpin"
+    },
+    "badge": {
+      "pinned": "Pinned",
+      "edited": "Edited"
+    },
+    "confirm": {
+      "delete": "Delete this comment? This cannot be undone."
+    },
+    "error": {
+      "loadFailed": "Failed to load comments. Try again.",
+      "tooLong": "Comment is too long (max 8192 characters).",
+      "empty": "Comment cannot be empty."
+    },
+    "loadMore": "Load more",
+    "section": {
+      "title": "Comments"
+    }
   }
 }
