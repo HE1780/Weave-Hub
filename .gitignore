@@ -73,12 +73,18 @@ __pycache__/
 # Git worktrees
 .worktrees/
 
-# Superpowers (AI planning artifacts)
+# Superpowers harness state (per-machine, not project artifacts)
 .superpowers/
+
+# Drafts not yet meant for review (commit when ready)
 docs/prds/
 docs/requirements/
 docs/review/
-docs/superpowers/
+
+# NOTE: docs/superpowers/{specs,plans}/ is tracked.
+# Per CLAUDE.md "project artifacts stay in the project", design specs and
+# implementation plans produced by superpowers:brainstorming /
+# writing-plans skills are project artifacts and must be committed.
 
 # Local workspace metadata
 AGENTS.md
