@@ -14,7 +14,7 @@ CREATE TABLE agent (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (namespace_id, slug),
-    CHECK (visibility IN ('PUBLIC', 'PRIVATE', 'NAMESPACE')),
+    CHECK (visibility IN ('PUBLIC', 'PRIVATE', 'NAMESPACE_ONLY')),
     CHECK (status IN ('ACTIVE', 'ARCHIVED'))
 );
 
