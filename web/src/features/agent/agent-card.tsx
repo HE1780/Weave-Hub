@@ -21,7 +21,7 @@ export function AgentCard({ agent }: AgentCardProps) {
       params={{ namespace: agent.namespace ?? 'global', slug: agent.name }}
       className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 rounded-xl"
     >
-      <Card className="h-full p-5 group relative overflow-hidden bg-white border shadow-sm transition-shadow hover:shadow-md">
+      <Card glass className="h-full p-5 group relative overflow-hidden">
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between mb-3">
             <h3
