@@ -1325,3 +1325,149 @@ export const commentsApi = {
     )
   },
 }
+
+export type AgentDtoVisibility = 'PUBLIC' | 'NAMESPACE_ONLY' | 'PRIVATE'
+export type AgentDtoStatus = 'ACTIVE' | 'ARCHIVED'
+export type AgentVersionDtoStatus =
+  | 'DRAFT'
+  | 'PENDING_REVIEW'
+  | 'PUBLISHED'
+  | 'REJECTED'
+  | 'ARCHIVED'
+export type AgentReviewTaskDtoStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface AgentDto {
+  id: number
+  namespace: string
+  slug: string
+  displayName: string
+  description: string | null
+  visibility: AgentDtoVisibility
+  ownerId: string
+  status: AgentDtoStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AgentVersionDto {
+  id: number
+  agentId: number
+  version: string
+  status: AgentVersionDtoStatus
+  submittedBy: string
+  submittedAt: string
+  publishedAt: string | null
+  packageSizeBytes: number
+  manifestYaml: string | null
+  soulMd: string | null
+  workflowYaml: string | null
+}
+
+export interface AgentPublishResponseDto {
+  agentId: number
+  agentVersionId: number
+  namespace: string
+  slug: string
+  version: string
+  status: AgentVersionDtoStatus
+  packageSizeBytes: number
+}
+
+export interface AgentReviewTaskDto {
+  id: number
+  agentVersionId: number
+  namespaceId: number
+  status: AgentReviewTaskDtoStatus
+  submittedBy: string
+  reviewedBy: string | null
+  reviewComment: string | null
+  submittedAt: string
+  reviewedAt: string | null
+}
+
+export const agentsApi = {
+  async list(params: { page?: number; size?: number } = {}) {
+    const search = new URLSearchParams()
+    if (params.page !== undefined) search.set('page', String(params.page))
+    if (params.size !== undefined) search.set('size', String(params.size))
+    const qs = search.toString()
+    const suffix = qs ? `?${qs}` : ''
+    return fetchJson<PagedResponse<AgentDto>>(`${WEB_API_PREFIX}/agents${suffix}`)
+  },
+
+  async get(namespace: string, slug: string) {
+    return fetchJson<AgentDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(namespace)}/${encodeURIComponent(slug)}`,
+    )
+  },
+
+  async listVersions(namespace: string, slug: string) {
+    return fetchJson<AgentVersionDto[]>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(namespace)}/${encodeURIComponent(slug)}/versions`,
+    )
+  },
+
+  async getVersion(namespace: string, slug: string, version: string) {
+    return fetchJson<AgentVersionDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(namespace)}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(version)}`,
+    )
+  },
+
+  async publish(namespace: string, file: File, visibility: AgentDtoVisibility) {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('visibility', visibility)
+    return fetchJson<AgentPublishResponseDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(namespace)}/publish`,
+      {
+        method: 'POST',
+        headers: getCsrfHeaders(),
+        body: form,
+      },
+    )
+  },
+}
+
+export const agentReviewsApi = {
+  async list(params: {
+    namespaceId: number
+    status?: AgentReviewTaskDtoStatus
+    page?: number
+    size?: number
+  }) {
+    const search = new URLSearchParams()
+    search.set('namespaceId', String(params.namespaceId))
+    if (params.status) search.set('status', params.status)
+    if (params.page !== undefined) search.set('page', String(params.page))
+    if (params.size !== undefined) search.set('size', String(params.size))
+    return fetchJson<PagedResponse<AgentReviewTaskDto>>(
+      `${WEB_API_PREFIX}/agents/reviews?${search.toString()}`,
+    )
+  },
+
+  async get(taskId: number) {
+    return fetchJson<AgentReviewTaskDto>(`${WEB_API_PREFIX}/agents/reviews/${taskId}`)
+  },
+
+  async approve(taskId: number, comment?: string) {
+    return fetchJson<AgentReviewTaskDto>(
+      `${WEB_API_PREFIX}/agents/reviews/${taskId}/approve`,
+      {
+        method: 'POST',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ comment: comment ?? null }),
+      },
+    )
+  },
+
+  async reject(taskId: number, comment?: string) {
+    return fetchJson<AgentReviewTaskDto>(
+      `${WEB_API_PREFIX}/agents/reviews/${taskId}/reject`,
+      {
+        method: 'POST',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ comment: comment ?? null }),
+      },
+    )
+  },
+}
