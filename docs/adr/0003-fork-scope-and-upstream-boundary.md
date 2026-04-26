@@ -47,16 +47,38 @@ Agent、视觉 UI、运行时安全等维度走出独立路线。
 
 #### 1.2 独立视觉 UI
 
-本 fork 的 UI 与 upstream 视觉解耦,允许引入只属于本分支的设计语言:
+本 fork 的 UI 与 upstream 视觉解耦,允许引入只属于本分支的设计语言。
 
-- 双频道色系(Skills 蓝 / Agents 紫)的全局 design tokens
+**设计基线: "技术编织"(Tech Weave) 美学**(详见 [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md)):
+
+- 视觉风格:深蓝紫色基调(slate-950 / indigo-950)+ 霓虹青色点缀(cyan-500)+ 紫罗兰辅助(violet-500)
+- 字体体系:标题 Syne / 正文 IBM Plex Sans / 代码 JetBrains Mono
+- 动效语言:渐入(fade-up, fade-in)、悬浮缩放(hover:scale-105)、渐变光晕、脉冲、Canvas 粒子连接动画
+- 概念隐喻:粒子节点之间的连线象征"技能之间的连接和协作"
+
+落地状态(2026-04-27 核对):
+- ✅ 字体三联已接入 `web/index.html` + `web/src/index.css`
+- ✅ brand-gradient(indigo `#6A6DFF` → violet `#B85EFF`)design tokens 已就位
+- ❌ 粒子 Canvas 动画未实现
+- ❌ 深蓝紫色基调(slate-950/indigo-950)未应用——当前是浅色主题
+- ❌ 双频道色系(Skills 蓝 / Agents 紫)未拆分,两频道共用同一 brand-gradient
+
+**待补的视觉/结构性改造(以 Tech Weave 基线为指导):**
+
+- 双频道色系(Skills 蓝 / Agents 紫)拆分:`--channel-skill` / `--channel-agent` design tokens
 - Hero 双入口主张(Skills/Agents 并列大卡片)
+- Hero 区域 Canvas 粒子动画(Tech Weave 标志元素)
 - 第三个 Quick Start Tab "Agent Architect"
 - 统一搜索 Tabs(全部 / Skills / Agents 三栏)
+- AgentCard 紫色识别度(脱离当前与 SkillCard 共用的灰色边框)
 - 后续可能的品牌化改造(知联 Weave Hub 视觉资产)
 
 upstream 若在视觉层做调整,**默认不合并**;只在涉及组件结构或可访问性
 回归时按需 cherry-pick。
+
+**视觉资产文件位置约束:**
+- 全局 design tokens 仍在 `web/src/index.css`,但新增的双频道 token 命名前缀必须以 `--channel-*` 隔离,便于将来从 upstream 合并 brand 调整时识别冲突面
+- Tech Weave 风格的 Canvas / 动画组件放在 `web/src/features/landing/`(新建目录),与 marketing 静态文案区分
 
 #### 1.3 完整且安全的运行
 
@@ -148,14 +170,10 @@ fork 自有路线推进(见 1.1)。
 - [2026-04-26-landing-page-dual-channel.md](../plans/2026-04-26-landing-page-dual-channel.md)
   — 双频道 landing 重构(已完成 strategy C,视觉对齐部分留待新 plan)
 
-未启动但属于 fork 自有路线的待写 plan(占位):
+未启动 plan 的优先级与依赖关系统一记录在 fork 自有路线 backlog:
 
-- 双频道视觉对齐 plan(Hero 双入口、Skills 蓝 / Agents 紫色系、统一搜索 Tabs、
-  Agent Architect Quick Start Tab)
-- Agent 评论 plan(在 [2026-04-26-comments-feature-requirements.md](../plans/2026-04-26-comments-feature-requirements.md)
-  基础上展开)
-- Agent 搜索集成 plan
-- Workflow Executor 子项目 plan(完整且安全的运行)
+- [docs/plans/2026-04-27-fork-backlog.md](../plans/2026-04-27-fork-backlog.md)
+  — 按依赖关系排序的 P0 / P1 / P2 / P3 队列,新 plan 启动前先看这份 backlog
 
 本 ADR 作为新 plan 的范围检查清单:每个新 plan 在开头注明"对应 ADR 0003 的
 1.1 / 1.2 / 1.3 哪一条",便于审阅范围正当性。
