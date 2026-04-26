@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/features/auth/use-auth'
 import type { SkillSummary } from '@/api/types'
 import { useMySkills } from '@/shared/hooks/use-user-queries'
+import { useMyNamespaces } from '@/shared/hooks/use-namespace-queries'
 import { canViewGovernanceCenter } from '@/shared/lib/governance-access'
 import { getHeadlineVersion } from '@/shared/lib/skill-lifecycle'
 import { TokenList } from '@/features/token/token-list'
@@ -25,6 +26,10 @@ export function DashboardPage() {
   const governanceVisible = canViewGovernanceCenter(user?.platformRoles)
   const { data: skillPage, isLoading: isLoadingSkills } = useMySkills({ page: 0, size: skillPreviewPageSize })
   const skillPreview = limitPreviewItems<SkillSummary>(skillPage?.items ?? [], DASHBOARD_PREVIEW_LIMIT)
+  const { data: myNamespaces } = useMyNamespaces()
+  const agentReviewsVisible = (myNamespaces ?? []).some(
+    (ns) => ns.currentUserRole === 'OWNER' || ns.currentUserRole === 'ADMIN',
+  )
 
   return (
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
@@ -95,6 +100,14 @@ export function DashboardPage() {
             {t('agents.myAgents.title')}
           </Link>
         </Card>
+        {agentReviewsVisible ? (
+          <Card className="p-5">
+            <div className="text-sm text-muted-foreground">{t('agentReviews.title')}</div>
+            <Link to="/dashboard/agent-reviews" className="mt-2 inline-block font-semibold text-primary hover:underline">
+              {t('agentReviews.title')}
+            </Link>
+          </Card>
+        ) : null}
         <Card className="p-5">
           <div className="text-sm text-muted-foreground">{t('dashboard.credentials')}</div>
           <Link to="/dashboard/tokens" className="mt-2 inline-block font-semibold text-primary hover:underline">
