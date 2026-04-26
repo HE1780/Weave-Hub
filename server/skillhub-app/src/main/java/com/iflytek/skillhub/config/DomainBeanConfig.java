@@ -1,5 +1,8 @@
 package com.iflytek.skillhub.config;
 
+import com.iflytek.skillhub.domain.agent.AgentMetadataParser;
+import com.iflytek.skillhub.domain.agent.AgentPackageValidator;
+import com.iflytek.skillhub.domain.agent.AgentVisibilityChecker;
 import com.iflytek.skillhub.domain.skill.VisibilityChecker;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadataParser;
 import com.iflytek.skillhub.domain.skill.validation.SkillPackageValidator;
@@ -40,5 +43,20 @@ public class DomainBeanConfig {
     @Bean
     public VisibilityChecker visibilityChecker() {
         return new VisibilityChecker();
+    }
+
+    @Bean
+    public AgentMetadataParser agentMetadataParser() {
+        return new AgentMetadataParser();
+    }
+
+    @Bean
+    public AgentPackageValidator agentPackageValidator(AgentMetadataParser agentMetadataParser) {
+        return new AgentPackageValidator(agentMetadataParser);
+    }
+
+    @Bean
+    public AgentVisibilityChecker agentVisibilityChecker() {
+        return new AgentVisibilityChecker();
     }
 }
