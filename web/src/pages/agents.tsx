@@ -1,18 +1,17 @@
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { Upload } from 'lucide-react'
 import { useAgents } from '@/features/agent/use-agents'
 import { AgentCard } from '@/features/agent/agent-card'
 import { useAuth } from '@/features/auth/use-auth'
 import { EmptyState } from '@/shared/components/empty-state'
-import { Button } from '@/shared/ui/button'
+import { buttonVariants } from '@/shared/ui/button'
 
 /**
  * Agents list page. Reads from useAgents() — real backend.
  */
 export function AgentsPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { user } = useAuth()
   const { data: agents, isLoading, isError } = useAgents()
 
@@ -32,10 +31,10 @@ export function AgentsPage() {
             </p>
             {user && (
               <div className="mt-6 flex justify-center">
-                <Button onClick={() => navigate({ to: '/dashboard/publish/agent' })}>
+                <Link to="/dashboard/publish/agent" className={buttonVariants()}>
                   <Upload className="mr-2 h-4 w-4" />
                   {t('agents.publish.title')}
-                </Button>
+                </Link>
               </div>
             )}
           </div>
@@ -61,12 +60,6 @@ export function AgentsPage() {
               <AgentCard
                 key={`${agent.namespace ?? 'global'}/${agent.name}`}
                 agent={agent}
-                onClick={() =>
-                  navigate({
-                    to: '/agents/$namespace/$slug',
-                    params: { namespace: agent.namespace ?? 'global', slug: agent.name },
-                  })
-                }
               />
             ))}
           </div>

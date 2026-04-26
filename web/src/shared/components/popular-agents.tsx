@@ -1,15 +1,14 @@
-import { useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { AgentCard } from '@/features/agent/agent-card'
 import { useAgents } from '@/features/agent/use-agents'
-import { Button } from '@/shared/ui/button'
+import { buttonVariants } from '@/shared/ui/button'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
 
 const TOP_N = 3
 
 export function PopularAgents() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { data: agents, isLoading } = useAgents()
 
   const top = (agents ?? []).slice(0, TOP_N)
@@ -32,9 +31,9 @@ export function PopularAgents() {
               {t('landing.popularAgents.description')}
             </p>
           </div>
-          <Button variant="ghost" onClick={() => navigate({ to: '/agents' })}>
+          <Link to="/agents" className={buttonVariants({ variant: 'ghost' })}>
             {t('landing.popularAgents.viewAll')}
-          </Button>
+          </Link>
         </div>
         {isLoading ? (
           <SkeletonList count={TOP_N} />
@@ -42,18 +41,7 @@ export function PopularAgents() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {top.map((agent, idx) => (
               <div key={agent.name} className={`animate-fade-up delay-${Math.min(idx + 1, 6)}`}>
-                <AgentCard
-                  agent={agent}
-                  onClick={() =>
-                    navigate({
-                      to: '/agents/$namespace/$slug',
-                      params: {
-                        namespace: agent.namespace ?? 'global',
-                        slug: agent.name,
-                      },
-                    })
-                  }
-                />
+                <AgentCard agent={agent} />
               </div>
             ))}
           </div>

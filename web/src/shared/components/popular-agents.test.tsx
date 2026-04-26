@@ -5,6 +5,11 @@ import { PopularAgents } from './popular-agents'
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
+  Link: ({ to, children, className }: { to: string; children: React.ReactNode; className?: string }) => (
+    <a href={to} className={className}>
+      {children}
+    </a>
+  ),
 }))
 
 vi.mock('react-i18next', async () => {
@@ -34,6 +39,7 @@ vi.mock('@/shared/components/skeleton-loader', () => ({
 
 vi.mock('@/shared/ui/button', () => ({
   Button: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+  buttonVariants: () => 'button',
 }))
 
 afterEach(() => cleanup())
