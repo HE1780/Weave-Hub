@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { PackageOpen, Terminal, Shield, Users, GitBranch, Search as SearchIcon, Settings } from 'lucide-react'
 import { LandingQuickStartSection } from '@/shared/components/landing-quick-start'
+import { PopularAgents } from '@/shared/components/popular-agents'
 import { SkillCard } from '@/features/skill/skill-card'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
@@ -249,6 +250,9 @@ export function LandingPage() {
           )}
         </div>
       </section>
+
+      {/* Popular Agents Section */}
+      <PopularAgents />
 
       {/* Latest Releases Section */}
       <section ref={latestView.ref} className={`relative z-10 w-full py-20 md:py-24 px-6 scroll-fade-up${latestView.inView ? ' in-view' : ''}`} style={{ background: 'var(--bg-page, hsl(var(--background)))' }}>
