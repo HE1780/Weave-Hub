@@ -18,7 +18,9 @@
       "searchPlaceholder": "搜索技能...",
       "exploreSkills": "探索技能",
       "browseAgents": "浏览智能体",
-      "publishSkill": "发布技能"
+      "publish": "发布",
+      "publishSkill": "发布技能",
+      "publishAgent": "发布智能体"
     },
     "channels": {
       "title": "两种组合 AI 能力的方式",

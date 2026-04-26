@@ -1,7 +1,7 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
-import { PackageOpen, Terminal, Shield, Users, GitBranch, Search as SearchIcon, Settings } from 'lucide-react'
+import { PackageOpen, Terminal, Shield, Users, GitBranch, Search as SearchIcon, Settings, ChevronDown } from 'lucide-react'
 import { LandingQuickStartSection } from '@/shared/components/landing-quick-start'
 import { LandingChannelsSection } from '@/shared/components/landing-channels'
 import { PopularAgents } from '@/shared/components/popular-agents'
@@ -10,6 +10,12 @@ import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
 import { useInView } from '@/shared/hooks/use-in-view'
 import { Button } from '@/shared/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu'
 
 /**
  * Marketing-style landing page for unauthenticated and first-time visitors.
@@ -152,17 +158,30 @@ export function LandingPage() {
           >
             {t('landing.hero.browseAgents')}
           </Link>
-          <Link
-            to="/dashboard/publish"
-            className="px-8 py-3.5 rounded-xl text-base font-medium border transition-colors"
-            style={{
-              background: 'hsl(var(--secondary))',
-              borderColor: 'hsl(var(--muted-foreground))',
-              color: 'hsl(var(--muted-foreground))',
-            }}
-          >
-            {t('landing.hero.publishSkill', { defaultValue: '开始构建' })}
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="px-8 py-3.5 rounded-xl text-base font-medium border transition-colors inline-flex items-center gap-2"
+                style={{
+                  background: 'hsl(var(--secondary))',
+                  borderColor: 'hsl(var(--muted-foreground))',
+                  color: 'hsl(var(--muted-foreground))',
+                }}
+              >
+                {t('landing.hero.publish', { defaultValue: '发布' })}
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center">
+              <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/publish' })}>
+                {t('landing.hero.publishSkill', { defaultValue: '发布技能' })}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/publish/agent' })}>
+                {t('landing.hero.publishAgent', { defaultValue: '发布智能体' })}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Stats */}

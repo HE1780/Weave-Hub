@@ -18,7 +18,9 @@
       "searchPlaceholder": "Search skills...",
       "exploreSkills": "Explore Skills",
       "browseAgents": "Browse Agents",
-      "publishSkill": "Publish Skill"
+      "publish": "Publish",
+      "publishSkill": "Publish Skill",
+      "publishAgent": "Publish Agent"
     },
     "channels": {
       "title": "Two ways to compose AI capabilities",

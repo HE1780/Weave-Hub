@@ -23,6 +23,14 @@ vi.mock('lucide-react', () => ({
   GitBranch: () => null,
   Search: () => null,
   Settings: () => null,
+  ChevronDown: () => null,
+}))
+
+vi.mock('@/shared/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: unknown }) => children,
+  DropdownMenuTrigger: ({ children }: { children: unknown }) => children,
+  DropdownMenuContent: ({ children }: { children: unknown }) => children,
+  DropdownMenuItem: ({ children }: { children: unknown }) => children,
 }))
 
 vi.mock('@/shared/components/landing-quick-start', () => ({
