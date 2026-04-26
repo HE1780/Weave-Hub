@@ -57,3 +57,19 @@
 - 后端测试统一前缀：`cd /Users/lydoc/projectscoding/skillhub/server && ./mvnw ...`。
 - 不要因这个去 polling `pwd`——每次写完整 cd 链就行。
 
+---
+
+## 2026-04-27 — 多模块 maven 别用 `-pl X test`，要么从 root 跑要么先 install
+
+**症状**: Phase E 接手时 `./mvnw -pl skillhub-app test` 报 241/456 ApplicationContext load failure，错误是 `No qualifying bean of type AgentRepository`。Memo 里前一会话猜是 `@EnableJpaRepositories` 配错或 JPA 扫描漏包。实际原因完全不是。
+
+**根因**: stale m2 cache。错误 stacktrace 显示 `agentPublishService defined in URL [jar:file:/Users/lydoc/.m2/repository/com/iflytek/skillhub/skillhub-domain/0.1.0/skillhub-domain-0.1.0.jar!/...]`——服务从 m2 jar 加载，而 m2 里的 `skillhub-infra-0.1.0.jar` 是较早装的版本，**不含** `Agent*JpaRepository.class`。Domain jar 已含 `AgentPublishService`（依赖 `AgentRepository`）但 infra jar 没有 impl，autowire 必然失败。`./mvnw -pl skillhub-app test` 不会触发上游模块 build/install，所以源码改动到不了运行时。
+
+**修复**: `./mvnw test`（从 server/ 根跑）走 reactor 全模块构建+install reactor 内构件，455/455 pass。等价的精确修法是 `./mvnw -pl skillhub-domain,skillhub-infra install -DskipTests` 然后 `./mvnw -pl skillhub-app test`。
+
+**规则**:
+- 多模块 maven 项目跑测试，**默认从 root 跑** (`./mvnw test`)。`-pl` 只在你确认上游 jar 是新鲜的时候用。
+- `mvn -pl X -am test` 看似解决，但 `-am` 把 test goal 也下沉到上游模块，会因为 `-Dtest=Foo` 在上游模块里找不到匹配类而失败——不是替代方案。正确的 -am 用法是配 `compile`/`install` 而不是 `test`：`./mvnw -pl skillhub-app -am compile` 或 `./mvnw -am install -DskipTests`，再单独 `-pl X test`。
+- 看到 "No qualifying bean of type X" 错误时，**先看异常里的 jar 路径**：如果是 `~/.m2/repository/...` 而不是 `target/classes/...`，几乎一定是 stale cache，不是配置问题。
+- 这种问题不留在源码里，git diff 看不到，只能跑测试触发；所以接手 plan 中间 phase 的 baseline 验证仍然要跑 `./mvnw test` 而不是 `./mvnw -pl X test`。
+
