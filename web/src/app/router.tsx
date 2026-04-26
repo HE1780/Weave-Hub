@@ -68,6 +68,8 @@ const RegisterPage = createLazyRouteComponent(() => import('@/pages/register'), 
 const ResetPasswordPage = createLazyRouteComponent(() => import('@/pages/reset-password'), 'ResetPasswordPage')
 const PrivacyPolicyPage = createLazyRouteComponent(() => import('@/pages/privacy'), 'PrivacyPolicyPage')
 const SearchPage = createLazyRouteComponent(() => import('@/pages/search'), 'SearchPage')
+const AgentsPage = createLazyRouteComponent(() => import('@/pages/agents'), 'AgentsPage')
+const AgentDetailPage = createLazyRouteComponent(() => import('@/pages/agent-detail'), 'AgentDetailPage')
 const TermsOfServicePage = createLazyRouteComponent(() => import('@/pages/terms'), 'TermsOfServicePage')
 const NamespacePage = createLazyRouteComponent(() => import('@/pages/namespace'), 'NamespacePage')
 const SkillDetailPage = createLazyRouteComponent(() => import('@/pages/skill-detail'), 'SkillDetailPage')
@@ -205,6 +207,21 @@ const searchRoute = createRoute({
       page: Number(search.page) || 0,
       starredOnly: search.starredOnly === true || search.starredOnly === 'true',
     }
+  },
+})
+
+const agentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'agents',
+  component: AgentsPage,
+})
+
+const agentDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'agents/$name',
+  component: function AgentDetailRouteComponent() {
+    const { name } = agentDetailRoute.useParams()
+    return <AgentDetailPage name={name} />
   },
 })
 
@@ -413,6 +430,8 @@ const routeTree = rootRoute.addChildren([
   resetPasswordRoute,
   privacyRoute,
   searchRoute,
+  agentsRoute,
+  agentDetailRoute,
   termsRoute,
   namespaceRoute,
   skillDetailRoute,
