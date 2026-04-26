@@ -1,9 +1,17 @@
 package com.iflytek.skillhub.controller;
 
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
+import com.iflytek.skillhub.domain.agent.Agent;
+import com.iflytek.skillhub.domain.agent.AgentRepository;
+import com.iflytek.skillhub.domain.agent.AgentVersion;
+import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
+import com.iflytek.skillhub.domain.agent.AgentVersionStatus;
+import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewService;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTask;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskStatus;
+import com.iflytek.skillhub.domain.namespace.Namespace;
+import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import org.junit.jupiter.api.Test;
@@ -24,6 +32,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -40,6 +49,9 @@ class AgentReviewControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockBean private AgentReviewService reviewService;
+    @MockBean private AgentRepository agentRepository;
+    @MockBean private AgentVersionRepository agentVersionRepository;
+    @MockBean private NamespaceRepository namespaceRepository;
 
     private UsernamePasswordAuthenticationToken auth(String userId, Set<String> platformRoles) {
         PlatformPrincipal principal = new PlatformPrincipal(
@@ -56,6 +68,34 @@ class AgentReviewControllerTest {
         f.setAccessible(true);
         f.set(t, taskId);
         return t;
+    }
+
+    private Namespace ns(long id, String slug) throws Exception {
+        Namespace n = new Namespace(slug, slug, "system");
+        Field f = Namespace.class.getDeclaredField("id");
+        f.setAccessible(true);
+        f.set(n, id);
+        return n;
+    }
+
+    private Agent agent(long id, long namespaceId, String slug) throws Exception {
+        Agent a = new Agent(namespaceId, slug, slug, "owner-1", AgentVisibility.PUBLIC);
+        Field f = Agent.class.getDeclaredField("id");
+        f.setAccessible(true);
+        f.set(a, id);
+        return a;
+    }
+
+    private AgentVersion version(long id, long agentId) throws Exception {
+        AgentVersion v = new AgentVersion(agentId, "1.0.0", "owner-1",
+                "manifest", "soul", "wf", "key", 1L);
+        Field idField = AgentVersion.class.getDeclaredField("id");
+        idField.setAccessible(true);
+        idField.set(v, id);
+        Field statusField = AgentVersion.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(v, AgentVersionStatus.PUBLISHED);
+        return v;
     }
 
     private MockHttpServletRequestBuilder withRoles(MockHttpServletRequestBuilder b,
@@ -130,6 +170,52 @@ class AgentReviewControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}")
                         .with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getDetail_returns_full_projection() throws Exception {
+        when(reviewService.getById(eq(100L), any(), any())).thenReturn(pending(100L));
+        when(agentVersionRepository.findById(70L)).thenReturn(Optional.of(version(70L, 7L)));
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent(7L, 1L, "agent-a")));
+        when(namespaceRepository.findById(1L)).thenReturn(Optional.of(ns(1L, "global")));
+
+        mockMvc.perform(get("/api/web/agents/reviews/100/detail")
+                        .with(authentication(auth("admin-1", Set.of()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.task.id").value(100))
+                .andExpect(jsonPath("$.data.agent.slug").value("agent-a"))
+                .andExpect(jsonPath("$.data.agent.namespace").value("global"))
+                .andExpect(jsonPath("$.data.version.version").value("1.0.0"))
+                .andExpect(jsonPath("$.data.version.soulMd").value("soul"))
+                .andExpect(jsonPath("$.data.version.workflowYaml").value("wf"));
+    }
+
+    @Test
+    void getDetail_returns_404_when_version_missing() throws Exception {
+        when(reviewService.getById(eq(100L), any(), any())).thenReturn(pending(100L));
+        when(agentVersionRepository.findById(70L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/web/agents/reviews/100/detail")
+                        .with(authentication(auth("admin-1", Set.of()))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getDetail_returns_404_when_agent_missing() throws Exception {
+        when(reviewService.getById(eq(100L), any(), any())).thenReturn(pending(100L));
+        when(agentVersionRepository.findById(70L)).thenReturn(Optional.of(version(70L, 7L)));
+        when(agentRepository.findById(7L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/web/agents/reviews/100/detail")
+                        .with(authentication(auth("admin-1", Set.of()))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getDetail_anonymous_returns_401() throws Exception {
+        mockMvc.perform(get("/api/web/agents/reviews/100/detail"))
                 .andExpect(status().isUnauthorized());
     }
 }
