@@ -4,6 +4,59 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-26 — Landing page dual-channel redesign
+
+**Plan:** `docs/plans/2026-04-26-landing-page-dual-channel.md`
+**Branch:** `main` (worked directly)
+**Range:** `f01dcccc` (plan commit) → `f5b58d7c` (final wire-up)
+
+### What shipped (7 commits)
+
+```
+f5b58d7c feat(web): wire LandingChannelsSection into landing page
+a50d2138 feat(web): add Popular Agents section to landing page
+0264fdcb feat(web): add Agents count to landing stats row
+e4ccf2ca feat(web): add Browse Agents CTA to landing hero
+d6c92bbe feat(web): add LandingChannelsSection (dual-channel intro)
+94a8102e feat(i18n): add landing.channels, popularAgents, hero.browseAgents, stats.agents keys
+f01dcccc docs(plan): landing page dual-channel redesign (Skills + Agents)
+```
+
+### Decisions locked (in lieu of brainstorming Q&A)
+
+User said "都听你的" so I picked:
+- Layout strategy **C**: Hero stays unchanged (search + 3 CTAs + 4 stats), new Channels block goes between Stats and Features.
+- Agents data: read from existing mock-backed `useAgents` (top 3).
+- Quick Start: **no change** — `LandingQuickStartSection` already has the two-tab structure (`agent` / `human`) we wanted; reusing avoids churn.
+- Unified search Tabs: **deferred** (no agent search API yet on backend).
+- Color overhaul (Skills blue / Agents purple): **deferred** — this would touch global design tokens; out of scope for layout redesign.
+
+### Test counts
+
+- Web: 598 → **606 passing** (added 4 channels + 4 popular-agents tests)
+- Backend: 432 (unchanged, untouched)
+- Typecheck: clean for all my files; only pre-existing `registry-skill.tsx` errors remain (untracked)
+- Lint: clean
+
+### Known gaps (intentional)
+
+1. **Stats numbers are still static**: 1000+/50+/50K+/200+. These were already static before this PR; agents number `50+` is consistent with the existing marketing-copy style.
+2. **`PopularAgents` lazy-loads `AgentCard` and `useAgents` synchronously** — no skeleton flicker since `useAgents` resolves immediately from mock. When real backend lands, the existing `isLoading` branch handles the network case.
+3. **Channels cards use brand-gradient for both icons** (not differentiated colors per Q4 decision). When the color overhaul plan lands, these cards are the natural canary for Skills-blue / Agents-purple.
+
+### How to resume
+
+If the user wants to do the **color overhaul** later:
+1. Define design tokens (CSS variables) for `--channel-skill` (blue) and `--channel-agent` (purple).
+2. Apply to `LandingChannelsSection` icons + `AgentCard` accent + `SkillCard` accent.
+3. Update Hero CTA buttons: keep brand-gradient on the primary `Explore Skills`, switch `Browse Agents` from secondary to a purple variant.
+
+If the user wants the **third Quick Start tab "Agent Architect"**:
+- Wait until `/dashboard/publish/agent` exists (no agent publish form today).
+- Then add the third tab to `LandingQuickStartSection` with copy from the design doc.
+
+---
+
 ## 2026-04-26 — Skill version comments backend (Tasks 1–13 of plan)
 
 **Plan:** `docs/plans/2026-04-26-skill-version-comments.md`
