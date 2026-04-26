@@ -8,7 +8,8 @@
     "dashboard": "Dashboard",
     "mySkills": "My Skills",
     "publish": "Publish",
-    "login": "Login"
+    "login": "Login",
+    "agents": "Agents"
   },
   "landing": {
     "hero": {
@@ -1404,6 +1405,26 @@
       "promotionDesc": "Notify on promotion request, approval, or rejection",
       "report": "Report Notifications",
       "reportDesc": "Notify on report submission or resolution"
+    }
+  },
+  "agents": {
+    "title": "Agents",
+    "subtitle": "Multi-skill orchestration with personality",
+    "emptyTitle": "No agents yet",
+    "emptyDescription": "Once agents are published, they will appear here.",
+    "loading": "Loading agents…",
+    "loadError": "Failed to load agents.",
+    "detail": {
+      "soulHeading": "Soul",
+      "workflowHeading": "Workflow",
+      "skillsHeading": "Skills used",
+      "noSoul": "(no soul provided)",
+      "noWorkflow": "(no workflow defined)",
+      "stepLabel": "Step",
+      "typeLabel": "Type",
+      "skillLabel": "Skill",
+      "promptLabel": "Prompt",
+      "inputsLabel": "Inputs"
     }
   }
 }
