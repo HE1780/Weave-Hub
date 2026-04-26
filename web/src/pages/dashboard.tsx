@@ -76,7 +76,7 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className={`grid grid-cols-1 gap-4 ${governanceVisible ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
+      <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${governanceVisible ? 'md:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-4'}`}>
         <Card className="p-5">
           <div className="text-sm text-muted-foreground">{t('dashboard.starsAndRatings')}</div>
           <Link to="/dashboard/stars" className="mt-2 inline-block font-semibold text-primary hover:underline">
@@ -87,6 +87,12 @@ export function DashboardPage() {
           <div className="text-sm text-muted-foreground">{t('dashboard.mySkillsTitle')}</div>
           <Link to="/dashboard/skills" className="mt-2 inline-block font-semibold text-primary hover:underline">
             {t('dashboard.openMySkills')}
+          </Link>
+        </Card>
+        <Card className="p-5">
+          <div className="text-sm text-muted-foreground">{t('agents.myAgents.title')}</div>
+          <Link to="/dashboard/my-agents" className="mt-2 inline-block font-semibold text-primary hover:underline">
+            {t('agents.myAgents.title')}
           </Link>
         </Card>
         <Card className="p-5">
