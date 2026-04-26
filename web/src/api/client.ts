@@ -1272,3 +1272,56 @@ export const notificationApi = {
     })
   },
 }
+
+export const commentsApi = {
+  async list(versionId: number, params: { page?: number; size?: number } = {}) {
+    const search = new URLSearchParams()
+    if (params.page !== undefined) search.set('page', String(params.page))
+    if (params.size !== undefined) search.set('size', String(params.size))
+    const qs = search.toString()
+    const suffix = qs ? `?${qs}` : ''
+    return fetchJson<import('@/features/comments/types').VersionCommentsPage>(
+      `${WEB_API_PREFIX}/skill-versions/${versionId}/comments${suffix}`,
+    )
+  },
+
+  async post(versionId: number, body: string) {
+    return fetchJson<import('@/features/comments/types').VersionComment>(
+      `${WEB_API_PREFIX}/skill-versions/${versionId}/comments`,
+      {
+        method: 'POST',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ body }),
+      },
+    )
+  },
+
+  async edit(commentId: number, body: string) {
+    return fetchJson<import('@/features/comments/types').VersionComment>(
+      `${WEB_API_PREFIX}/comments/${commentId}`,
+      {
+        method: 'PATCH',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ body }),
+      },
+    )
+  },
+
+  async delete(commentId: number) {
+    await fetchJson<void>(`${WEB_API_PREFIX}/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: getCsrfHeaders(),
+    })
+  },
+
+  async togglePin(commentId: number, pinned: boolean) {
+    return fetchJson<import('@/features/comments/types').VersionComment>(
+      `${WEB_API_PREFIX}/comments/${commentId}/pin`,
+      {
+        method: 'POST',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ pinned }),
+      },
+    )
+  },
+}
