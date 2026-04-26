@@ -4,7 +4,7 @@ import { buttonVariants } from './button'
 describe('buttonVariants', () => {
   it('applies default variant and size classes', () => {
     const classes = buttonVariants()
-    expect(classes).toContain('bg-brand-gradient')
+    expect(classes).toContain('btn-primary')
     expect(classes).toContain('h-10')
     expect(classes).toContain('px-5')
   })
