@@ -346,3 +346,59 @@ Diagnosed and fixed the "broken backend baseline" reported in the previous Phase
 - Typecheck: clean (only pre-existing registry-skill.tsx errors)
 
 **Lesson recorded** at `memo/lessons.md` — multi-module maven, `-pl X test` doesn't rebuild upstream modules. Default to `./mvnw test` from root.
+
+---
+
+## 2026-04-27 — Phase E cleanup: follow-ups #5, #1-#4 (web), Task 27 test
+
+Closed every remaining Phase E follow-up in one session, in C → A → B order.
+
+### What shipped (6 commits)
+
+```
+c0a76f81 test(web): migrate agent hook tests to shared createWrapper helper
+5eccf35e refactor(web): pass t down in workflow-steps instead of two useTranslation calls
+27df14e3 refactor(web): use TanStack Link instead of navigate() in agent UI
+c3ec0e75 feat(web): show agent name + version in review inbox row
+f3363cb5 feat(api): hydrate agent review list rows with agent slug/version
+9c114e21 test(api): cover AgentReviewController getDetail endpoint
+```
+
+ADR 0003 §1.1 (Agent management) for all six.
+
+### What got resolved
+
+- **Phase E Task 27 test (held back from prior session)** — added 4 cases to `AgentReviewControllerTest` (happy path, version-missing 404, agent-missing 404, anonymous 401) for `/api/web/agents/reviews/{taskId}/detail`.
+- **Phase E follow-up #5** — review inbox rows now carry agent slug/displayName/namespace/version. Backend extends `AgentReviewTaskResponse` with four nullable fields populated by the list endpoint via the new `enriched()` factory. Single-task endpoints (getOne/approve/reject) keep the unhydrated `from()` factory. Added `AgentVersionRepository.findByIdIn` for the batch lookup. Frontend renders the new Agent column and replaces `#agentVersionId` with the version string, with `—` and `#id` fallbacks for orphaned/legacy data.
+- **Agents Frontend MVP follow-ups #1+#2** — `AgentCard` now wraps in TanStack `<Link>`, dropping the role/tabIndex/onKeyDown plumbing; `agents.tsx` and `popular-agents.tsx` use `<Link>` + `buttonVariants()` for their CTAs. cmd-click / middle-click / right-click open in new tab now work.
+- **Agents Frontend MVP follow-up #3** — `WorkflowSteps` lifts `useTranslation` to the parent and threads `t` down to `StepBody`.
+- **Agents Frontend MVP follow-up #4** — 7 agent hook tests now use the shared `createWrapper()` helper. Added `createWrapperWithClient()` variant exposing the QueryClient for approve/reject tests that need to spy on `invalidateQueries`.
+
+### Test counts
+
+- Backend: 459 → **460/460** (added 1 list test for the orphaned-version fallback case; net is +5 vs baseline including Task 27 cases).
+- Web: 627 → **631/631** (+4: 1 createWrapperWithClient test, 1 extra agent-card link assertion, 2 enriched/fallback row cases).
+- Typecheck: clean (only pre-existing registry-skill.tsx errors).
+
+### Spec divergences worth noting
+
+1. **`AgentCard` lost the `onClick` prop.** It used to accept an optional click handler so callers could navigate. With the Link wrapper that's vestigial — every caller in the tree already wanted the same destination. Tests updated to assert on `href` instead of `vi.fn()` invocation. If a future caller needs click-side-effects, prefer `onClick` *additionally* on the `Card` (Link still owns navigation), not as a replacement.
+
+2. **`createWrapperWithClient` is a new public helper, not a refactor of `createWrapper`.** Approve/reject tests need the QueryClient instance to install spies; rather than break the existing `wrapper: createWrapper()` callsite shape used by 5 comments tests + 5 agent tests, added a separate two-return helper. Rule of thumb: prefer `createWrapper()`; reach for `createWrapperWithClient` only when spying on cache ops.
+
+3. **Backend `AgentReviewTaskResponse` now has both `from(task)` and `enriched(task, agent, version, slug)` factories.** Detail/approve/reject use `from()` (unhydrated, four `null` fields); list uses `enriched()`. The frontend treats the four enriched fields as `?: T | null` so missing data falls back gracefully — no breaking change for clients that don't read them.
+
+### How to resume
+
+Backend baseline + Phase E follow-up list are now empty. Natural next stops per ADR 0003:
+
+- **Color overhaul plan** (ADR 0003 §1.2): Skills blue / Agents purple design tokens, Hero double-entry refresh, third Quick Start tab "Agent Architect".
+- **Agent comments plan** (ADR 0003 §1.1): extend skill-version comments polymorphism to Agent, or fork. Requirements doc already at `docs/plans/2026-04-26-comments-feature-requirements.md`.
+- **Agent search integration** (ADR 0003 §1.1): `/agents` keyword search wired into the unified search Tabs.
+
+```bash
+cd /Users/lydoc/projectscoding/skillhub
+cd web && pnpm vitest run                       # 631/631 passing
+cd web && pnpm tsc --noEmit                     # only registry-skill.tsx errors remain (pre-existing)
+cd server && ./mvnw test                        # 460/460 passing — RUN FROM ROOT
+```
