@@ -1,15 +1,19 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
+import { Upload } from 'lucide-react'
 import { useAgents } from '@/features/agent/use-agents'
 import { AgentCard } from '@/features/agent/agent-card'
+import { useAuth } from '@/features/auth/use-auth'
 import { EmptyState } from '@/shared/components/empty-state'
+import { Button } from '@/shared/ui/button'
 
 /**
- * Agents list page. Reads from useAgents() — backed by mocks today, real API later.
+ * Agents list page. Reads from useAgents() — real backend.
  */
 export function AgentsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { data: agents, isLoading, isError } = useAgents()
 
   return (
@@ -26,6 +30,14 @@ export function AgentsPage() {
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               {t('agents.subtitle')}
             </p>
+            {user && (
+              <div className="mt-6 flex justify-center">
+                <Button onClick={() => navigate({ to: '/dashboard/publish/agent' })}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {t('agents.publish.title')}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

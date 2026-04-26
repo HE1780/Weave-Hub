@@ -1479,6 +1479,31 @@
       "skillLabel": "Skill",
       "promptLabel": "Prompt",
       "inputsLabel": "Inputs"
+    },
+    "publish": {
+      "title": "Publish Agent",
+      "subtitle": "Upload an agent package (AGENT.md + soul.md + workflow.yaml).",
+      "fileLabel": "Agent package (.zip)",
+      "filePlaceholder": "Choose a .zip file containing AGENT.md, soul.md, and workflow.yaml",
+      "fileSelected": "Selected: {{name}} ({{size}} KB)",
+      "namespaceLabel": "Namespace",
+      "namespacePlaceholder": "Select a namespace",
+      "visibilityLabel": "Visibility",
+      "visibilityPublic": "Public — visible to everyone after review",
+      "visibilityNamespace": "Namespace — visible to namespace members after review",
+      "visibilityPrivate": "Private — auto-published, only owner and admins can see",
+      "submit": "Publish",
+      "submitting": "Publishing…",
+      "successAutoPublished": "Agent published successfully.",
+      "successPendingReview": "Agent submitted for review.",
+      "errorMissingFile": "Choose a .zip file before publishing.",
+      "errorMissingNamespace": "Choose a namespace.",
+      "errorGeneric": "Publish failed. Check the package and try again."
+    },
+    "myAgents": {
+      "title": "My Agents",
+      "empty": "You haven't published any agents yet.",
+      "publish": "Publish a new agent"
     }
   }
 }

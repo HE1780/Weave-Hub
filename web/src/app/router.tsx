@@ -76,6 +76,7 @@ const SkillDetailPage = createLazyRouteComponent(() => import('@/pages/skill-det
 const DashboardPage = createLazyRouteComponent(() => import('@/pages/dashboard'), 'DashboardPage')
 const MySkillsPage = createLazyRouteComponent(() => import('@/pages/dashboard/my-skills'), 'MySkillsPage')
 const PublishPage = createLazyRouteComponent(() => import('@/pages/dashboard/publish'), 'PublishPage')
+const AgentPublishPage = createLazyRouteComponent(() => import('@/pages/dashboard/publish-agent'), 'AgentPublishPage')
 const MyNamespacesPage = createLazyRouteComponent(
   () => import('@/pages/dashboard/my-namespaces'),
   'MyNamespacesPage',
@@ -272,6 +273,13 @@ const dashboardPublishRoute = createRoute({
   component: PublishPage,
 })
 
+const dashboardPublishAgentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dashboard/publish/agent',
+  beforeLoad: requireAuth,
+  component: AgentPublishPage,
+})
+
 const dashboardNamespacesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/namespaces',
@@ -438,6 +446,7 @@ const routeTree = rootRoute.addChildren([
   dashboardRoute,
   dashboardSkillsRoute,
   dashboardPublishRoute,
+  dashboardPublishAgentRoute,
   dashboardNamespacesRoute,
   dashboardNamespaceMembersRoute,
   dashboardNamespaceReviewsRoute,

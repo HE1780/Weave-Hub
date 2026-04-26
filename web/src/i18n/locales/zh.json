@@ -1480,6 +1480,31 @@
       "skillLabel": "技能",
       "promptLabel": "提示词",
       "inputsLabel": "输入"
+    },
+    "publish": {
+      "title": "发布智能体",
+      "subtitle": "上传一个智能体包（包含 AGENT.md、soul.md 和 workflow.yaml）。",
+      "fileLabel": "智能体包（.zip）",
+      "filePlaceholder": "选择一个包含 AGENT.md、soul.md、workflow.yaml 的 .zip 文件",
+      "fileSelected": "已选择：{{name}}（{{size}} KB）",
+      "namespaceLabel": "命名空间",
+      "namespacePlaceholder": "选择命名空间",
+      "visibilityLabel": "可见性",
+      "visibilityPublic": "公开 —— 审核通过后所有人可见",
+      "visibilityNamespace": "命名空间 —— 审核通过后命名空间成员可见",
+      "visibilityPrivate": "私有 —— 自动发布，仅创建者和管理员可见",
+      "submit": "发布",
+      "submitting": "正在发布…",
+      "successAutoPublished": "智能体发布成功。",
+      "successPendingReview": "智能体已提交审核。",
+      "errorMissingFile": "请先选择一个 .zip 文件。",
+      "errorMissingNamespace": "请选择命名空间。",
+      "errorGeneric": "发布失败。请检查包内容后重试。"
+    },
+    "myAgents": {
+      "title": "我的智能体",
+      "empty": "您还未发布任何智能体。",
+      "publish": "发布新智能体"
     }
   }
 }
