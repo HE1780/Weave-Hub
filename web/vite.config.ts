@@ -11,6 +11,7 @@ export default defineConfig({
   },
   test: {
     exclude: ['**/node_modules/**', '**/e2e/**'],
+    setupFiles: ['./src/test-setup.ts'],
   },
   server: {
     port: 3000,
