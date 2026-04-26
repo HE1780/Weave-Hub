@@ -4,6 +4,17 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## Fork scope (read first)
+
+This fork (`HE1780/Weave-Hub`) takes Agent management, independent visual UI,
+and safe runtime as its own development lines. Governance / social / search
+enhancements track upstream `iflytek/skillhub` instead. Authoritative scope
+decisions live in [docs/adr/0003-fork-scope-and-upstream-boundary.md](../docs/adr/0003-fork-scope-and-upstream-boundary.md).
+Every new plan should declare which clause of ADR 0003 (1.1 / 1.2 / 1.3) it
+belongs to.
+
+---
+
 ## 2026-04-26 — Landing page dual-channel redesign
 
 **Plan:** `docs/plans/2026-04-26-landing-page-dual-channel.md`
@@ -292,7 +303,7 @@ End-to-end Agent flow now closed: publish → review inbox → review detail (wi
 
 ### Known gaps and follow-ups (in priority order)
 
-1. **🔥 Backend test baseline is broken (Phase A–D regression).** `mvn test -pl skillhub-app` produces **241 ApplicationContext load failures across 456 tests**. Root cause: `AgentJpaRepository` / `AgentVersionJpaRepository` / `AgentReviewTaskJpaRepository` exist in `skillhub-infra` but the test context can't autowire `AgentRepository` etc. — bean type resolution fails for the agent JPA chain. Verified this is pre-existing on `main` HEAD before any Phase E changes (stashed Phase E modifications and reproduced). Phase E added the `/detail` controller wiring but **deliberately did NOT add a new controller test** because it would just join the broken baseline. **Next step**: a separate session needs to repair JPA scanning/wiring for the agent module — likely an `@EnableJpaRepositories(basePackages = ...)` in skillhub-app that doesn't include the new `com.iflytek.skillhub.infra.jpa` agent files, or a config issue around how agent repositories were added relative to skill repositories.
+1. **✅ RESOLVED 2026-04-27** — Backend baseline is **NOT** actually broken. Original report misdiagnosed root cause as JPA scanning/wiring issue. Real cause: `mvn -pl skillhub-app test` doesn't rebuild upstream modules, and m2 cache held a stale `skillhub-infra-0.1.0.jar` from before the agent JPA repositories were added (jar lacked `Agent*JpaRepository.class`). The fresh domain jar referenced `AgentRepository` but no impl was on the classpath → `No qualifying bean`. Fix: run `./mvnw test` from `server/` root (full reactor) instead of `-pl skillhub-app`. **Backend now: 455/455 passing**, no source code changes required. See `memo/lessons.md` 2026-04-27 multi-module maven entry for full diagnostic trail.
 
 2. **No real integration test for the agent review approve/reject lifecycle.** Carried over from the comments-session pattern — the codebase has no `@SpringBootTest` precedent that drives real repos through the controller layer for these workflows. Worth a separate spec.
 
@@ -313,10 +324,25 @@ cd /Users/lydoc/projectscoding/skillhub
 git status   # branch: main, 6 commits ahead of origin/main since 7036273b
 cd web && pnpm vitest run                       # 627/627 passing
 cd web && pnpm typecheck                        # only registry-skill.tsx errors remain (pre-existing)
-# Backend: SEE FOLLOW-UP #1 — server tests are NOT runnable on main HEAD; fix that first.
+cd server && ./mvnw test                        # 455/455 passing — RUN FROM ROOT, not -pl skillhub-app
 ```
 
 If continuing the agent rollout, the natural next stops are:
-- Repair backend test baseline (follow-up #1) so agent controller tests are runnable.
 - Surface review-task list rows with agent slug + version (follow-up #5).
 - Wire `Agents Frontend MVP` follow-ups #1–#4 (keyboard-nav `<Link>`s, shared `createWrapper`, etc).
+- Optionally re-attempt Task 27's `AgentReviewControllerTest.getDetail_returns_full_projection` test that was held back due to the now-resolved baseline issue.
+
+---
+
+## 2026-04-27 — Phase E follow-up #1 resolved (backend baseline restored)
+
+Diagnosed and fixed the "broken backend baseline" reported in the previous Phase E session. **No source code changes were needed.** The previous session's hypothesis (JPA scanning/wiring misconfiguration) was wrong; actual root cause was a stale m2 cache + the wrong maven invocation pattern.
+
+**Diagnostic**: error stacktrace showed `agentPublishService defined in URL [jar:file:/Users/lydoc/.m2/...skillhub-domain-0.1.0.jar!/...]` — services were loading from m2 cache. Inspecting `~/.m2/.../skillhub-infra-0.1.0.jar` confirmed it was missing the `Agent*JpaRepository.class` files (jar predated the agent module additions). Fresh `./mvnw install` regenerated the jar; `./mvnw test` from server root passes all 455 tests.
+
+**Verified state**:
+- Backend: 455/455 (was: 241/456 broken)
+- Web: 627/627 (unchanged)
+- Typecheck: clean (only pre-existing registry-skill.tsx errors)
+
+**Lesson recorded** at `memo/lessons.md` — multi-module maven, `-pl X test` doesn't rebuild upstream modules. Default to `./mvnw test` from root.
