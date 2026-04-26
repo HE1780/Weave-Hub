@@ -44,7 +44,15 @@ export function PopularAgents() {
               <div key={agent.name} className={`animate-fade-up delay-${Math.min(idx + 1, 6)}`}>
                 <AgentCard
                   agent={agent}
-                  onClick={() => navigate({ to: `/agents/${encodeURIComponent(agent.name)}` })}
+                  onClick={() =>
+                    navigate({
+                      to: '/agents/$namespace/$slug',
+                      params: {
+                        namespace: agent.namespace ?? 'global',
+                        slug: agent.name,
+                      },
+                    })
+                  }
                 />
               </div>
             ))}

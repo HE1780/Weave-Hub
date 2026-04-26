@@ -25,5 +25,6 @@ function toSummary(dto: AgentDto): AgentSummary {
   return {
     name: dto.slug,
     description: dto.description ?? '',
+    namespace: dto.namespace,
   }
 }

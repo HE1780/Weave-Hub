@@ -59,9 +59,14 @@ export function AgentsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {agents.map((agent) => (
               <AgentCard
-                key={agent.name}
+                key={`${agent.namespace ?? 'global'}/${agent.name}`}
                 agent={agent}
-                onClick={() => navigate({ to: '/agents/$name', params: { name: agent.name } })}
+                onClick={() =>
+                  navigate({
+                    to: '/agents/$namespace/$slug',
+                    params: { namespace: agent.namespace ?? 'global', slug: agent.name },
+                  })
+                }
               />
             ))}
           </div>

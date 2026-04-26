@@ -45,7 +45,11 @@ describe('useAgents', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.data).toHaveLength(1)
-    expect(result.current.data?.[0]).toEqual({ name: 'agent-a', description: 'description-a' })
+    expect(result.current.data?.[0]).toEqual({
+      name: 'agent-a',
+      description: 'description-a',
+      namespace: 'global',
+    })
   })
 
   it('returns empty list when backend has no agents', async () => {

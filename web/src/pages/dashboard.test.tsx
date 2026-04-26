@@ -30,6 +30,10 @@ vi.mock('@/shared/hooks/use-user-queries', () => ({
   }),
 }))
 
+vi.mock('@/shared/hooks/use-namespace-queries', () => ({
+  useMyNamespaces: () => ({ data: [], isLoading: false }),
+}))
+
 vi.mock('@/shared/lib/governance-access', () => ({
   canViewGovernanceCenter: () => false,
 }))

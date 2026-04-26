@@ -56,7 +56,10 @@ export function AgentPublishPage() {
           ? t('agents.publish.successAutoPublished')
           : t('agents.publish.successPendingReview'),
       )
-      navigate({ to: '/agents/$name', params: { name: result.slug } })
+      navigate({
+        to: '/agents/$namespace/$slug',
+        params: { namespace: result.namespace, slug: result.slug },
+      })
     } catch (error) {
       const message =
         error instanceof ApiError

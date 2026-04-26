@@ -1469,6 +1469,7 @@
     "emptyDescription": "智能体发布后将显示在这里。",
     "loading": "正在加载智能体…",
     "loadError": "加载智能体失败。",
+    "noPublishedVersion": "该智能体尚未发布任何版本。",
     "detail": {
       "soulHeading": "灵魂",
       "workflowHeading": "工作流",

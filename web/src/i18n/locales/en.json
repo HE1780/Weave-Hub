@@ -1468,6 +1468,7 @@
     "emptyDescription": "Once agents are published, they will appear here.",
     "loading": "Loading agents…",
     "loadError": "Failed to load agents.",
+    "noPublishedVersion": "This agent has no published version yet.",
     "detail": {
       "soulHeading": "Soul",
       "workflowHeading": "Workflow",

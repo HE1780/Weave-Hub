@@ -10,6 +10,7 @@ export interface AgentSummary {
   name: string
   description: string
   version?: string
+  namespace?: string
 }
 
 export interface AgentDetail extends AgentSummary {

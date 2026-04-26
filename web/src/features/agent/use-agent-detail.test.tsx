@@ -60,7 +60,7 @@ describe('useAgentDetail', () => {
       workflowYaml: sampleWorkflow,
     })
 
-    const { result } = renderHook(() => useAgentDetail('agent-a'), { wrapper })
+    const { result } = renderHook(() => useAgentDetail('global', 'agent-a'), { wrapper })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.data?.name).toBe('agent-a')
@@ -81,14 +81,14 @@ describe('useAgentDetail', () => {
         packageSizeBytes: 1, manifestYaml: null, soulMd: null, workflowYaml: null },
     ])
 
-    const { result } = renderHook(() => useAgentDetail('agent-b'), { wrapper })
+    const { result } = renderHook(() => useAgentDetail('global', 'agent-b'), { wrapper })
     await waitFor(() => expect(result.current.isError).toBe(true))
   })
 
   it('errors when backend returns 404 for the agent', async () => {
     getMock.mockRejectedValueOnce(new Error('not found'))
 
-    const { result } = renderHook(() => useAgentDetail('does-not-exist'), { wrapper })
+    const { result } = renderHook(() => useAgentDetail('global', 'does-not-exist'), { wrapper })
     await waitFor(() => expect(result.current.isError).toBe(true))
   })
 
@@ -111,7 +111,7 @@ describe('useAgentDetail', () => {
       manifestYaml: null, soulMd: null, workflowYaml: null,
     })
 
-    const { result } = renderHook(() => useAgentDetail('agent-c'), { wrapper })
+    const { result } = renderHook(() => useAgentDetail('global', 'agent-c'), { wrapper })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.data?.workflow).toBeUndefined()

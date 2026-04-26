@@ -57,7 +57,10 @@ export function MyAgentsPage() {
                 key={agent.id}
                 className="p-4 cursor-pointer hover:bg-muted/30 transition-colors"
                 onClick={() =>
-                  navigate({ to: '/agents/$name', params: { name: agent.slug } })
+                  navigate({
+                    to: '/agents/$namespace/$slug',
+                    params: { namespace: agent.namespace, slug: agent.slug },
+                  })
                 }
               >
                 <div className="flex items-start justify-between gap-4">

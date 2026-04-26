@@ -4,19 +4,18 @@ import { WorkflowSteps } from '@/features/agent/workflow-steps'
 
 interface AgentDetailPageProps {
   /**
-   * Optional override for tests. In normal use this is read from route params via the
-   * route component wrapper in router.tsx.
+   * Namespace and slug come from the route params (or are passed directly in tests).
    */
-  name?: string
+  namespace?: string
+  slug?: string
 }
 
 /**
  * Detail page for a single agent. Renders metadata + soul + workflow.
  */
-export function AgentDetailPage({ name }: AgentDetailPageProps) {
+export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const { t } = useTranslation()
-  const resolvedName = name ?? ''
-  const { data: agent, isLoading, isError } = useAgentDetail(resolvedName)
+  const { data: agent, isLoading, isError, error } = useAgentDetail(namespace ?? '', slug ?? '')
 
   if (isLoading) {
     return (
@@ -27,9 +26,13 @@ export function AgentDetailPage({ name }: AgentDetailPageProps) {
   }
 
   if (isError || !agent) {
+    const errorMessage = error instanceof Error ? error.message : ''
+    const isNoPublishedVersion = errorMessage.includes('no published version')
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <p className="text-destructive">{t('agents.loadError')}</p>
+        <p className="text-destructive">
+          {isNoPublishedVersion ? t('agents.noPublishedVersion') : t('agents.loadError')}
+        </p>
       </div>
     )
   }

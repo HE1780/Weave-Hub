@@ -226,12 +226,25 @@ const agentsRoute = createRoute({
   component: AgentsPage,
 })
 
-const agentDetailRoute = createRoute({
+// Legacy single-segment route /agents/$name — redirects to the canonical
+// /agents/global/$name. Old hero/popular-agents links may still hit this.
+const agentDetailLegacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'agents/$name',
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/agents/$namespace/$slug',
+      params: { namespace: 'global', slug: params.name },
+    })
+  },
+})
+
+const agentDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'agents/$namespace/$slug',
   component: function AgentDetailRouteComponent() {
-    const { name } = agentDetailRoute.useParams()
-    return <AgentDetailPage name={name} />
+    const { namespace, slug } = agentDetailRoute.useParams()
+    return <AgentDetailPage namespace={namespace} slug={slug} />
   },
 })
 
@@ -472,6 +485,7 @@ const routeTree = rootRoute.addChildren([
   privacyRoute,
   searchRoute,
   agentsRoute,
+  agentDetailLegacyRoute,
   agentDetailRoute,
   termsRoute,
   namespaceRoute,

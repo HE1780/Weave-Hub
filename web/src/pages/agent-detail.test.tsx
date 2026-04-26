@@ -62,7 +62,7 @@ describe('AgentDetailPage', () => {
       isError: false,
     })
 
-    render(<AgentDetailPage name="customer-support-agent" />, { wrapper })
+    render(<AgentDetailPage namespace="global" slug="customer-support-agent" />, { wrapper })
 
     await waitFor(() =>
       expect(screen.getByText('customer-support-agent')).toBeInTheDocument(),
@@ -78,7 +78,7 @@ describe('AgentDetailPage', () => {
       isError: true,
     })
 
-    render(<AgentDetailPage name="does-not-exist" />, { wrapper })
+    render(<AgentDetailPage namespace="global" slug="does-not-exist" />, { wrapper })
 
     await waitFor(() => expect(screen.getByText('Failed to load agents.')).toBeInTheDocument())
   })
