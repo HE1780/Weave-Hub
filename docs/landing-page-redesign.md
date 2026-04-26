@@ -1,319 +1,157 @@
-# SkillHub 首页重新设计方案
+# 知连 WeaveHub 首页设计方案
+
+**Status:** Approved (2026-04-27 brainstorming, A 路线全面取代)
+**Detailed spec:** [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)
+**Reference prototype:** [web/weavehub---知连/](../web/weavehub---知连/)
+**Scope clause:** [ADR 0003](adr/0003-fork-scope-and-upstream-boundary.md) §1.2
+
+> 本文档承担 fork 路线"独立视觉 UI"的产品级愿景说明。详细技术实现见 design spec。
+> 旧的"双频道 Skills 蓝 / Agents 紫"和"前端执行版双频道等权"两版方案均于 2026-04-27 抛弃。
 
 ## 🎯 设计目标
 
-**核心目标**：设计一个能同时展示Skill和Agent双重价值的首页，让用户清楚理解：
-- 🔧 **Skill频道**：单一功能的能力单元
-- 🤖 **Agent频道**：多技能组合的智能配置
-- 🔗 **协同价值**：Skill + Agent = 完整AI解决方案
+打造一个**面向团队和企业自有应用的 AI 能力协作平台**首页,核心传达:
 
-## 📐 首页结构设计
+- 平台是**持续进化**的 AI 能力枢纽
+- 技能包(Skills)与智能体(Agents)在**同一平台上协作**,不刻意把两者拆成对立频道
+- 首页是**功能型入口**,优先帮助用户快速完成操作(找资源 → 看详情 → 返回继续筛选)
+- **不堆砌宣传数字**,不堆概念解释型文案
 
-### Hero区域 - 双价值主张
+## 📐 信息架构
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│              SkillHub - AI Agent配置管理平台                    │
-│                                                             │
-│     🤖 为Claude等AI Agent提供可组合的技能和配置管理                │
-│                                                             │
-│   ┌─────────────┐              ┌─────────────┐              │
-│   │  🔧 Skills  │              │ 🤖 Agents   │              │
-│   │  能力单元   │              │  智能配置   │              │
-│   └─────────────┘              └─────────────┘              │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 统计数据 - 分层展示
-```
-┌─────────────────────────────────────────────────────────────┐
-│  平台数据                                                  │
-│  • 1000+ 技能包 (Skills)                                     │
-│  • 200+ 预配置Agent (Agents)                                │
-│  • 50K+ 下载使用                                             │
-│  • 500+ 企业团队                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 功能特性 - 双轨展示
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Skills频道能力                                              │
-│  ┌──────────┬──────────┬──────────┐                        │
-│  │ 提示词模板 │ 数据分析  │ 代码生成  │                        │
-│  │ 知识库   │ 文件处理  │ 图像生成  │                        │
-│  │ 单一功能  │ 可复用    │ 可组合    │                        │
-│  └──────────┴──────────┴──────────┘                        │
+│  glass-header                                               │
+│  [📐 知连 WeaveHub]   [首页][发布▾][技能][智能体][我的Weave][控制台]   [🔔][👤] │
 ├─────────────────────────────────────────────────────────────┤
-│  Agents频道能力                                              │
-│  ┌──────────┬──────────┬──────────┐                        │
-│  │ 研究助理 │ 代码审查  │ 内容创作  │                        │
-│  │ 自动客服 │ 数据分析  │ 自动化流  │                        │
-│  │ 多技能组合 │ 工作流    │ 端到端    │                        │
-│  └──────────┴──────────┴──────────┘                        │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 快速开始 - 并行引导
-```
-┌─────────────────────────────────────────────────────────────┐
-│  快速开始 - 选择你的使用方式                                 │
 │                                                             │
-│  ┌─────────────────────┬─────────────────────┐           │
-│  │   我是Agent使用者    │   我是技能开发者     │           │
-│  │                     │                     │           │
-│  │ [浏览Agent模板]      │ [发布技能包]         │           │
-  │ [创建Agent配置]     │ [技能包文档]         │           │
-│  │                     │                     │           │
-│  │ 现成的解决方案      │ 可复用的能力组件     │           │
-│  └─────────────────────┴─────────────────────┘           │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 内容展示 - 双区展示
-```
-┌─────────────────────────────────────────────────────────────┐
-│  热门Skills                                              │
-│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐        │
-│  │ 提示词  │ │数据分析 │ │写作    │ │代码    │        │
-│  │ 模板   │ │工具    │ │助手    │ │生成    │        │
-│  └────────┘ └────────┘ └────────┘ └────────┘        │
+│            [✨ Redefining Intelligence Connection]          │
+│                                                             │
+│              持续进化的 AI 能力                             │
+│                                                             │
+│        让团队的技能包和智能体在一起协作                       │
+│                                                             │
+│           [🔍 搜索...           ⌘K]   [开始探索]            │
+│                                                             │
 ├─────────────────────────────────────────────────────────────┤
-│  热门Agents                                              │
-│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐        │
-│  │研究    │ │代码审查 │ │内容    │ │自动    │        │
-│  │助理    │ │助手    │ │创作    │ │化流程  │        │
-│  └────────┘ └────────┘ └────────└ └────────┘        │
-└─────────────────────────────────────────────────────────────┘
+│  ─── Handpicked selection                                   │
+│  热门推荐                                                    │
+│  [全部] 技能包  智能体             浏览所有 →               │
+│                                                             │
+│  ┌──────┐ ┌──────┐ ┌──────┐                                │
+│  │ skill│ │agent │ │ skill│                                │
+│  └──────┘ └──────┘ └──────┘                                │
+│  ┌──────┐ ┌──────┐ ┌──────┐                                │
+│  │agent │ │ skill│ │agent │                                │
+│  └──────┘ └──────┘ └──────┘                                │
+│  ...                                                        │
+├──────────────────────────────────────┬──────────────────────┤
+│  ─── Live Updates                    │  工作台               │
+│  全域动态流                           │                       │
+│                                      │  [未登录]              │
+│  ┌──────┐ ┌──────┐                   │   [大头像]            │
+│  │ ··· │ │ ··· │                   │   立即认证登录        │
+│  └──────┘ └──────┘                   │                       │
+│  ┌──────┐ ┌──────┐                   │  [已登录]              │
+│  │ ··· │ │ ··· │                   │   ─ 我的技能包 (3)    │
+│  └──────┘ └──────┘                   │   ─ 我的智能体 (3)    │
+│  [Load Discovery Stream]             │   [Open Control Panel]│
+└──────────────────────────────────────┴──────────────────────┘
+   Footer: 品牌 + Documentation + Community + Version
 ```
 
-## 🎨 具体页面设计
+## 🎨 设计语言
 
-### 1. Hero区域重新设计
-```tsx
-// 主标题
-<h1>SkillHub - AI Agent配置管理平台</h1>
+| 维度 | 决策 |
+|---|---|
+| 站名 | **知连 WeaveHub**(英文 locale 下显示 "WeaveHub") |
+| 主色 | 绿色单色阶 `#34a853` (brand-500) / `#2c8e46` (brand-600) / `#23743a` (brand-700) |
+| 浅色阶 | brand-50 (#f4fbf6) / brand-100 (#e7f4ea) / brand-200 (#c9e8d1) |
+| 卡片 | glass-morphism(白色透明 + backdrop-blur + rounded-3xl) |
+| 字体 | Inter(主)+ JetBrains Mono(代码) |
+| 动效 | `motion/react` 渐入 + 卡片悬浮上提 |
+| 类型区分 | 仅靠右上角 type 灰底文字徽章("skill" / "agent"),**不分频道色** |
 
-// 副标题
-<p>🤖 为Claude等AI Agent提供可组合的技能和配置管理</p>
+## 📋 内容与信息表达原则
 
-// 双入口按钮组
-<div className="flex gap-4">
-  <Link to="/skills" className="btn-primary">
-    🔧 探索技能包
-  </Link>
-  <Link to="/agents" className="btn-secondary">
-    🤖 浏览Agent配置
-  </Link>
-  <Link to="/dashboard/publish" className="btn-outline">
-    📤 发布资源
-  </Link>
-</div>
-```
+来自参考 prototype 的 [DESIGN_NOTES.md](../web/weavehub---知连/DESIGN_NOTES.md):
 
-### 2. 特性展示区重新设计
-```tsx
-const features = [
-  // Skills频道特性
-  {
-    category: "Skills频道",
-    icon: <PackageOpen className="w-6 h-6" />,
-    title: "丰富的技能包",
-    description: "提示词模板、数据分析、代码生成等多种能力单元"
-  },
-  {
-    category: "Skills频道",
-    icon: <GitBranch className="w-6 h-6" />,
-    title: "版本管理",
-    description: "技能包的版本控制、回退和升级机制"
-  },
+- 面向用户表达,不使用研发内部术语
+- **不展示宣传型数字**(1000+ 技能包、50K+ 下载量等)
+- 避免概念解释型文案堆叠
+- 文案优先使用:`技能包` / `智能体` / `我的 Weave` / `发布`
+- 浅色体系优先,**不引入深色基调**作为主基底
 
-  // Agents频道特性
-  {
-    category: "Agents频道",
-    icon: <Settings className="w-6 h-6" />,
-    title: "Agent配置",
-    description: "通过JSON配置多技能工作流，创建智能Agent"
-  },
-  {
-    category: "Agents频道",
-    icon: <Bot className="w-6 h-6" />,
-    title: "一键部署",
-    description: "选择Agent配置，一键部署到你的AI环境"
-  },
+## 🔑 关键文案
 
-  // 通用特性
-  {
-    category: "平台特性",
-    icon: <Shield className="w-6 h-6" />,
-    title: "安全可控",
-    description: "企业级权限控制、审计日志、私有部署"
-  },
-  {
-    category: "平台特性",
-    icon: <Users className="w-6 h-6" />,
-    title: "团队协作",
-    description: "多租户支持、技能分享、团队配置库"
-  }
-]
-```
+### Hero 区域
+- **小绿条徽章**:`Redefining Intelligence Connection`(uppercase 装饰文字)
+- **主标题**:`持续进化的 AI 能力`
+- **副标题**:`让团队的技能包和智能体在一起协作`
+- **搜索框 placeholder**:`搜索技能包或智能体...`
+- **CTA 按钮**:`开始探索`
 
-### 3. 快速开始区域重新设计
-```tsx
-// 双Tab快速开始
-const quickStartTabs = [
-  {
-    id: 'agent-user',
-    label: '我是Agent使用者',
-    description: '快速找到现成的Agent配置',
-    icon: <Bot className="w-5 h-5" />,
-    steps: [
-      '浏览Agent模板',
-      '选择合适的Agent配置',
-      '一键部署到环境',
-      '开始使用'
-    ]
-  },
-  {
-    id: 'skill-developer',
-    label: '我是技能开发者',
-    description: '发布可复用的技能包',
-    icon: <Code className="w-5 h-5" />,
-    steps: [
-      '创建技能包',
-      '编写SKILL.md',
-      '上传到平台',
-      '获得使用反馈'
-    ]
-  },
-  {
-    id: 'agent-architect',
-    label: '我是Agent架构师',
-    description: '设计Agent工作流配置',
-    icon: <Workflow className="w-5 h-5" />,
-    steps: [
-      '组合多个技能包',
-      '设计工作流程',
-      '配置Agent行为',
-      '发布Agent配置'
-    ]
-  }
-]
-```
+### 核心信息块
+- 热门推荐 section header:`Handpicked selection` / `热门推荐`
+- 最新动态 section header:`Live Updates` / `全域动态流`
+- 工作台未登录:`SYNC REQUIRED` / `Authorize now to synchronize your AI assets across all platforms.` / `立即认证登录`
 
-### 4. 示例展示区域
-```tsx
-// 分栏展示Skills和Agents
-<div className="grid md:grid-cols-2 gap-8">
-  // Skills展示
-  <section>
-    <h3>🔧 热门技能包</h3>
-    <div className="skill-grid">
-      <SkillCard skill="prompts" />
-      <SkillCard skill="data-analyzer" />
-      <SkillCard skill="code-gen" />
-    </div>
-    <Link to="/skills">查看所有技能 →</Link>
-  </section>
+## 🧭 导航规则
 
-  // Agents展示
-  <section>
-    <h3>🤖 热门Agent配置</h3>
-    <div className="agent-grid">
-      <AgentCard agent="research-assistant" />
-      <AgentCard agent="code-reviewer" />
-      <AgentCard agent="content-creator" />
-    </div>
-    <Link to="/agents">查看所有Agent →</Link>
-  </section>
-</div>
-```
+### 未登录(3 项)
 
-### 5. 统一搜索区
-```tsx
-// 统一的搜索和过滤
-<div className="search-section">
-  <Tabs defaultValue="all">
-    <TabsList>
-      <TabsTrigger value="all">全部资源</TabsTrigger>
-      <TabsTrigger value="skills">技能包</TabsTrigger>
-      <TabsTrigger value="agents">Agent配置</TabsTrigger>
-    </TabsList>
+- 首页(`/`)
+- 搜索(`/search`)
+- 登录(右侧 CTA,不在 chip nav 里)
 
-    <TabsContent value="all">
-      <SearchBar placeholder="搜索技能包和Agent配置..." />
-      <CombinedResults />
-    </TabsContent>
+### 已登录(5 项 chip + 1 个发布 dropdown)
 
-    <TabsContent value="skills">
-      <SearchBar placeholder="搜索技能包..." />
-      <SkillResults />
-    </TabsContent>
+- 首页(`/`)
+- 发布 ▾(发布技能 → `/dashboard/publish` / 发布智能体 → `/dashboard/publish/agent`)
+- 技能(`/skills`)
+- 智能体(`/agents`)
+- 我的 Weave(`/my-weave` — 新路由)
+- 控制台(`/dashboard`)
 
-    <TabsContent value="agents">
-      <SearchBar placeholder="搜索Agent配置..." />
-      <AgentResults />
-    </TabsContent>
-  </Tabs>
-</div>
-```
+## 📦 我的 Weave 页
 
-## 🎯 核心设计原则
+新建 `/my-weave` 路由,展示双段:
 
-### 1. 清晰的区分
-- **视觉区分**：不同的图标、颜色、卡片样式
-- **功能区分**：明确的解释各自的用途
-- **用户路径**：不同的使用流程和入口
+- **我的技能包**:复用现有 `/dashboard/skills` 列表逻辑
+- **我的智能体**:复用现有 [my-agents.tsx](../web/src/pages/dashboard/my-agents.tsx) 逻辑
 
-### 2. 统一的体验
-- **一致的设计语言**：相似的卡片、按钮、交互模式
-- **统一的质量标准**：相同的审核、版本管理、搜索机制
-- **共享的基础设施**：用户系统、权限控制、API设计
+旧 `/dashboard/skills` 路由保留向后兼容,但 nav 不再链入。
 
-### 3. 协同的价值
-- **Skill作为基础**：Agent依赖Skill，展示组合价值
-- **Agent作为应用**：展示实际使用场景和效果
-- **生态完整性**：从开发到使用的完整闭环
+## 🚫 抛弃的旧愿景(2026-04-27 决策)
 
-## 📱 响应式布局
+以下两版历史方案已抛弃:
 
-### 桌面端
-- Hero区域：Skills和Agents并排展示
-- 特性介绍：分两列展示（左边Skills，右边Agents）
-- 示例展示：Skills和Agents各占一半
+**旧 Tech Weave 双频道愿景**:
+- ❌ Skills 蓝 / Agents 紫双频道色系拆分
+- ❌ Hero 双入口并列大卡片主张
+- ❌ Quick Start "Agent Architect" 第三 Tab
+- ❌ 统一搜索三栏 Tabs(landing 不再放置中央搜索 + 类型 tab)
+- ❌ Tech Weave 粒子 Canvas 动画
+- ❌ 深 slate-950 / indigo-950 基调
+- ❌ Syne 字体
+- ❌ "为 Claude 等 AI Agent 提供..." 类的概念解释型副标
 
-### 移动端
-- Hero区域：Skills和Agents上下排列
-- 特性介绍：垂直列表，交替展示
-- 示例展示：Tabs切换Skills/Agents
+**旧"前端执行版"双频道等权**(本文件 2026-04-27 之前的版本):
+- ❌ "双频道等权"作为核心设计原则
+- ❌ Skills 偏蓝 / Agents 偏紫的频道语义色
+- ❌ Search 页 `Skills | Agents` 类型切换
+- ❌ Landing+Search+Agents+Agent 详情+我的 Weave 五段信息架构
+- ❌ `首页/发现/智能体/我的 Weave/发布` 顺序的导航
+- ❌ `/dashboard/my-weaves` 路径
+- ❌ 站点宣传数字(1000+ / 50K+ 等 stats)
 
-## 🎨 视觉设计建议
+**取而代之**:weavehub 浅色 glass-morphism + 绿色单色 + 类型徽章区分 + 首页 4 段架构。
 
-### 配色方案
-- **Skills频道主色**：蓝色系 (代表工具、能力)
-- **Agents频道主色**：紫色系 (代表智能、自动化)
-- **平台品牌色**：保持现有的渐变色
+## 📅 落地排期
 
-### 图标设计
-- **Skills图标**：🔧 工具、⚙️ 齿轮
-- **Agents图标**：🤖 机器人、🧠 智能、⚡ 闪电
-- **组合图标**：🔧+🤖 (技能+智能体)
+| Plan | 范围 | 估时 |
+|---|---|---|
+| **P0-1a** | design tokens + glass-morphism 工具类 + 字体切换 + Card 类组件视觉迁移 | ~1.5 天 |
+| **P0-1b** | Landing 信息架构重写 + `/my-weave` 路由 + nav 重排 + 站名变更 | ~1.5 天 |
 
-### 文案建议
-- **Skills标签语**："能力单元"、"可复用技能"、"工具组件"
-- **Agents标签语**："智能配置"、"自动化方案"、"端到端解决方案"
-
-## 📝 关键文案
-
-### Hero区域
-- 主标题：`SkillHub - AI Agent配置管理平台`
-- 副标题：`🤖 为Claude等AI Agent提供可组合的技能和配置管理`
-- CTA按钮：`探索技能包`、`浏览Agent配置`、`发布资源`
-
-### 价值说明
-- Skills："**单一功能的强大工具**，为AI Agent提供专业能力"
-- Agents："**多技能的智能配置**，开箱即用的AI解决方案"
-- 协同："**Skills + Agents = 完整的AI能力生态系统**"
-
-这个首页设计清晰地区分了两个频道的价值，同时展示了它们如何协同工作，为用户提供完整的AI配置管理体验。
+详细任务拆解由 superpowers:writing-plans skill 在 design spec 通过用户 review 后生成。

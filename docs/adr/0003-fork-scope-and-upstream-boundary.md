@@ -49,36 +49,54 @@ Agent、视觉 UI、运行时安全等维度走出独立路线。
 
 本 fork 的 UI 与 upstream 视觉解耦,允许引入只属于本分支的设计语言。
 
-**设计基线: "技术编织"(Tech Weave) 美学**(详见 [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md)):
+**设计基线: "知连 WeaveHub" 美学**(详见 [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md)
+和详细设计 [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)):
 
-- 视觉风格:深蓝紫色基调(slate-950 / indigo-950)+ 霓虹青色点缀(cyan-500)+ 紫罗兰辅助(violet-500)
-- 字体体系:标题 Syne / 正文 IBM Plex Sans / 代码 JetBrains Mono
-- 动效语言:渐入(fade-up, fade-in)、悬浮缩放(hover:scale-105)、渐变光晕、脉冲、Canvas 粒子连接动画
-- 概念隐喻:粒子节点之间的连线象征"技能之间的连接和协作"
+- **站名**:知连 WeaveHub(显示侧;代码包名 `skillhub` 不动)
+- **视觉风格**:浅色 + glass-morphism(白色透明 + backdrop-blur)+ 双 radial-gradient 微光背景
+- **主色**:绿色单色阶 `#34a853` (brand-500) / `#2c8e46` (brand-600) / `#23743a` (brand-700) + 浅色阶 brand-50/100/200
+- **字体体系**:正文与标题 Inter / 代码 JetBrains Mono(不用 serif italic)
+- **动效语言**:`motion/react` 渐入 + 卡片悬浮上提 + 软阴影
+- **资源类型区分**:不分频道色,卡片右上角 type 灰底文字徽章("skill" / "agent")区分
+- **信息架构**:浅色 + 功能型入口("热门 / 最新 / 工作台" 三段),不堆宣传数字、不堆概念解释
 
 落地状态(2026-04-27 核对):
-- ✅ 字体三联已接入 `web/index.html` + `web/src/index.css`
-- ✅ brand-gradient(indigo `#6A6DFF` → violet `#B85EFF`)design tokens 已就位
-- ❌ 粒子 Canvas 动画未实现
-- ❌ 深蓝紫色基调(slate-950/indigo-950)未应用——当前是浅色主题
-- ❌ 双频道色系(Skills 蓝 / Agents 紫)未拆分,两频道共用同一 brand-gradient
+- ❌ 当前 `--brand-start` (#6A6DFF indigo) / `--brand-end` (#B85EFF violet) 与新方案冲突,P0-1a 整体替换
+- ❌ Syne / IBM Plex Sans 字体引用要清理,只保留 Inter + JetBrains Mono
+- ❌ glass-morphism 工具类未实现
+- ❌ Landing 当前结构是九段(Hero+Stats+Channels+Popular+QuickStart+Features+CTA+Latest),要重写为 weavehub 四段
+- ❌ 站名仍是 SkillHub
+- ❌ "我的 Weave"路由(`/my-weave`)未创建
 
-**待补的视觉/结构性改造(以 Tech Weave 基线为指导):**
+**待补的视觉/结构性改造**:
 
-- 双频道色系(Skills 蓝 / Agents 紫)拆分:`--channel-skill` / `--channel-agent` design tokens
-- Hero 双入口主张(Skills/Agents 并列大卡片)
-- Hero 区域 Canvas 粒子动画(Tech Weave 标志元素)
-- 第三个 Quick Start Tab "Agent Architect"
-- 统一搜索 Tabs(全部 / Skills / Agents 三栏)
-- AgentCard 紫色识别度(脱离当前与 SkillCard 共用的灰色边框)
-- 后续可能的品牌化改造(知联 Weave Hub 视觉资产)
+- design tokens 切换到绿色单色阶 + glass-morphism 工具类(`.glass-header` / `.glass-card` / `.brand-gradient` / `.btn-primary` / `.nav-chip`)
+- 字体引用切到 Inter + JetBrains Mono
+- Landing 信息架构重写:Hero(主标题"持续进化的 AI 能力" + 副标"让团队的技能包和智能体在一起协作")+ 热门(混排 + 下划线 Tab)+ 最新 + 工作台
+- 移除全部宣传数字(stats 块整体删)
+- 站名 SkillHub → 知连 WeaveHub(en locale 仍可显示 "WeaveHub")
+- 新增 `/my-weave` 路由(双栏:我的技能 / 我的智能体)
+- nav 项重排:首页 / 发布 ▾ / 技能 / 智能体 / 我的 Weave / 控制台
+- 引入 `motion/react` 替代当前 `useInView` 自定义 hook
+- 新增 `ResourceCard`(landing 用统一资源卡)+ `ResourceTabs`(下划线样式 section tab)
+- AgentCard / SkillCard 视觉迁移到 glass-card,**不合并**为单组件
 
 upstream 若在视觉层做调整,**默认不合并**;只在涉及组件结构或可访问性
 回归时按需 cherry-pick。
 
-**视觉资产文件位置约束:**
-- 全局 design tokens 仍在 `web/src/index.css`,但新增的双频道 token 命名前缀必须以 `--channel-*` 隔离,便于将来从 upstream 合并 brand 调整时识别冲突面
-- Tech Weave 风格的 Canvas / 动画组件放在 `web/src/features/landing/`(新建目录),与 marketing 静态文案区分
+**抛弃的旧路线**(2026-04-27 决策,A 路线全面取代):
+
+- ❌ Tech Weave 美学(粒子 Canvas、深 slate-950/indigo-950 基调、Syne 字体、霓虹青/紫罗兰)
+- ❌ 双频道色系(Skills 蓝 / Agents 紫,`--channel-skill` / `--channel-agent` token)
+- ❌ Hero 双入口并列大卡片主张
+- ❌ Quick Start "Agent Architect" 第三 Tab
+- ❌ 统一搜索三栏 Tabs(landing 不再搁置中央搜索 + 类型 tab)
+- ❌ 站点宣传数字(1000+/50K+ 等)
+
+**视觉资产文件位置约束**:
+- 全局 design tokens 在 `web/src/index.css` `@theme` 块
+- glass-morphism 工具类放在同文件的 `@layer base` 之外,不污染 base 样式
+- Landing 拆分组件位于 `web/src/shared/components/landing-*.tsx`
 
 #### 1.3 完整且安全的运行
 

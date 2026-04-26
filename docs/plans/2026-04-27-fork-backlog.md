@@ -4,7 +4,10 @@
 **Status:** Living document — 每次启动新 plan 前先看,启动后把对应条目标 🔄,完成后标 ✅
 **Owner:** HE1780/Weave-Hub fork 维护者
 **Scope source:** [docs/adr/0003-fork-scope-and-upstream-boundary.md](../adr/0003-fork-scope-and-upstream-boundary.md)
-**Visual baseline:** [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md) (Tech Weave 美学)
+**Visual baseline:** [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md)
+(知连 WeaveHub 美学 — 浅色 glass-morphism + 绿色单色,2026-04-27 取代旧 Tech Weave 路线)
+**Visual design spec:** [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)
+**Reference prototype:** [web/weavehub---知连/](../../web/weavehub---知连/)
 
 ## 排序原则
 
@@ -25,40 +28,52 @@
 - AgentReviewsPage 行展示 agent slug + version(原 P1-1 已完成)
 - AgentCard 用 TanStack `<Link>`(支持 cmd-click / 中键 / 右键打开新标签)
 - Hero CTA:已拆 dropdown(发布 Skill / 发布 Agent)
-- Tech Weave 字体三联:Syne / IBM Plex Sans / JetBrains Mono 已接入
+
+视觉路线 2026-04-27 重置(brainstorming A 路线)——以下旧状态**不再适用**:
+
+- 字体三联 Syne / IBM Plex Sans / JetBrains Mono → P0-1a 改为 Inter + JetBrains Mono
+- `--brand-start` indigo / `--brand-end` violet brand-gradient → P0-1a 改为绿色单色 brand-50/100/200/500/600/700
+- 旧 LandingChannelsSection / PopularAgents / LandingQuickStartSection → P0-1b 删除
+- 站名 SkillHub → P0-1b 改为"知连 WeaveHub"
 
 ---
 
 ## P0 — 立即可启动(无前置依赖)
 
-### P0-1: 双频道视觉对齐(Tech Weave 第一波落地)
+### P0-1a: WeaveHub design tokens + glass-morphism 体系迁移
 
-**ADR 0003 §1.2** · 估时 ~1.5 天 · 纯前端
+**ADR 0003 §1.2** · 估时 ~1.5 天 · 纯前端 · token 层
 
-承接 [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md) 已经定义但未落地的视觉主张。
-本 plan **不**做粒子 Canvas(留 P1),先把"双频道色系 + Hero 双入口 + AgentCard 识别度"做扎实,
-让用户能立即感知 Skills/Agents 是平等的两条线。
+承接 [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)
+§4.1。**只动 design system 层,不动版面**。提交后全站颜色变绿、卡片变玻璃感,但布局不动。
 
 范围:
-- 在 `web/src/index.css` 增 `--channel-skill` (蓝) / `--channel-agent` (紫) tokens
-- `LandingChannelsSection` 两张卡片应用各自频道色(目前共用 brand-gradient)
-- `AgentCard` 改用 `--channel-agent` 紫色系作为 accent / border / hover 光晕
-- `SkillCard` 同步加 `--channel-skill` accent(回归测试 ≥1 现有 Skill 列表展示)
-- Hero 区域改造:在现有"标题 + 搜索 + 3 CTA + 4 stats"基础上,把 Channels 块**前置**到 Stats 之前,
-  并把两张 Channel 卡视觉权重提升到与搜索框平级(并列 hero 主张)
-- nav 中 "Skills" / "Agents" 链接的 active state 用各自频道色
-- i18n 不变(已有 keys)
+- 替换 [web/src/index.css](../../web/src/index.css) `--brand-start` / `--brand-end` 为绿色单色阶
+  (`--color-brand-50/100/200/500/600/700` + `--color-ink` + `--color-zinc-soft`)
+- 加 glass-morphism 工具类:`.glass-header` / `.glass-card` / `.brand-gradient` / `.btn-primary` /
+  `.btn-secondary` / `.nav-chip`
+- [web/index.html](../../web/index.html) 字体 link 切到 Inter + JetBrains Mono(去 Syne + IBM Plex)
+- [web/tailwind.config.ts](../../web/tailwind.config.ts) brand 色 plugin 配置
+- [web/src/features/skill/skill-card.tsx](../../web/src/features/skill/skill-card.tsx) 视觉迁移到 glass-card
+- [web/src/features/agent/agent-card.tsx](../../web/src/features/agent/agent-card.tsx) 视觉迁移到 glass-card
+- [web/src/shared/ui/card.tsx](../../web/src/shared/ui/card.tsx) 兼容 glass-card override
+- [web/src/app/layout.tsx](../../web/src/app/layout.tsx) nav chip 视觉(链表不变,留 P0-1b 重排)
+- [web/src/shared/ui/button.tsx](../../web/src/shared/ui/button.tsx) variant 对齐新 token
+- 全站 `brand-gradient` 8 个引用回归(layout / button / review-skill-detail-section / landing-channels /
+  popular-agents 等)
+- `pnpm add motion` 引入 `motion/react`
 
 不在范围:
-- 粒子 Canvas 动画(P1)
-- 深蓝紫色基调切换(slate-950 / indigo-950)— 涉及全站主题切换,留独立 plan
-- 第三个 Quick Start Tab(P0-3)
-- 统一搜索 Tabs(P0-2)
+- Landing 信息架构重写(P0-1b)
+- nav 链表重排(P0-1b)
+- 站名变更(P0-1b)
+- 新增 ResourceCard / 删除 LandingChannelsSection 等版面级组件(P0-1b)
 
 验收:
-- `pnpm vitest run` 仍 627/627
+- `pnpm vitest run` 仍 631/631
 - `pnpm typecheck` / `pnpm lint` 仍 clean
-- 浏览器烟雾:landing / agents 列表 / 一个 agent detail / search 页面 视觉无回归
+- 浏览器烟雾:每个 Card 类组件颜色统一为绿色 hover、卡片有 glass 感、nav 项是 chip 形态
+- 所有页面**视觉一致**变绿;不允许 P0-1a 期间出现"半旧半新"的混乱中间态
 
 ---
 
@@ -88,26 +103,50 @@
 
 ---
 
-### P0-3: 双频道视觉对齐第二波(Hero 主张并列 + Quick Start Architect Tab + 统一搜索 Tabs 骨架)
+### P0-1b: Landing 信息架构重写 + my-weave 路由 + nav 重排 + 站名变更
 
-**ADR 0003 §1.2** · 估时 ~1 天 · 纯前端
+**ADR 0003 §1.2** · 估时 ~1.5 天 · 纯前端 · 版面层 · 依赖 P0-1a 完成
 
-P0-1 完成后,把 landing 页结构完成最后一步。
+承接 [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)
+§4.2。token 层稳定后,把 landing 信息架构按 weavehub 4 段重写。
 
 范围:
-- Hero 区域改成"标题 + 副标题 + 双卡片并列主张(Skills/Agents)+ 统一搜索栏(下含 Tabs)+ Stats"
-- 搜索栏增加 Tabs:**全部 / Skills / Agents**,Tab 切换只改前端搜索路由参数;后端搜索仍只打 Skill,
-  Agents tab 在搜索结果展示一个占位"Agent 搜索基于关键词,跳转到 /agents?q=..."(复用 P0-2 的端点)
-- `LandingQuickStartSection` 增加第三个 tab "Agent Architect",文案从 [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md)
-  和原 [docs/landing-page-redesign.md](../landing-page-redesign.md) 拼
+- 整体重写 [web/src/pages/landing.tsx](../../web/src/pages/landing.tsx) 为 4 段:
+  Hero(主标题"持续进化的 AI 能力" + 副标"让团队的技能包和智能体在一起协作" + 搜索 + 开始探索按钮)
+  / 热门推荐(下划线 Tab 全部/技能包/智能体 + 9 卡 3 列)
+  / 最新动态 col-span-8(4 紧凑卡 + Load Discovery)+ 工作台 col-span-4(登录态切换)
+  / Footer
+- 新增组件(均位于 `web/src/shared/components/`):
+  `resource-card.tsx`(landing 用,内部 dispatch 到现有 SkillCard / AgentCard 骨架,**不**合并两个组件)
+  `resource-tabs.tsx`(下划线样式 section tab)
+  `landing-hot-section.tsx` / `landing-recent-section.tsx` / `landing-workspace.tsx`
+- 删除组件:
+  [landing-channels.tsx](../../web/src/shared/components/landing-channels.tsx) /
+  [popular-agents.tsx](../../web/src/shared/components/popular-agents.tsx) /
+  [landing-quick-start.tsx](../../web/src/shared/components/landing-quick-start.tsx)
+- 新增 `web/src/pages/my-weave.tsx`(双段:我的技能包 + 我的智能体,复用 dashboard/skills 列表逻辑和 my-agents 逻辑)
+- [web/src/app/router.tsx](../../web/src/app/router.tsx) 加 `/my-weave` 路由
+- [web/src/app/layout.tsx](../../web/src/app/layout.tsx) nav 链表重排:
+  未登录 = 首页 / 搜索;
+  已登录 = 首页 / 发布 ▾ / 技能 / 智能体 / 我的 Weave / 控制台
+- 站名 SkillHub → 知连 WeaveHub(layout logo + index.html title + i18n brand key)
+- i18n 加新 keys:`landing.hero.title` / `subtitle` / `landing.hot.*` / `landing.recent.*` /
+  `landing.workspace.*` / `nav.myWeave` / `nav.skills`
+- i18n 删旧 keys:`landing.stats.*` / `landing.channels.*` / `landing.popularAgents.*` /
+  `landing.hero.exploreSkills` / `browseAgents`
+- [web/index.html](../../web/index.html) `<title>` 改 "知连 WeaveHub"
 
 不在范围:
-- 真正的统一后端搜索(需要 federate Skill + Agent 搜索,留 P3)
-- Architect tab 的具体落地工作流(只是引导文案)
+- 真正的统一后端搜索(留 P3-3)
+- 移动端深度优化(weavehub 已 responsive,保持骨架即可)
+- AgentCard / SkillCard 合并(明确不做)
 
 验收:
-- 测试覆盖三个 tab 切换 + Architect tab 渲染
-- 浏览器烟雾:Hero 主张视觉权重清晰
+- 浏览器烟雾:Hero 文案为"持续进化的 AI 能力" + 副标 / 不显示任何 stats 数字 / Tab 切换混排 /
+  工作台未登录显示 "立即认证登录"、登录后显示双段列表
+- 测试 631 → 应增长(~5-8 个新组件测试 + landing 重写)
+- typecheck/lint 仍 clean
+- 所有文档引用路径仍可点击通过
 
 ---
 
@@ -135,29 +174,14 @@ P0-1 完成后,把 landing 页结构完成最后一步。
 3. 写 plan 文档拆任务
 4. 实施(后端 + 前端,模式与 ADR 0002 类似,全栈 ~30 任务)
 
-启动前必须:**P0 全部完成**,因为 Agent 评论会挂在 agent-detail 页,而该页面 P0-1/P0-3 会改样式。
+启动前必须:**P0 全部完成**,因为 Agent 评论会挂在 agent-detail 页,而该页面 P0-1a/P0-1b 会改样式。
 
 ---
 
-### P1-3: 粒子 Canvas 动画(Tech Weave 标志元素)
+### ~~P1-3: 粒子 Canvas 动画~~ ❌ 已抛弃
 
-**ADR 0003 §1.2** · 估时 ~1 天 · 纯前端
-
-[web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md) 设计的核心视觉 hook。
-80 个粒子节点 + 动态连线,放在 Hero 背景层。
-
-依赖:P0-1 + P0-3 完成,Hero 结构稳定后再叠加动画,避免改样式时 Canvas 反复重跑。
-
-范围:
-- 新建 `web/src/features/landing/particle-canvas.tsx`(可访问性:`prefers-reduced-motion` 时静态化)
-- 粒子色用 cyan-500 + violet-500(频道色对应)
-- Hero 区域 z-index 分层:Canvas 在最底层,内容在上层
-- 不阻塞 SSR / 首屏(`useEffect` mount 后再启动 RAF)
-
-验收:
-- 移动端不渲染粒子(性能)
-- `prefers-reduced-motion: reduce` 时退化为静态渐变
-- Lighthouse Performance 不劣化超 5 分
+2026-04-27 brainstorming A 路线决策:Tech Weave 美学整体抛弃,粒子 Canvas 不再做。
+weavehub 美学使用 `motion/react` 入场动效 + glass-card 悬浮上提替代视觉趣味,P0-1a 已包含 `motion/react` 引入。
 
 ---
 
@@ -176,19 +200,12 @@ P0-1 完成后,把 landing 页结构完成最后一步。
 `AgentVersionStatus` 已有 `ARCHIVED` 枚举,补 service 方法 + 4 个端点 + admin UI 按钮。
 权限模型沿用 namespace ADMIN+ 与 skill 一致。
 
-### P2-3: 深蓝紫色基调切换(Tech Weave 完整版)
+### ~~P2-3: 深蓝紫色基调切换~~ ❌ 已抛弃
 
-**ADR 0003 §1.2** · 估时 ~2 天 · 纯前端,触面广
+2026-04-27 brainstorming A 路线决策:weavehub 浅色体系优先,
+[DESIGN_NOTES §6](../../web/weavehub---知连/DESIGN_NOTES.md) 明确"不使用深色背景作为主基底"。深色主题不再是路线项。
 
-[web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md) 期望的 slate-950 / indigo-950 主题。
-当前是浅色主题。这是 design token 大换底,影响所有页面,**最后做**避免反复返工。
-
-范围:
-- `web/src/index.css` `:root` 默认值改深色,旧浅色作为 `[data-theme="light"]`
-- 全站组件视觉回归
-- Skills/Agents 频道色在深底上的对比度调整
-
-依赖:P0-1 / P0-3 / P1-3 完成,所有视觉新元素都在浅底上验过,再统一切深底。
+如未来仍有深色主题需求,**重新启动一次独立 brainstorming**,以浅色 weavehub 为基线扩展深色变体。
 
 ---
 
@@ -225,12 +242,16 @@ PostgreSQL Full-Text Index(GIN)+ 触发器维护,mirror `skill_search_document` 
 
 ## 启动建议
 
-按当前对话敲定的优先级,**下一个动作是 P0-1**(双频道视觉对齐第一波)。
+2026-04-27 brainstorming 已完成,产出 design spec
+[docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)。
+
+下一步:**P0-1a**(WeaveHub design tokens + glass-morphism 体系迁移)。
+
 启动方式:
 
-1. 把这份 backlog 的 P0-1 标 🔄
-2. 调用 `superpowers:brainstorming` 把"双卡 Hero 主张"的具体布局/文案/交互细节聊清楚(防止再次 strategy C 退化)
-3. 用 `superpowers:writing-plans` 落 plan 到 `docs/plans/2026-04-XX-dual-channel-visual-pass-1.md`
-4. 实施
+1. 用户 review design spec
+2. 调用 `superpowers:writing-plans` 把 spec §4.1 拆为可执行 plan,落到 `docs/plans/2026-04-XX-weavehub-tokens.md`
+3. 把 backlog 的 P0-1a 标 🔄,实施
+4. P0-1a 完成后再启动 P0-1b(spec §4.2),用同样流程
 
-如果 P0-1 不需要 brainstorm(范围已经够清晰),可以跳到 step 3 直接写 plan。
+P0-1a 与 P0-1b 共享同一份 design spec,**不**需要再次 brainstorm。
