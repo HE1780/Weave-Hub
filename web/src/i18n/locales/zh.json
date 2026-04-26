@@ -17,7 +17,29 @@
       "subtitle": "使用社区驱动的技能构建强大的 AI 代理",
       "searchPlaceholder": "搜索技能...",
       "exploreSkills": "探索技能",
+      "browseAgents": "浏览智能体",
       "publishSkill": "发布技能"
+    },
+    "channels": {
+      "title": "两种组合 AI 能力的方式",
+      "subtitle": "Skills 是基础积木，Agents 是组装好的方案。可独立使用，也可协同使用。",
+      "skill": {
+        "label": "Skills",
+        "tagline": "能力单元",
+        "description": "单一功能、可复用的技能包 —— 提示词、数据工具、代码助手等。",
+        "cta": "浏览技能包"
+      },
+      "agent": {
+        "label": "Agents",
+        "tagline": "智能配置",
+        "description": "组合多个技能的预制智能体，开箱即用。",
+        "cta": "浏览智能体"
+      }
+    },
+    "popularAgents": {
+      "title": "热门智能体",
+      "description": "组合多个技能的预制智能体。",
+      "viewAll": "查看全部"
     },
     "features": {
       "secure": {
@@ -47,6 +69,7 @@
     },
     "stats": {
       "skills": "项目库",
+      "agents": "智能体",
       "downloads": "下载量",
       "teams": "团队"
     },

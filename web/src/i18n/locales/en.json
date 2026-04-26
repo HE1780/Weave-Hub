@@ -17,7 +17,29 @@
       "subtitle": "Build powerful AI agents with community-driven skills",
       "searchPlaceholder": "Search skills...",
       "exploreSkills": "Explore Skills",
+      "browseAgents": "Browse Agents",
       "publishSkill": "Publish Skill"
+    },
+    "channels": {
+      "title": "Two ways to compose AI capabilities",
+      "subtitle": "Skills are the building blocks. Agents are the assembled solutions. Use them together or alone.",
+      "skill": {
+        "label": "Skills",
+        "tagline": "Capability units",
+        "description": "Single-purpose, reusable skill packages — prompts, data tools, code helpers, and more.",
+        "cta": "Browse Skills"
+      },
+      "agent": {
+        "label": "Agents",
+        "tagline": "Smart configurations",
+        "description": "Pre-assembled agents that combine multiple skills into ready-to-use workflows.",
+        "cta": "Browse Agents"
+      }
+    },
+    "popularAgents": {
+      "title": "Popular Agents",
+      "description": "Pre-configured agents combining multiple skills.",
+      "viewAll": "View all agents"
     },
     "features": {
       "secure": {
@@ -47,6 +69,7 @@
     },
     "stats": {
       "skills": "Catalogs",
+      "agents": "Agents",
       "downloads": "Downloads",
       "teams": "Teams"
     },
