@@ -30,7 +30,9 @@ export function VersionCommentsSection({ versionId, canPost }: Props) {
     <section className="space-y-4">
       {canPost && (
         <CommentComposer
-          onSubmit={(body) => post.mutateAsync(body)}
+          onSubmit={async (body) => {
+            await post.mutateAsync(body)
+          }}
           isSubmitting={post.isPending}
         />
       )}
