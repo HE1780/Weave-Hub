@@ -46,6 +46,8 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/agents/reviews"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/agents/reviews/*"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/agents/reviews/*"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/agents/reviews/*/detail"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/agents/reviews/*/detail"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/v1/agents/reviews/*/approve"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/agents/reviews/*/approve"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/v1/agents/reviews/*/reject"),

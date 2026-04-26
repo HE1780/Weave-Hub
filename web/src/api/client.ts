@@ -1385,6 +1385,12 @@ export interface AgentReviewTaskDto {
   reviewedAt: string | null
 }
 
+export interface AgentReviewVersionDetailDto {
+  task: AgentReviewTaskDto
+  agent: AgentDto
+  version: AgentVersionDto
+}
+
 export const agentsApi = {
   async list(params: { page?: number; size?: number } = {}) {
     const search = new URLSearchParams()
@@ -1447,6 +1453,12 @@ export const agentReviewsApi = {
 
   async get(taskId: number) {
     return fetchJson<AgentReviewTaskDto>(`${WEB_API_PREFIX}/agents/reviews/${taskId}`)
+  },
+
+  async getDetail(taskId: number) {
+    return fetchJson<AgentReviewVersionDetailDto>(
+      `${WEB_API_PREFIX}/agents/reviews/${taskId}/detail`,
+    )
   },
 
   async approve(taskId: number, comment?: string) {

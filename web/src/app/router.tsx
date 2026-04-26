@@ -82,6 +82,10 @@ const AgentReviewsPage = createLazyRouteComponent(
   () => import('@/pages/dashboard/agent-reviews'),
   'AgentReviewsPage',
 )
+const AgentReviewDetailPage = createLazyRouteComponent(
+  () => import('@/pages/dashboard/agent-review-detail'),
+  'AgentReviewDetailPage',
+)
 const MyNamespacesPage = createLazyRouteComponent(
   () => import('@/pages/dashboard/my-namespaces'),
   'MyNamespacesPage',
@@ -299,6 +303,16 @@ const dashboardAgentReviewsRoute = createRoute({
   component: AgentReviewsPage,
 })
 
+const dashboardAgentReviewDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dashboard/agent-reviews/$taskId',
+  beforeLoad: requireAuth,
+  component: function AgentReviewDetailRouteComponent() {
+    const { taskId } = dashboardAgentReviewDetailRoute.useParams()
+    return <AgentReviewDetailPage taskId={Number(taskId)} />
+  },
+})
+
 const dashboardNamespacesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/namespaces',
@@ -468,6 +482,7 @@ const routeTree = rootRoute.addChildren([
   dashboardPublishAgentRoute,
   dashboardMyAgentsRoute,
   dashboardAgentReviewsRoute,
+  dashboardAgentReviewDetailRoute,
   dashboardNamespacesRoute,
   dashboardNamespaceMembersRoute,
   dashboardNamespaceReviewsRoute,

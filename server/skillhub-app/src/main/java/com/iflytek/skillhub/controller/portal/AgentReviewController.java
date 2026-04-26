@@ -2,14 +2,24 @@ package com.iflytek.skillhub.controller.portal;
 
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.controller.BaseApiController;
+import com.iflytek.skillhub.domain.agent.Agent;
+import com.iflytek.skillhub.domain.agent.AgentRepository;
+import com.iflytek.skillhub.domain.agent.AgentVersion;
+import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewService;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTask;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskStatus;
+import com.iflytek.skillhub.domain.namespace.Namespace;
+import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
+import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.dto.AgentReviewActionRequest;
 import com.iflytek.skillhub.dto.AgentReviewTaskResponse;
+import com.iflytek.skillhub.dto.AgentReviewVersionDetailResponse;
+import com.iflytek.skillhub.dto.AgentResponse;
+import com.iflytek.skillhub.dto.AgentVersionResponse;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.PageResponse;
@@ -29,11 +39,20 @@ public class AgentReviewController extends BaseApiController {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final AgentReviewService reviewService;
+    private final AgentRepository agentRepository;
+    private final AgentVersionRepository agentVersionRepository;
+    private final NamespaceRepository namespaceRepository;
 
     public AgentReviewController(AgentReviewService reviewService,
+                                 AgentRepository agentRepository,
+                                 AgentVersionRepository agentVersionRepository,
+                                 NamespaceRepository namespaceRepository,
                                  ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.reviewService = reviewService;
+        this.agentRepository = agentRepository;
+        this.agentVersionRepository = agentVersionRepository;
+        this.namespaceRepository = namespaceRepository;
     }
 
     @GetMapping
@@ -72,6 +91,37 @@ public class AgentReviewController extends BaseApiController {
         requireAuth(principal);
         AgentReviewTask task = reviewService.getById(taskId, rolesOrEmpty(userNsRoles), principal.platformRoles());
         return ok("response.success.read", AgentReviewTaskResponse.from(task));
+    }
+
+    /**
+     * Returns the full review payload: task + agent metadata + version (with
+     * inline soul.md and workflow.yaml). Reviewers need this on the detail
+     * screen; the lighter {@link #getOne} stays for callers that only need the
+     * task row.
+     */
+    @GetMapping("/{taskId}/detail")
+    public ApiResponse<AgentReviewVersionDetailResponse> getDetail(
+            @PathVariable Long taskId,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+
+        requireAuth(principal);
+        AgentReviewTask task = reviewService.getById(taskId, rolesOrEmpty(userNsRoles), principal.platformRoles());
+        AgentVersion version = agentVersionRepository.findById(task.getAgentVersionId())
+                .orElseThrow(() -> new DomainNotFoundException(
+                        "Agent version not found: " + task.getAgentVersionId()));
+        Agent agent = agentRepository.findById(version.getAgentId())
+                .orElseThrow(() -> new DomainNotFoundException(
+                        "Agent not found: " + version.getAgentId()));
+        Namespace namespace = namespaceRepository.findById(agent.getNamespaceId())
+                .orElseThrow(() -> new DomainNotFoundException(
+                        "Namespace not found: " + agent.getNamespaceId()));
+
+        AgentReviewVersionDetailResponse body = new AgentReviewVersionDetailResponse(
+                AgentReviewTaskResponse.from(task),
+                AgentResponse.from(agent, namespace.getSlug()),
+                AgentVersionResponse.from(version));
+        return ok("response.success.read", body);
     }
 
     @PostMapping("/{taskId}/approve")
