@@ -29,6 +29,10 @@ vi.mock('@/shared/components/landing-quick-start', () => ({
   LandingQuickStartSection: () => null,
 }))
 
+vi.mock('@/shared/components/landing-channels', () => ({
+  LandingChannelsSection: () => null,
+}))
+
 vi.mock('@/shared/components/popular-agents', () => ({
   PopularAgents: () => null,
 }))

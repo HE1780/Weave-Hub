@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { PackageOpen, Terminal, Shield, Users, GitBranch, Search as SearchIcon, Settings } from 'lucide-react'
 import { LandingQuickStartSection } from '@/shared/components/landing-quick-start'
+import { LandingChannelsSection } from '@/shared/components/landing-channels'
 import { PopularAgents } from '@/shared/components/popular-agents'
 import { SkillCard } from '@/features/skill/skill-card'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
@@ -36,6 +37,7 @@ export function LandingPage() {
 
   const heroView = useInView()
   const statsView = useInView()
+  const channelsView = useInView()
   const featuresView = useInView()
   const quickStartView = useInView()
   const popularView = useInView()
@@ -177,6 +179,11 @@ export function LandingPage() {
           ))}
         </div>
       </main>
+
+      {/* Channels Section — dual-channel intro (Skills + Agents) */}
+      <div ref={channelsView.ref} className={`scroll-fade-up${channelsView.inView ? ' in-view' : ''}`}>
+        <LandingChannelsSection />
+      </div>
 
       {/* Features Section */}
       <section ref={featuresView.ref} className={`relative z-10 w-full py-20 md:py-24 px-6 scroll-fade-up${featuresView.inView ? ' in-view' : ''}`} style={{ background: 'var(--bg-page, hsl(var(--background)))' }}>
