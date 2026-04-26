@@ -4,42 +4,50 @@
 
 @layer base {
   :root {
-    /* SkillHub — 浅色主题 (indigo-violet brand) */
-    --background: 210 20% 98%;
-    --foreground: 220 26% 14%;
+    /* WeaveHub — 浅色主题 (green monochrome, 2026-04-27 spec) */
+    --background: 145 38% 99%;          /* zinc-soft #fcfdfc */
+    --foreground: 220 13% 18%;          /* ink #1f2937 */
     --card: 0 0% 100%;
-    --card-foreground: 220 26% 14%;
+    --card-foreground: 220 13% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 26% 14%;
-    /* Indigo primary (#6A6DFF) */
-    --primary: 239 100% 71%;
+    --popover-foreground: 220 13% 18%;
+    /* Brand-500 primary (#34a853) */
+    --primary: 134 53% 43%;
     --primary-foreground: 0 0% 100%;
     /* Surface tones */
-    --secondary: 210 30% 96%;
-    --secondary-foreground: 220 26% 14%;
-    --muted: 210 25% 95%;
+    --secondary: 145 30% 96%;
+    --secondary-foreground: 220 13% 18%;
+    --muted: 145 25% 95%;
     --muted-foreground: 215 14% 46%;
-    /* Violet accent (#B85EFF) */
-    --accent: 271 100% 68%;
-    --accent-foreground: 0 0% 100%;
+    /* Brand-200 accent (#c9e8d1) — light moss for highlights */
+    --accent: 134 39% 85%;
+    --accent-foreground: 220 13% 18%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 239 100% 71%;
-    --radius: 0.75rem;
+    --border: 145 22% 90%;
+    --input: 145 22% 90%;
+    --ring: 134 53% 43%;
+    --radius: 1rem;                     /* rounded-2xl default for weavehub feel */
 
     /* Extended palette */
-    --surface-glass: 210 30% 97%;
-    --glow-primary: 239 100% 71%;
-    --glow-accent: 271 100% 68%;
-    --success: 160 60% 45%;
+    --surface-glass: 0 0% 100%;
+    --glow-primary: 134 53% 43%;
+    --glow-accent: 134 39% 85%;
+    --success: 134 53% 43%;
     --warning: 38 92% 58%;
 
-    /* Brand */
-    --brand-start: #6A6DFF;
-    --brand-end: #B85EFF;
-    --brand-gradient: linear-gradient(135deg, #6A6DFF 0%, #B85EFF 100%);
+    /* Brand color scale (weavehub green) */
+    --brand-50: 134 53% 97%;            /* #f4fbf6 */
+    --brand-100: 134 50% 93%;           /* #e7f4ea */
+    --brand-200: 134 39% 85%;           /* #c9e8d1 */
+    --brand-500: 134 53% 43%;           /* #34a853 */
+    --brand-600: 134 53% 36%;           /* #2c8e46 */
+    --brand-700: 134 53% 29%;           /* #23743a */
+
+    /* Brand gradient — kept as a single CSS var so 14 downstream uses auto-recolor */
+    --brand-start: #2c8e46;
+    --brand-end: #34a853;
+    --brand-gradient: linear-gradient(135deg, #2c8e46 0%, #34a853 100%);
 
     /* Text semantic */
     --text-secondary: 215 19% 35%;
@@ -47,7 +55,7 @@
     --text-placeholder: 213 12% 63%;
 
     /* Border semantic */
-    --border-card: 220 26% 94%;
+    --border-card: 145 22% 92%;
   }
 
   .dark {
