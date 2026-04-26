@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import type { AgentWorkflow, AgentWorkflowStep } from '@/api/agent-types'
 
 interface WorkflowStepsProps {
@@ -35,15 +36,14 @@ export function WorkflowSteps({ workflow }: WorkflowStepsProps) {
               </span>
             )}
           </div>
-          <StepBody step={step} />
+          <StepBody step={step} t={t} />
         </li>
       ))}
     </ol>
   )
 }
 
-function StepBody({ step }: { step: AgentWorkflowStep }) {
-  const { t } = useTranslation()
+function StepBody({ step, t }: { step: AgentWorkflowStep; t: TFunction }) {
   return (
     <dl className="text-sm space-y-1">
       {step.skill && (
