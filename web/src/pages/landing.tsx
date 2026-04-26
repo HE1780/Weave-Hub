@@ -83,6 +83,7 @@ export function LandingPage() {
 
   const stats = [
     { value: '1000+', label: t('landing.stats.skills', { defaultValue: 'Registry items' }) },
+    { value: '50+', label: t('landing.stats.agents', { defaultValue: 'Agents' }) },
     { value: '50K+', label: t('landing.stats.downloads', { defaultValue: 'Downloads' }) },
     { value: '200+', label: t('landing.stats.teams', { defaultValue: 'Teams' }) },
   ]
@@ -162,7 +163,7 @@ export function LandingPage() {
         </div>
 
         {/* Stats */}
-        <div ref={statsView.ref} className={`flex flex-row justify-center gap-16 md:gap-24 scroll-fade-up${statsView.inView ? ' in-view' : ''}`} style={{ transitionDelay: '0.15s' }}>
+        <div ref={statsView.ref} className={`flex flex-row flex-wrap justify-center gap-10 md:gap-16 scroll-fade-up${statsView.inView ? ' in-view' : ''}`} style={{ transitionDelay: '0.15s' }}>
           {stats.map((stat) => (
             <div key={stat.label} className="flex flex-col items-center">
               <span className="text-3xl md:text-4xl font-bold tracking-tight text-brand-gradient mb-1">
