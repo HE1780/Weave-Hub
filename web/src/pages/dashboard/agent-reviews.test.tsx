@@ -63,4 +63,72 @@ describe('AgentReviewsPage', () => {
     expect(screen.getByText('agentReviews.queueTitle')).toBeTruthy()
     expect(useAgentReviewsMock).toHaveBeenCalledWith(7, 'PENDING', 0, 20, true)
   })
+
+  it('renders enriched agent metadata in the row when the backend hydrated it', () => {
+    myNamespacesMock.mockReturnValue({
+      data: [{ id: 7, slug: 'team-x', displayName: 'Team X', currentUserRole: 'ADMIN' }],
+      isLoading: false,
+    })
+    useAgentReviewsMock.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      data: {
+        items: [
+          {
+            id: 100,
+            agentVersionId: 70,
+            namespaceId: 7,
+            status: 'PENDING',
+            submittedBy: 'alice',
+            reviewedBy: null,
+            reviewComment: null,
+            submittedAt: '2026-04-27T00:00:00Z',
+            reviewedAt: null,
+            agentSlug: 'agent-a',
+            agentDisplayName: 'Agent A',
+            agentNamespace: 'team-x',
+            agentVersion: '1.2.0',
+          },
+        ],
+        totalElements: 1,
+        totalPages: 1,
+      },
+    })
+
+    render(<AgentReviewsPage />)
+    expect(screen.getByText('Agent A')).toBeTruthy()
+    expect(screen.getByText('team-x/agent-a')).toBeTruthy()
+    expect(screen.getByText('1.2.0')).toBeTruthy()
+  })
+
+  it('falls back to dashes and version-id when backend hydration is missing', () => {
+    myNamespacesMock.mockReturnValue({
+      data: [{ id: 7, slug: 'team-x', displayName: 'Team X', currentUserRole: 'ADMIN' }],
+      isLoading: false,
+    })
+    useAgentReviewsMock.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      data: {
+        items: [
+          {
+            id: 101,
+            agentVersionId: 71,
+            namespaceId: 7,
+            status: 'PENDING',
+            submittedBy: 'bob',
+            reviewedBy: null,
+            reviewComment: null,
+            submittedAt: '2026-04-27T00:00:00Z',
+            reviewedAt: null,
+          },
+        ],
+        totalElements: 1,
+        totalPages: 1,
+      },
+    })
+
+    render(<AgentReviewsPage />)
+    expect(screen.getByText('#71')).toBeTruthy()
+  })
 })

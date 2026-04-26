@@ -1526,6 +1526,7 @@
     "tabApproved": "已通过",
     "tabRejected": "已驳回",
     "colTaskId": "任务",
+    "colAgent": "智能体",
     "colVersionId": "版本",
     "colSubmitter": "提交人",
     "colSubmittedAt": "提交时间",

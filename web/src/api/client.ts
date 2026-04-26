@@ -1383,6 +1383,11 @@ export interface AgentReviewTaskDto {
   reviewComment: string | null
   submittedAt: string
   reviewedAt: string | null
+  /** Hydrated by the list endpoint; null on single-task lookups (approve/reject/getOne). */
+  agentSlug?: string | null
+  agentDisplayName?: string | null
+  agentNamespace?: string | null
+  agentVersion?: string | null
 }
 
 export interface AgentReviewVersionDetailDto {

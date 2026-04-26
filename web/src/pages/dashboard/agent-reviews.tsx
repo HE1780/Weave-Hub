@@ -110,6 +110,9 @@ export function AgentReviewsPage() {
                 {t('agentReviews.colTaskId')}
               </TableHead>
               <TableHead className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                {t('agentReviews.colAgent')}
+              </TableHead>
+              <TableHead className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 {t('agentReviews.colVersionId')}
               </TableHead>
               <TableHead className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
@@ -139,7 +142,21 @@ export function AgentReviewsPage() {
                 onClick={() => handleRowClick(task.id)}
               >
                 <TableCell className="font-mono">#{task.id}</TableCell>
-                <TableCell className="font-mono">#{task.agentVersionId}</TableCell>
+                <TableCell>
+                  {task.agentSlug ? (
+                    <div className="flex flex-col">
+                      <span className="font-medium">{task.agentDisplayName ?? task.agentSlug}</span>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {task.agentNamespace ?? '—'}/{task.agentSlug}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="font-mono">
+                  {task.agentVersion ?? `#${task.agentVersionId}`}
+                </TableCell>
                 <TableCell>{task.submittedBy}</TableCell>
                 {status === 'PENDING' ? (
                   <TableCell>{formatDate(task.submittedAt)}</TableCell>

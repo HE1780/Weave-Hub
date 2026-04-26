@@ -1525,6 +1525,7 @@
     "tabApproved": "Approved",
     "tabRejected": "Rejected",
     "colTaskId": "Task",
+    "colAgent": "Agent",
     "colVersionId": "Version",
     "colSubmitter": "Submitted by",
     "colSubmittedAt": "Submitted at",
