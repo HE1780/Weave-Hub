@@ -1406,5 +1406,36 @@
       "report": "举报通知",
       "reportDesc": "举报提交或处理完成时通知"
     }
+  },
+  "comments": {
+    "empty": "暂无评论。来写第一条变更说明。",
+    "composer": {
+      "placeholder": "添加评论（支持 markdown）",
+      "submit": "发布",
+      "preview": "预览",
+      "write": "编辑"
+    },
+    "action": {
+      "edit": "编辑",
+      "delete": "删除",
+      "pin": "置顶",
+      "unpin": "取消置顶"
+    },
+    "badge": {
+      "pinned": "已置顶",
+      "edited": "已编辑"
+    },
+    "confirm": {
+      "delete": "确认删除该评论？此操作无法撤销。"
+    },
+    "error": {
+      "loadFailed": "加载评论失败。请重试。",
+      "tooLong": "评论过长（最多 8192 字符）。",
+      "empty": "评论不能为空。"
+    },
+    "loadMore": "加载更多",
+    "section": {
+      "title": "评论"
+    }
   }
 }
