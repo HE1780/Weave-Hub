@@ -1,15 +1,26 @@
 import * as React from 'react'
 import { cn } from '@/shared/lib/utils'
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Opts into the WeaveHub glass-morphism look (translucent white, backdrop blur,
+   * rounded-3xl, hover-lifts). When false (default), preserves the original solid
+   * `rounded-xl border bg-card` look used by dashboard panels and form cards.
+   */
+  glass?: boolean
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, glass = false, style, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        'rounded-xl border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md',
+        glass
+          ? 'glass-card text-card-foreground'
+          : 'rounded-xl border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md',
         className
       )}
-      style={{ borderColor: 'hsl(var(--border-card))' }}
+      style={glass ? style : { borderColor: 'hsl(var(--border-card))', ...style }}
       {...props}
     />
   )
