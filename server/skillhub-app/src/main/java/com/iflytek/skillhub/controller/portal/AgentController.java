@@ -4,10 +4,12 @@ import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.domain.agent.Agent;
 import com.iflytek.skillhub.domain.agent.AgentVersion;
+import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.service.AgentService;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.dto.AgentResponse;
 import com.iflytek.skillhub.dto.AgentVersionResponse;
@@ -48,10 +50,33 @@ public class AgentController extends BaseApiController {
 
     @GetMapping
     public ApiResponse<PageResponse<AgentResponse>> listPublic(
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "namespace", required = false) String namespace,
+            @RequestParam(value = "visibility", required = false) String visibility,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "20") int size) {
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+
         int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
-        Page<Agent> result = agentService.listPublic(PageRequest.of(Math.max(page, 0), safeSize));
+
+        Long namespaceId = null;
+        if (namespace != null && !namespace.isBlank()) {
+            namespaceId = namespaceRepository.findBySlug(namespace)
+                    .orElseThrow(() -> new DomainNotFoundException("Namespace not found: " + namespace))
+                    .getId();
+        }
+
+        AgentVisibility visibilityFilter = parseVisibility(visibility);
+
+        Page<Agent> result = agentService.searchPublic(
+                q,
+                namespaceId,
+                visibilityFilter,
+                principal == null ? null : principal.userId(),
+                rolesOrEmpty(userNsRoles),
+                principal == null ? Set.of() : principal.platformRoles(),
+                PageRequest.of(Math.max(page, 0), safeSize));
 
         Map<Long, String> namespaceSlugs = resolveNamespaceSlugs(result.getContent());
         List<AgentResponse> items = result.getContent().stream()
@@ -60,6 +85,17 @@ public class AgentController extends BaseApiController {
 
         return ok("response.success.read", new PageResponse<>(
                 items, result.getTotalElements(), result.getNumber(), result.getSize()));
+    }
+
+    private AgentVisibility parseVisibility(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return AgentVisibility.valueOf(raw.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new DomainBadRequestException("Invalid visibility: " + raw);
+        }
     }
 
     @GetMapping("/{namespace}/{slug}")

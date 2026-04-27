@@ -7,6 +7,7 @@ import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.service.AgentService;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
+import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,7 +75,7 @@ class AgentControllerTest {
 
     @Test
     void list_public_anonymous_returns_paged_response() throws Exception {
-        when(agentService.listPublic(any(Pageable.class)))
+        when(agentService.searchPublic(isNull(), isNull(), isNull(), isNull(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(agent(7L, 1L, "agent-a")), PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/web/agents"))
@@ -82,6 +83,51 @@ class AgentControllerTest {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.items[0].slug").value("agent-a"))
                 .andExpect(jsonPath("$.data.items[0].namespace").value("global"));
+    }
+
+    @Test
+    void list_with_q_propagates_keyword_to_service() throws Exception {
+        when(agentService.searchPublic(eq("hello"), isNull(), isNull(), isNull(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(agent(7L, 1L, "agent-a")), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/api/web/agents").param("q", "hello"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].slug").value("agent-a"));
+    }
+
+    @Test
+    void list_with_namespace_slug_resolves_to_id_and_passes_to_service() throws Exception {
+        when(namespaceRepository.findBySlug("team-x")).thenReturn(Optional.of(ns(42L, "team-x")));
+        when(agentService.searchPublic(isNull(), eq(42L), isNull(), isNull(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(agent(7L, 42L, "agent-a")), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/api/web/agents").param("namespace", "team-x"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].slug").value("agent-a"));
+    }
+
+    @Test
+    void list_with_unknown_namespace_returns_404() throws Exception {
+        when(namespaceRepository.findBySlug("ghost")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/web/agents").param("namespace", "ghost"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void list_with_visibility_PUBLIC_propagates_filter_to_service() throws Exception {
+        when(agentService.searchPublic(isNull(), isNull(), eq(AgentVisibility.PUBLIC), isNull(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(agent(7L, 1L, "agent-a")), PageRequest.of(0, 20), 1));
+
+        mockMvc.perform(get("/api/web/agents").param("visibility", "PUBLIC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].slug").value("agent-a"));
+    }
+
+    @Test
+    void list_with_invalid_visibility_returns_400() throws Exception {
+        mockMvc.perform(get("/api/web/agents").param("visibility", "BANANA"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

@@ -22,6 +22,14 @@ public interface AgentRepository {
 
     Page<Agent> findByVisibilityAndStatus(AgentVisibility visibility, AgentStatus status, Pageable pageable);
 
+    /**
+     * Returns ACTIVE agents matching an optional case-insensitive keyword (display_name or
+     * description) and an optional namespace filter. Visibility is intentionally NOT filtered
+     * here because the rule depends on caller identity; the service layer applies
+     * {@link AgentVisibilityChecker} on top of this result.
+     */
+    Page<Agent> searchPublic(String keyword, Long namespaceId, Pageable pageable);
+
     Page<Agent> findByOwnerId(String ownerId, Pageable pageable);
 
     Agent save(Agent agent);

@@ -16,6 +16,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -112,5 +116,66 @@ class AgentServiceTest {
         List<AgentVersion> result = service.listVersions(agent, "stranger", roles, Set.of());
 
         assertEquals(2, result.size());
+    }
+
+    @Test
+    void searchPublic_returns_only_PUBLIC_for_anonymous_caller() {
+        Agent publicAgent = new Agent(1L, "pub", "Pub", "owner-1", AgentVisibility.PUBLIC);
+        Agent privateAgent = new Agent(1L, "prv", "Prv", "owner-1", AgentVisibility.PRIVATE);
+        Pageable pageable = PageRequest.of(0, 20);
+        when(agentRepository.searchPublic(any(), any(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(publicAgent, privateAgent), pageable, 2));
+        when(visibilityChecker.canAccess(eq(publicAgent), isNull(), any(), any())).thenReturn(true);
+        when(visibilityChecker.canAccess(eq(privateAgent), isNull(), any(), any())).thenReturn(false);
+
+        var result = service.searchPublic(null, null, null, null, Map.of(), Set.of(), pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertSame(publicAgent, result.getContent().get(0));
+    }
+
+    @Test
+    void searchPublic_returns_PRIVATE_owned_by_caller() {
+        Agent privateAgent = new Agent(1L, "prv", "Prv", "owner-1", AgentVisibility.PRIVATE);
+        Pageable pageable = PageRequest.of(0, 20);
+        when(agentRepository.searchPublic(any(), any(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(privateAgent), pageable, 1));
+        when(visibilityChecker.canAccess(eq(privateAgent), eq("owner-1"), any(), any())).thenReturn(true);
+
+        var result = service.searchPublic(null, null, null, "owner-1", Map.of(), Set.of(), pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertSame(privateAgent, result.getContent().get(0));
+    }
+
+    @Test
+    void searchPublic_returns_NAMESPACE_ONLY_for_namespace_member() {
+        Agent nsAgent = new Agent(7L, "ns", "Ns", "other", AgentVisibility.NAMESPACE_ONLY);
+        Pageable pageable = PageRequest.of(0, 20);
+        Map<Long, NamespaceRole> roles = Map.of(7L, NamespaceRole.MEMBER);
+        when(agentRepository.searchPublic(any(), any(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(nsAgent), pageable, 1));
+        when(visibilityChecker.canAccess(eq(nsAgent), eq("alice"), eq(roles), any())).thenReturn(true);
+
+        var result = service.searchPublic(null, null, null, "alice", roles, Set.of(), pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertSame(nsAgent, result.getContent().get(0));
+    }
+
+    @Test
+    void searchPublic_visibility_filter_PRIVATE_excludes_PUBLIC_items() {
+        Agent publicAgent = new Agent(1L, "pub", "Pub", "owner-1", AgentVisibility.PUBLIC);
+        Agent privateAgent = new Agent(1L, "prv", "Prv", "owner-1", AgentVisibility.PRIVATE);
+        Pageable pageable = PageRequest.of(0, 20);
+        when(agentRepository.searchPublic(any(), any(), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(publicAgent, privateAgent), pageable, 2));
+        when(visibilityChecker.canAccess(any(), eq("owner-1"), any(), any())).thenReturn(true);
+
+        var result = service.searchPublic(
+                null, null, AgentVisibility.PRIVATE, "owner-1", Map.of(), Set.of(), pageable);
+
+        assertEquals(1, result.getContent().size());
+        assertSame(privateAgent, result.getContent().get(0));
     }
 }
