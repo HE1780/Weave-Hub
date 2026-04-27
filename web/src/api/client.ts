@@ -1474,6 +1474,14 @@ export interface AgentDeleteResultDto {
   deleted: boolean
 }
 
+export interface AgentVersionMutationDto {
+  agentId: number
+  versionId: number
+  version: string
+  action: string
+  status: AgentVersionDtoStatus
+}
+
 export const agentLifecycleApi = {
   async archiveAgent(
     namespace: string,
@@ -1515,6 +1523,38 @@ export const agentLifecycleApi = {
       {
         method: 'DELETE',
         headers: await ensureCsrfHeaders(),
+      },
+    )
+  },
+
+  async withdrawAgentReview(
+    namespace: string,
+    slug: string,
+    version: string,
+  ): Promise<AgentVersionMutationDto> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    return fetchJson<AgentVersionMutationDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(version)}/withdraw-review`,
+      {
+        method: 'POST',
+        headers: await ensureCsrfHeaders(),
+      },
+    )
+  },
+
+  async rereleaseAgentVersion(
+    namespace: string,
+    slug: string,
+    version: string,
+    targetVersion: string,
+  ): Promise<AgentVersionMutationDto> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    return fetchJson<AgentVersionMutationDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(version)}/rerelease`,
+      {
+        method: 'POST',
+        headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ targetVersion }),
       },
     )
   },

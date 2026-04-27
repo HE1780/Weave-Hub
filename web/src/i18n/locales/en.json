@@ -1505,7 +1505,20 @@
       "deleteWarning": "All versions, stars, ratings, and stored package files will be removed. The slug becomes available for re-publishing.",
       "deleteSuccessTitle": "Agent deleted",
       "deleteSuccessDescription": "{{agent}} has been permanently deleted.",
-      "deleteErrorTitle": "Failed to delete agent"
+      "deleteErrorTitle": "Failed to delete agent",
+      "withdraw": "Withdraw from review",
+      "withdrawConfirmTitle": "Withdraw this version from review?",
+      "withdrawConfirmDescription": "Version {{version}} will return to draft. The pending review task will be removed.",
+      "withdrawSuccessTitle": "Review withdrawn",
+      "withdrawSuccessDescription": "Version {{version}} returned to draft.",
+      "withdrawErrorTitle": "Failed to withdraw review",
+      "rerelease": "Rerelease",
+      "rereleaseTitle": "Rerelease as a new version",
+      "rereleaseDescription": "Clone version {{source}} into a fresh version with a new version string. PUBLIC/namespace agents go back through review; PRIVATE agents auto-publish.",
+      "rereleasePlaceholder": "New version (e.g. 1.1.0)",
+      "rereleaseSuccessTitle": "Rerelease created",
+      "rereleaseSuccessDescription": "Version {{source}} cloned to {{target}}.",
+      "rereleaseErrorTitle": "Failed to rerelease version"
     }
   },
   "agentReviews": {

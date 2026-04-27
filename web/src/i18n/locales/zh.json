@@ -1504,7 +1504,20 @@
       "deleteWarning": "所有版本、收藏、评分以及存储中的包文件都会被一并删除，slug 释放后可重新发布。",
       "deleteSuccessTitle": "智能体已删除",
       "deleteSuccessDescription": "{{agent}} 已永久删除。",
-      "deleteErrorTitle": "删除智能体失败"
+      "deleteErrorTitle": "删除智能体失败",
+      "withdraw": "撤回审核",
+      "withdrawConfirmTitle": "确认撤回此版本的审核？",
+      "withdrawConfirmDescription": "版本 {{version}} 将退回到草稿状态，待审核任务将被移除。",
+      "withdrawSuccessTitle": "已撤回审核",
+      "withdrawSuccessDescription": "版本 {{version}} 已回到草稿。",
+      "withdrawErrorTitle": "撤回审核失败",
+      "rerelease": "重新发布",
+      "rereleaseTitle": "克隆为新版本",
+      "rereleaseDescription": "基于版本 {{source}} 复制一份新版本。公开/命名空间可见的智能体会重新进入审核；私有智能体会自动发布。",
+      "rereleasePlaceholder": "新版本号（如 1.1.0）",
+      "rereleaseSuccessTitle": "新版本已创建",
+      "rereleaseSuccessDescription": "版本 {{source}} 已克隆为 {{target}}。",
+      "rereleaseErrorTitle": "重新发布失败"
     }
   },
   "agentReviews": {

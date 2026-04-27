@@ -6,6 +6,8 @@ import { useAgentDetail } from '@/features/agent/use-agent-detail'
 import { useArchiveAgent } from '@/features/agent/use-archive-agent'
 import { useUnarchiveAgent } from '@/features/agent/use-unarchive-agent'
 import { useDeleteAgent } from '@/features/agent/use-delete-agent'
+import { useWithdrawAgentReview } from '@/features/agent/use-withdraw-agent-review'
+import { useRereleaseAgentVersion } from '@/features/agent/use-rerelease-agent-version'
 import { AgentStarButton } from '@/features/agent/social/agent-star-button'
 import { AgentRatingInput } from '@/features/agent/social/agent-rating-input'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
@@ -46,11 +48,16 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const archiveMutation = useArchiveAgent()
   const unarchiveMutation = useUnarchiveAgent()
   const deleteMutation = useDeleteAgent()
+  const withdrawMutation = useWithdrawAgentReview()
+  const rereleaseMutation = useRereleaseAgentVersion()
   const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
   const [unarchiveConfirmOpen, setUnarchiveConfirmOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [deleteInputOpen, setDeleteInputOpen] = useState(false)
   const [deleteSlugInput, setDeleteSlugInput] = useState('')
+  const [withdrawTarget, setWithdrawTarget] = useState<string | null>(null)
+  const [rereleaseTarget, setRereleaseTarget] = useState<string | null>(null)
+  const [rereleaseInput, setRereleaseInput] = useState('')
   const [activeDoc, setActiveDoc] = useState<'agent' | 'soul'>('agent')
   const handleRequireLogin = () => {
     navigate({
@@ -160,6 +167,58 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
     } catch (err) {
       toast.error(
         t('agents.lifecycle.deleteErrorTitle'),
+        err instanceof Error ? err.message : '',
+      )
+    }
+  }
+
+  const handleWithdraw = async () => {
+    if (!withdrawTarget) return
+    try {
+      await withdrawMutation.mutateAsync({
+        namespace: targetNamespace,
+        slug: targetSlug,
+        version: withdrawTarget,
+      })
+      toast.success(
+        t('agents.lifecycle.withdrawSuccessTitle'),
+        t('agents.lifecycle.withdrawSuccessDescription', { version: withdrawTarget }),
+      )
+      setWithdrawTarget(null)
+    } catch (err) {
+      toast.error(
+        t('agents.lifecycle.withdrawErrorTitle'),
+        err instanceof Error ? err.message : '',
+      )
+    }
+  }
+
+  const handleOpenRerelease = (version: string) => {
+    setRereleaseTarget(version)
+    setRereleaseInput('')
+  }
+
+  const handleRerelease = async () => {
+    if (!rereleaseTarget || !rereleaseInput.trim()) return
+    try {
+      await rereleaseMutation.mutateAsync({
+        namespace: targetNamespace,
+        slug: targetSlug,
+        version: rereleaseTarget,
+        targetVersion: rereleaseInput.trim(),
+      })
+      toast.success(
+        t('agents.lifecycle.rereleaseSuccessTitle'),
+        t('agents.lifecycle.rereleaseSuccessDescription', {
+          source: rereleaseTarget,
+          target: rereleaseInput.trim(),
+        }),
+      )
+      setRereleaseTarget(null)
+      setRereleaseInput('')
+    } catch (err) {
+      toast.error(
+        t('agents.lifecycle.rereleaseErrorTitle'),
         err instanceof Error ? err.message : '',
       )
     }
@@ -279,8 +338,34 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                           <span>{formatLocalDateTime(version.publishedAt ?? version.submittedAt, i18n.language)}</span>
                         </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {(version.packageSizeBytes / 1024).toFixed(1)} KB
+                      <div className="flex items-center justify-between gap-3 mt-2 flex-wrap">
+                        <div className="text-xs text-muted-foreground">
+                          {(version.packageSizeBytes / 1024).toFixed(1)} KB
+                        </div>
+                        {canManageLifecycle && (
+                          <div className="flex items-center gap-2">
+                            {version.status === 'PENDING_REVIEW' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setWithdrawTarget(version.version)}
+                                disabled={withdrawMutation.isPending}
+                              >
+                                {t('agents.lifecycle.withdraw')}
+                              </Button>
+                            )}
+                            {version.status === 'PUBLISHED' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenRerelease(version.version)}
+                                disabled={rereleaseMutation.isPending}
+                              >
+                                {t('agents.lifecycle.rerelease')}
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -453,6 +538,72 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
               {deleteMutation.isPending
                 ? t('agents.lifecycle.processing')
                 : t('agents.lifecycle.deleteFinal')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!withdrawTarget}
+        onOpenChange={(open) => {
+          if (!open) setWithdrawTarget(null)
+        }}
+        title={t('agents.lifecycle.withdrawConfirmTitle')}
+        description={
+          withdrawTarget
+            ? t('agents.lifecycle.withdrawConfirmDescription', { version: withdrawTarget })
+            : ''
+        }
+        confirmText={t('agents.lifecycle.withdraw')}
+        onConfirm={handleWithdraw}
+      />
+
+      <Dialog
+        open={!!rereleaseTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRereleaseTarget(null)
+            setRereleaseInput('')
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('agents.lifecycle.rereleaseTitle')}</DialogTitle>
+            <DialogDescription>
+              {rereleaseTarget
+                ? t('agents.lifecycle.rereleaseDescription', { source: rereleaseTarget })
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              value={rereleaseInput}
+              onChange={(event) => setRereleaseInput(event.target.value)}
+              placeholder={t('agents.lifecycle.rereleasePlaceholder')}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRereleaseTarget(null)
+                setRereleaseInput('')
+              }}
+            >
+              {t('dialog.cancel')}
+            </Button>
+            <Button
+              onClick={handleRerelease}
+              disabled={
+                !rereleaseInput.trim() ||
+                rereleaseInput.trim() === rereleaseTarget ||
+                rereleaseMutation.isPending
+              }
+            >
+              {rereleaseMutation.isPending
+                ? t('agents.lifecycle.processing')
+                : t('agents.lifecycle.rerelease')}
             </Button>
           </DialogFooter>
         </DialogContent>
