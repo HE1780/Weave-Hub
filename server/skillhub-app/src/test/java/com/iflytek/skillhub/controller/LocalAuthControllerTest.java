@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
@@ -107,9 +108,8 @@ class LocalAuthControllerTest {
 
     @Test
     void register_rejectsInvalidEmailFormat() throws Exception {
-        given(localAuthService.register("bob", "Abcd123!", "not-an-email"))
-            .willThrow(new AuthFlowException(HttpStatus.BAD_REQUEST, "validation.auth.local.email.invalid"));
-
+        // Bean validation (@Email on LocalRegisterRequest.email) short-circuits before the
+        // service is invoked, so the request never reaches localAuthService.
         mockMvc.perform(post("/api/v1/auth/local/register")
                 .with(csrf())
                 .header("Accept-Language", "zh-CN")
@@ -120,14 +120,12 @@ class LocalAuthControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value(400));
 
-        verify(localAuthService).register("bob", "Abcd123!", "not-an-email");
+        verify(localAuthService, never()).register(any(), any(), any());
     }
 
     @Test
     void register_rejectsBlankEmail() throws Exception {
-        given(localAuthService.register("bob", "Abcd123!", " "))
-            .willThrow(new AuthFlowException(HttpStatus.BAD_REQUEST, "validation.auth.local.email.notBlank"));
-
+        // Bean validation (@NotBlank on LocalRegisterRequest.email) short-circuits the request.
         mockMvc.perform(post("/api/v1/auth/local/register")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -137,7 +135,7 @@ class LocalAuthControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value(400));
 
-        verify(localAuthService).register("bob", "Abcd123!", " ");
+        verify(localAuthService, never()).register(any(), any(), any());
     }
 
     @Test
@@ -213,9 +211,7 @@ class LocalAuthControllerTest {
 
     @Test
     void requestPasswordReset_rejectsInvalidEmailFormat() throws Exception {
-        willThrow(new AuthFlowException(HttpStatus.BAD_REQUEST, "validation.auth.password.reset.email.invalid"))
-            .given(passwordResetService).requestPasswordReset("alice");
-
+        // Bean validation (@Email on PasswordResetRequestDto.email) short-circuits the request.
         mockMvc.perform(post("/api/v1/auth/local/password-reset/request")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -225,7 +221,7 @@ class LocalAuthControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value(400));
 
-        verify(passwordResetService).requestPasswordReset("alice");
+        verify(passwordResetService, never()).requestPasswordReset(any());
     }
 
     @Test
@@ -244,9 +240,7 @@ class LocalAuthControllerTest {
 
     @Test
     void confirmPasswordReset_rejectsInvalidEmailFormat() throws Exception {
-        willThrow(new AuthFlowException(HttpStatus.BAD_REQUEST, "validation.auth.password.reset.email.invalid"))
-            .given(passwordResetService).confirmPasswordReset("alice", "123456", "Abcd123!");
-
+        // Bean validation (@Email on PasswordResetConfirmRequest.email) short-circuits.
         mockMvc.perform(post("/api/v1/auth/local/password-reset/confirm")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -256,7 +250,7 @@ class LocalAuthControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.code").value(400));
 
-        verify(passwordResetService).confirmPasswordReset("alice", "123456", "Abcd123!");
+        verify(passwordResetService, never()).confirmPasswordReset(any(), any(), any());
     }
 
 }
