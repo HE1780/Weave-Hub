@@ -92,3 +92,16 @@ CLAUDE.md
 
 # Local config file
 .mcp.json
+
+# Editor / agent extension caches (per-machine, not project artifacts)
+.opencode/
+.trae/
+
+# Local skill/agent package fixtures used for manual upload testing.
+# Contains binary .zip artifacts; not meant to live in git history.
+source-test/
+
+# Screenshots dropped at the repo root during debugging / design review.
+# If a screenshot needs to live in the repo, put it under a deliberate
+# directory like docs/diagnosis/ or docs/superpowers/specs/.
+/*.png
