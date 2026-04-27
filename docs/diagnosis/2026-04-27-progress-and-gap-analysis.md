@@ -1,10 +1,20 @@
 # 项目进度检查与功能 Gap 分析
 
-**Date:** 2026-04-27
+**Date:** 2026-04-27（主体）/ Amended 2026-04-27（§4.3 + §5 + §6 重写）
 **Owner:** HE1780/Weave-Hub fork（知联 WeaveHub）
 **Scope source:** [ADR 0003 — Fork 范围与 upstream 边界](../adr/0003-fork-scope-and-upstream-boundary.md)
 **Backlog source:** [docs/plans/2026-04-27-fork-backlog.md](../plans/2026-04-27-fork-backlog.md)
 **Baseline 时间戳:** 2026-04-27（main 比 origin/main 领先 54 commits）
+
+> **Amendment 2026-04-27（§5 提问后续讨论）:** 维护者明确：
+> **不做 Workflow Executor / 任何 Agent 运行时**。fork 内 Agent 只做
+> "发布、版本、共享、社交对齐"，运行交给下游。ADR 0003 §1.3 已重写为
+> "上线发布前安全 + 审计 + SSO + 功能验证"，P3-1 已抛弃。
+> 原报告 §4.3 G9（"Agent 不能运行是战略空白"）从"必做缺口"重分类为
+> "已决策不做"。新增 Agent–Skill 能力对齐集群（A0–A10）覆盖：
+> archive 前端按钮 / 评论 / star / rating / label / tag / report /
+> download / CLI 拉取 / promotion / 统计。详见 fork-backlog
+> "🆕 Agent–Skill 能力对齐集群" 段。
 
 ---
 
@@ -138,14 +148,15 @@
 | **G7** | Agent star / rating **完全没有** | P2-1 | ~1 天（mirror Skill 模式）|
 | **G8** | **没跑过完整浏览器烟雾测试** —— `/`（最新视觉）、`/my-weave` 的 Tab、`publish/agent` 的新视觉、登录态切换、agent-detail 与 review inbox 全链路从未在真浏览器跑通 | 跨多 plan | ~0.5 天，但在 G1 提交完之前不该跑（视觉还在变）|
 
-### 4.3 长期 / 战略缺口（fork 自有路线 §1.3）
+### 4.3 长期 / 战略缺口
 
-| # | 缺口 | 对应 backlog | 风险 |
+| # | 缺口 | 对应 backlog | 状态 / 风险 |
 |---|---|---|---|
-| **G9** | **Workflow Executor / Agent 实际运行时**完全空白 | P3-1 | **战略性**：当前已发布的 Agent 包**不能运行**，"知联 WeaveHub" 主张的 Agent 主线产品价值闭环未通；ADR 0003 §1.3 的核心承诺空悬 |
+| ~~**G9**~~ | ~~Workflow Executor / Agent 实际运行时~~ | ~~P3-1~~ | **❌ 已决策不做（2026-04-27）**：fork 内 Agent 只做 registry，运行交给下游。ADR 0003 §1.3 重写后，此项从"战略空白"出列。如未来重启需走独立 ADR 0005 |
 | **G10** | Validator 规则链扩展（依赖白名单 / workflow.yaml schema / 可执行权限） | P3-2b | 安全发布的纵深防御薄；目前只有 Basic（密钥 + 占位符）|
 | **G11** | Agent 后端搜索的 ILIKE 撑不住规模 | P3-3 | 数据量小不显，量上去会变慢；同时 P0-2 已知"`Page.totalElements` 反映 raw repo total"是 visibility 后过滤的副作用 |
-| **G12** | "Agent 评论"决策点在 brainstorm 之前——**polymorphism 还是新表**没定 | P1-2 前置 | G6 启动前必须先解决，否则 plan 写不出 |
+| **G12** | "Agent 评论"决策点在 brainstorm 之前——**polymorphism 还是新表**没定 | A1（原 P1-2 改名）前置 | A1 启动前必须先解决，否则 plan 写不出 |
+| **G16** | **Agent–Skill 能力对齐集群（11 项 A0–A10）整体未启动** | fork-backlog "Agent–Skill 能力对齐" | **新主线**：替代原 G9 成为 fork 路线下一阶段重心。详见 §5 推荐执行顺序 |
 
 ### 4.4 工程治理 / Tech debt
 
@@ -157,42 +168,45 @@
 
 ---
 
-## 5. 推荐下一步
+## 5. 推荐下一步（2026-04-27 Amendment 后重排）
 
 **P0（立刻做，今天 / 明天）：**
 
-1. **解决 G1**：把工作树拆成 5 个主题 commit，避免丢失。建议顺序：
-   - C1: footer 外链补全 + layout 切 LandingFooter（含 layout.test 同步）
-   - C2: resource-card / landing-{hot,recent,workspace} 卡片可读性精修
-   - C3: my-weave 改 Tab 化
-   - C4: publish-agent 视觉对齐 publish + 测试
-   - C5: 把 4 个 plan 文档（agents-frontend-mvp / comments-feature-requirements / agent-list-search 等）入历史
-2. **G3 / G4**：删 `registry-skill.tsx`、加 `.gitignore`、归档/删 `docs/todo.md`
-3. **G2**：归档 `docs/todo.md` 到 `docs/_archive/2026-pre-fork-todo.md` 并加 README 注明"已被 fork-backlog 取代"
-4. 提交后运行**完整浏览器烟雾测试（G8）**，覆盖：登录前/后 `/`、`/my-weave` Tab 切换、`/dashboard/publish/agent` 新版、`/agents` 搜索 + 筛选、`/agents/$ns/$slug`、`/dashboard/agent-reviews` 审核详情
-5. `git push origin main`（解决 G13），把 54 commits 推到远端
+1. ✅ **G1 已完成（commits db4b5f7b → 06e8829a，5 个主题 commit）**——工作树拆 5 commit 全部入历史
+2. **G3 / G4 / G2 收尾**：删 `registry-skill.tsx`、加 `.gitignore`、归档 `docs/todo.md` 到 `docs/_archive/`
+3. **完整浏览器烟雾（G8）**：登录前/后 `/`、`/my-weave` Tab 切换、`/dashboard/publish/agent` 新版、`/agents` 搜索 + 筛选、`/agents/$ns/$slug`、`/dashboard/agent-reviews` 审核详情
+4. **G13**：`git push origin main` 把 60 commits 推到远端
 
-**P1（本周）：**
+**P1（本周，按 fork-backlog A0 → A1 → A2/A3/A6 顺序）：**
 
-6. **G5**：Agent archive/unarchive 前端按钮（~0.5 天，无前置依赖）—— 这是 P2-2 唯一缺口
-7. **G7**：Agent star / rating 全栈（~1 天，mirror Skill 模式现成）
+5. **A0**（原 G5）：Agent archive/unarchive 前端按钮 ~0.5 天 —— 后端齐前端缺，无前置
+6. **A1**（原 G6/P1-2）：Agent 评论 —— 先 brainstorm（解决 G12，polymorphism vs 新表）→ ADR 0004 → plan → 实施 ~5 天
+7. **A2 + A3**（原 G7）：Agent star + rating，mirror Skill 模式 ~1-2 天，可与 A6 并行
 
-**P2（下一周或之后，需先决策）：**
+**P2（下两周）：**
 
-8. **G12 → G6**：Agent 评论先做一次 1 小时 brainstorm，决定 polymorphism / 新表，写 ADR 0004，再写 plan，再实施（总 ~5 天）
-9. **G10**：P3-2b validator 链扩展，独立 brainstorm 锁 scope
+8. **A6**：Agent report（~0.5-1 天，与 A2/A3 同期）
+9. **A4 + A5**：Agent label + tag —— A4 先 brainstorm 决定共享 vocabulary 还是隔离，A5 跟随
+10. **G10 / P3-2b**：validator 规则链扩展，独立 brainstorm 锁 scope
 
-**P3（战略，独立 brainstorm + ADR）：**
+**P3（中长期）：**
 
-10. **G9**：Workflow Executor 子项目——这是 fork 路线 §1.3 最大空白，且体量最大（沙箱 / 超时 / 配额 / 审计 / workflow.yaml schema 收敛），建议**先写 ADR 0005 锁 scope，再决定是否启动**
+11. **A7 → A8**：Agent download → CLI 协议拉取（A7 先决定包格式，A8 mirror ClawHub）
+12. **A9 / A10**：Agent promotion 推荐位 + 下载 / 查看统计
+13. **G11 / P3-3**：Agent 后端搜索切到 GIN 索引（数据量上来再做）
+
+**已抛弃（不再排期）：**
+
+- ~~G9 / P3-1：Workflow Executor~~ —— fork 决策不做，运行交给下游
 
 ---
 
-## 6. 总体判断
+## 6. 总体判断（2026-04-27 Amendment 后）
 
 - **代码层面非常健康**：641 web + 473 backend 测试 0 fail；P0-1a / P0-1b / P0-2 / P2-2（后端）/ P2-4 / P3-2a 全部按期落地；fork 自有路线 §1.1 + §1.2 大部分到位。
-- **工程治理有积累的小债**：未提交工作树、过时 todo、孤立文件、未推送 commit、未跑过完整烟雾。**今日 0.5 天就能全部清掉**。
-- **战略空白集中在 §1.3**：已发布的 Agent **不能运行**——这是 fork 与 upstream 的最大差异化承诺，但目前 0 进度。`Workflow Executor` 应该在下一阶段进入"独立 ADR + 独立 brainstorm"流程。
-- **"Agent 评论"是中期 cluster 的入口**：需要先 brainstorm 决断 polymorphism vs 新表（G12），再开 ADR 0004，再写 plan。这条阻塞 backlog P1-2。
+- **工程治理小债已清一半**：5 主题 commit 已合（db4b5f7b → 06e8829a），剩 G2/G3/G4 + push + 烟雾测试。
+- **战略方向已锁定**：fork 不做运行时。Agent 在 registry 层与 Skill 完全等价是下一阶段主线（A0–A10 共 11 项，全部 mirror Skill 现成模式，工作量可预估）。
+- **关键决策点**：A1（评论 polymorphism vs 新表）+ A4（label 共享 vs 隔离）是两个需先 brainstorm 的入口，其余 9 项基本是 mirror。
+- **ADR 0003 §1.3 已对齐现实**：从空承诺"运行时安全"改为可衡量的"上线发布前安全 + 审计 + SSO + 功能验证"。
 
-**Check Passed**——baseline 实测、未提交工作清单、ADR / backlog 三方对齐分析完成，缺口可执行、可估时、按 ADR 0003 子条款归位。
+**Check Passed**——baseline 实测、未提交工作清单、ADR 0003 / fork-backlog / 诊断报告 三方对齐已完成；战略缩窄已落到文档，下一阶段执行路径清晰可估。
