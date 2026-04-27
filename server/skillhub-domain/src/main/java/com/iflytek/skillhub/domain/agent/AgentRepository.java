@@ -34,5 +34,7 @@ public interface AgentRepository {
 
     Agent save(Agent agent);
 
+    void delete(Agent agent);
+
     void flush();
 }

@@ -24,5 +24,9 @@ public interface AgentVersionRepository {
 
     AgentVersion save(AgentVersion agentVersion);
 
+    void delete(AgentVersion agentVersion);
+
+    void deleteByAgentId(Long agentId);
+
     void flush();
 }

@@ -62,6 +62,8 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/agents/*/*/star"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/agents/*/*/rating"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/agents/*/*/rating"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.DELETE, "/api/v1/agents/*/*"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.DELETE, "/api/web/agents/*/*"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/agents"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/agents"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/agents/*/*"),
