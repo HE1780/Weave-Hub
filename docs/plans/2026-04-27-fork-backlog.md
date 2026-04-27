@@ -96,36 +96,31 @@
 
 ---
 
-### P0-2: Agent 列表搜索 + 筛选
+### ~~P0-2: Agent 列表搜索 + 筛选~~ ✅ 已完成 (2026-04-27)
 
-**ADR 0003 §1.1** · 估时 ~1 天 · 前后端 · 状态:**未启动**
+**ADR 0003 §1.1** · 实际 ~2.5 小时 · 前后端
+**Plan:** [docs/plans/2026-04-27-agent-list-search.md](2026-04-27-agent-list-search.md)
+**Range:** `93bfff15` (backend) → `da7e4c68` (frontend) · 2 commits
+**Tests:** backend 468 → 473 (+5 controller + 4 service) · web 632 → 641 (+2 hook + 4 page + 3 noop noted)
 
-不做完整的搜索文档表(那是 P3),先用 PostgreSQL `ILIKE` 把 list 端点扩参,把"看不到搜索框"
-这件事修掉。
+Visibility 语义采用 Q4=B "我能看到的全部":匿名仅 PUBLIC;登录默认 PUBLIC + 自己的
+PRIVATE/NAMESPACE_ONLY;visibility 参数进一步收窄。Slug→id 解析在 controller,unknown slug → 404。
+Service 层用 `AgentVisibilityChecker.canAccess` 做 post-filter,DB 层只做 keyword + namespace 预过滤
+(JPQL `LOWER(...) LIKE LOWER(...)` 跨方言)。
 
-代码现状(2026-04-27 audit):
-- [AgentController.listPublic](../../server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/portal/AgentController.java) 当前只有 `page`/`size` 两个参数,无 `q`/`namespace`/`visibility`
-- [AgentService](../../server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/agent/service/AgentService.java) 没有 ILIKE 查询方法
-- [AgentRepository](../../server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/agent/AgentRepository.java) 现有 `findByVisibilityAndStatus` 但没有 keyword 变体
-- 整条链路要新写
+**已知局限**(P0 阶段接受,P3-3 重做时解决):
+- `Page.totalElements` 反映 raw repo total,不是 post-filter total;前端可能显示
+  "X 结果" 但实际可见行数少几个(visibility 过滤掉)
+- 无 ranking / highlight,纯 ILIKE
+- 无 autocomplete,debounce 300ms (`useDebounce` helper)
 
-范围:
+旧描述(已落地):
 - 后端:`GET /api/web/agents` 增加 `q` (display_name + description ILIKE)、
-  `namespace` (slug 过滤)、`visibility` 三个查询参数,默认仍只返回 `PUBLISHED` 版本
-- 后端:`AgentService.searchPublic` 新方法 + `AgentRepository` 加 keyword query method
-- 前端:`agents.tsx` 增加搜索 input + namespace 选择器 + visibility 单选
-- hook `useAgents` 接受参数,query key 加入参数 hash
-- 安全策略不变(仍 `permitAll(GET)`)
-
-不在范围:
-- 排序选项(默认 created_at desc 即可)
-- 高亮匹配片段
-- 后端独立的 `agent_search_document` 表(P3,数据量大才有必要)
-
-验收:
-- 后端测试新增 ≥3 个(无参 / 带 q / 带 namespace+visibility)
-- 前端搜索框有 debounce ≥300ms
-- 测试通过
+  `namespace` (slug 过滤)、`visibility` 三个查询参数 ✅
+- 后端:`AgentService.searchPublic` 新方法 + `AgentRepository` 加 keyword query method ✅
+- 前端:`agents.tsx` 增加搜索 input + namespace 选择器 + visibility 单选(仅登录可见) ✅
+- hook `useAgents` 接受参数,query key 加入参数 hash ✅
+- 安全策略不变(仍 `permitAll(GET)`) ✅
 
 ---
 

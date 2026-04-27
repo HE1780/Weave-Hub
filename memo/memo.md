@@ -696,3 +696,122 @@ login → re-test `/` to see workspace authenticated state.
 Backlog after P0-1b:
 - Update fork backlog to mark P0-1a + P0-1b ✅, refresh visual baseline notes
 - P0-2 (Agent list search backend + frontend) — next per backlog priority
+
+---
+
+## 2026-04-27 — Landing 首页卡片可读性优化（留白 / 行数 / 图标）
+
+**范围**: `web/src/shared/components`（仅首页资源卡片链路）
+
+### 本次交付
+
+- 两种卡片（`featured` + `compact`）统一支持：标题 `2` 行、附文 `2` 行（`line-clamp-2`）。
+- `compact` 卡片新增附文展示（原来只显示标题）。
+- 卡片留白微调：`compact` 内边距从 `!p-6` 提到 `!p-7`，`featured` 提到 `!p-8`，并优化图标与文本间距。
+- 图标策略从“随机池 hash”改为“按类型固定”：
+  - `skill` → `Wand2`
+  - `agent` → `Bot`
+- `LandingRecentSection` 补齐卡片附文字段映射（skill 用 `summary`，agent 用 `description`）。
+
+### 影响文件
+
+- `web/src/shared/components/resource-card.tsx`
+- `web/src/shared/components/landing-hot-section.tsx`
+- `web/src/shared/components/landing-recent-section.tsx`
+- `web/src/shared/components/resource-card.test.tsx`（同步断言，compact 现在应显示附文）
+
+### 验证
+
+- `pnpm vitest run src/shared/components/resource-card.test.tsx src/pages/landing.test.tsx` → **7/7 通过**
+- 以上 4 个变更文件 VS Code diagnostics 均为 0
+
+### 追加调整（同日）
+
+- 用户反馈“热门推荐图标和文字不在一行、两种卡片对齐感不足”后，`featured` 结构已改为与 `compact` 同骨架：`图标 + 标题(同一行) + type tag`，并保持附文/底部信息区节奏不变。
+- 图标策略改回“稳定随机（基于 id/name hash）”，保留多样性且不抖动。
+- 回归验证：`pnpm vitest run src/shared/components/resource-card.test.tsx src/pages/landing.test.tsx` 仍 **7/7 通过**。
+
+---
+
+## 2026-04-27 — 全局 Footer 文档/社区链接升级为真实地址
+
+**范围**: `web/src/shared/components/landing-footer.tsx`
+
+### 本次交付
+
+- 基于仓库 `README.md` 中的官方地址，将 Footer 文档/社区链接由“站内兜底跳转”升级为真实外链：
+  - API References → `https://zread.ai/iflytek/skillhub`
+  - Cloud Sync / Integration → `https://iflytek.github.io/skillhub/`
+  - Security → `https://github.com/iflytek/skillhub/security`
+  - Open Source → `https://github.com/iflytek/skillhub`
+  - Forum → `https://github.com/iflytek/skillhub/discussions`
+  - Support → `https://github.com/iflytek/skillhub/issues`
+- 为外链统一补充 `target="_blank"` 与 `rel="noopener noreferrer"`。
+- 隐私条款继续保留站内路由（`/privacy`），与现有页面一致。
+
+### 验证
+
+- `pnpm vitest run src/shared/components/landing-footer.test.tsx src/app/layout.test.ts src/pages/landing.test.tsx` → **6/6 通过**
+- `landing-footer.tsx` diagnostics: **0**
+
+---
+
+## 2026-04-27 — P0-2: Agent 列表搜索 + 筛选
+
+**Plan:** [docs/plans/2026-04-27-agent-list-search.md](../docs/plans/2026-04-27-agent-list-search.md)
+**ADR:** 0003 §1.1 (Agent management)
+**Range:** `93bfff15` (backend) → `da7e4c68` (frontend) · 2 commits
+
+### Brainstorming 决策
+
+- Q1=B：`q` ILIKE 字段 = display_name + description（不含 slug）
+- Q2=C：未登录传 `visibility=PRIVATE/NAMESPACE_ONLY` 时返空列表（不报错，不泄露存在性）—— 自然落到 `AgentVisibilityChecker` 的 anonymous 分支
+- Q3=A：`namespace` 参数 = slug，slug 不存在 → 404（与 `getOne` 一致）
+- Q4=B：**"我能看到的全部"语义** —— 匿名 PUBLIC only，登录 PUBLIC + 自己有权限的 PRIVATE/NAMESPACE_ONLY，可选 `visibility` 参数收窄
+
+### 架构
+
+DB 层做 keyword + namespace 预过滤（JPQL `LOWER(...) LIKE LOWER(...)`，跨方言），应用层做 visibility 过滤（复用 `AgentVisibilityChecker.canAccess`）。Trade-off：`Page.totalElements` 反映 raw repo total 不是 post-filter total，前端可能"X 结果实际可见 X-N"。P0 接受，P3-3 上 `agent_search_document` 时重做。
+
+### 改动清单
+
+**Backend (commit `93bfff15`):**
+- `AgentRepository.searchPublic(keyword, namespaceId, pageable)` port + JPA `@Query` impl
+- `AgentService.searchPublic(...)` 应用 visibility filter，旧 `listPublic(Pageable)` deprecate 但保留
+- `AgentController.listPublic` 接 `q`/`namespace`/`visibility` query params + slug→id 解析 + `parseVisibility`
+- `AgentControllerTest`：5 → 10（+5：q 传播 / namespace 解析 / 404 unknown / visibility 传播 / 400 invalid）
+- `AgentServiceTest`：6 → 10（+4：anonymous PUBLIC only / owner PRIVATE / namespace member / visibility filter narrows）
+- 后端套件：468 → **473 全绿**
+
+**Frontend (commit `da7e4c68`):**
+- `agentsApi.list` 接 `q`/`namespace`/`visibility`，导出 `AgentVisibilityFilter` 类型
+- `useAgents` 接 `UseAgentsParams`，query key 含 params 对象（不同参数→不同 cache）
+- `agents.tsx` 加 search Input（`useDebounce(rawQ, 300)`）+ namespace Select（`useMyNamespaces` 数据）+ visibility Select（**仅登录可见**）
+- 空状态分支：filter 激活 + 0 结果 → `agents.search.noResults`，否则原 emptyTitle/emptyDescription
+- i18n：`agents.search.{placeholder,allNamespaces,allVisibility,visibility{Public,Namespace,Private},noResults}` 7 keys × 2 语言
+- `useAgents.test.tsx`：2 → 4（+2：参数传播 / cache key 隔离）
+- 新增 `agents.test.tsx`：4 cases（debounce / visibility-selector auth-gating / noResults state）
+- web 套件：632 → **641 全绿**
+
+### Plan 偏离
+
+1. **Plan Task 7 (`useDebouncedValue` helper) SKIPPED** —— pre-flight 发现 `web/src/shared/hooks/use-debounce.ts` 已 export `useDebounce`（同样签名 `<T>(value, delay=300)`）。直接 import 复用，没新建文件。
+2. **Plan 写"6 个 commit 拆分"实际 2 个 commit** —— 决定 backend 一个 commit（repo + service + controller + 两侧 test 一起，逻辑闭合），frontend 一个 commit。这避免了"backend 改了 controller 但没接 service 测试"那种中间态出现在 history 里。也按 lessons.md 第 5 条减少 git index 暴露窗口。
+3. **Backend baseline 实际 468 不是 plan 原写的"460"或"635"** —— pre-flight 时已发现并把 plan 数字同步成 468/632。
+
+### 已知遗留
+
+- 分页 over-count（plan §"Known limitations" #1）—— 留待 P3-3
+- 无 ranking / highlight / autocomplete —— 留待 P3-3
+- **`agents.tsx` Hero 视觉块还是旧蓝紫 gradient**（`from-purple-500/10 to-blue-500/10` + `bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent`）—— P0-1a tokens 已切绿但 agents 页 Hero 没回归。**不属于 P0-2 scope**，下次 visual sweep 时一并处理。
+
+### How to resume
+
+```bash
+cd /Users/lydoc/projectscoding/skillhub
+cd server && ./mvnw test 2>&1 | tail -3   # 473/473
+cd /Users/lydoc/projectscoding/skillhub/web && pnpm vitest run 2>&1 | tail -3   # 641/641
+cd /Users/lydoc/projectscoding/skillhub/web && pnpm tsc --noEmit 2>&1 | grep -v "registry-skill.tsx" | tail -3   # clean
+```
+
+P0 全部清空。下一站候选（按 backlog 顺序）：P2-1 Agent star + rating，或独立 brainstorm 启动 P1-2 Agent 评论 / P3-1 Workflow Executor / P3-3 Agent search FTS。
