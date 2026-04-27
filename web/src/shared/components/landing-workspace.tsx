@@ -1,14 +1,19 @@
 import { useNavigate } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 import { Grid, User as UserIcon, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
 import { useMySkills } from '@/shared/hooks/use-user-queries'
-import { useAgents } from '@/features/agent/use-agents'
+import { agentsApi, type AgentDto } from '@/api/client'
 
 /**
  * "工作台" right rail (col-span-4). Guest sees sign-in CTA; authenticated user
  * sees their top 3 skills + top 3 agents. Visual mirrors prototype lines 293-368.
+ *
+ * Both data hooks are gated on isLoggedIn to avoid 401-spamming the auth
+ * endpoint for guests, and the agent list is filtered by `ownerId === user.userId`
+ * (mirrors my-weave.tsx) so we surface the user's own agents, not all public ones.
  */
 export function LandingWorkspace() {
   const { t } = useTranslation()
@@ -16,12 +21,19 @@ export function LandingWorkspace() {
   const navigate = useNavigate()
   const isLoggedIn = !!user
 
-  const { data: mySkillsPage } = useMySkills({ page: 0, size: 3 })
-  const { data: agentsList } = useAgents()
-  const mySkills = isLoggedIn ? (mySkillsPage?.items?.slice(0, 3) ?? []) : []
-  const myAgents = isLoggedIn
-    ? (agentsList ?? []).filter((a) => a.namespace).slice(0, 3)
-    : []
+  const { data: mySkillsPage } = useMySkills({ page: 0, size: 3 }, isLoggedIn)
+  const { data: ownAgentsList } = useQuery({
+    queryKey: ['agents', 'my', user?.userId],
+    queryFn: async () => {
+      const page = await agentsApi.list({ page: 0, size: 200 })
+      return page.items
+    },
+    enabled: isLoggedIn,
+  })
+  const mySkills = mySkillsPage?.items?.slice(0, 3) ?? []
+  const myAgents = (ownAgentsList ?? [])
+    .filter((a: AgentDto) => a.ownerId === user?.userId)
+    .slice(0, 3)
 
   return (
     <section className="lg:col-span-4 h-full">
@@ -98,12 +110,17 @@ export function LandingWorkspace() {
                   </div>
                   {myAgents.map((agent) => (
                     <div
-                      key={agent.name}
-                      onClick={() => navigate({ to: `/agents/${agent.namespace ?? 'global'}/${agent.name}` })}
+                      key={agent.id}
+                      onClick={() =>
+                        navigate({
+                          to: '/agents/$namespace/$slug',
+                          params: { namespace: agent.namespace, slug: agent.slug },
+                        })
+                      }
                       className="flex items-center justify-between p-4 rounded-2xl bg-white/70 hover:bg-white border border-transparent hover:border-brand-200 transition-all cursor-pointer group shadow-sm"
                     >
                       <span className="text-sm font-bold text-slate-700 group-hover:text-brand-600 uppercase tracking-tight">
-                        {agent.name}
+                        {agent.displayName}
                       </span>
                       <ChevronRight size={16} className="text-slate-300 group-hover:text-brand-500" />
                     </div>

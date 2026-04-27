@@ -23,10 +23,14 @@ async function submitPromotion(params: { sourceSkillId: number; sourceVersionId:
   })
 }
 
-export function useMySkills(params: { page?: number; size?: number; filter?: string } = {}) {
+export function useMySkills(
+  params: { page?: number; size?: number; filter?: string } = {},
+  enabled = true,
+) {
   return useQuery({
     queryKey: ['skills', 'my', params],
     queryFn: () => getMySkills(params),
+    enabled,
   })
 }
 
