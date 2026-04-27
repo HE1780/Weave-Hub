@@ -103,7 +103,7 @@
     "ctaTitle": "Ready to Get Started?",
     "ctaDescription": "Start your local development environment with a single command and experience the complete skill management workflow",
     "ctaButton": "Try Now",
-    "footerLicense": "© 2026 SkillHub. Apache License 2.0.",
+    "footerLicense": "© 2026 WeaveHub. Apache License 2.0.",
     "footerDocs": "Docs",
     "footerGithub": "GitHub",
     "footerCommunity": "Community"
@@ -121,7 +121,7 @@
     "quickStart": {
       "title": "Quick Start",
       "subtitle": "快速开始",
-      "description": "Get started with SkillHub in just a few simple steps",
+      "description": "Get started with WeaveHub in just a few simple steps",
       "tip": "💡 Tip: Visit the skill detail page for one-click install commands with environment variables",
       "steps": {
         "configureEnv": {
@@ -171,7 +171,7 @@
     "clear": "Clear search"
   },
   "login": {
-    "title": "Login to SkillHub",
+    "title": "Login to WeaveHub",
     "subtitle": "Choose a method to continue",
     "tabPassword": "Password",
     "tabOAuth": "OAuth",
@@ -191,7 +191,7 @@
     "oauthHint": "After OAuth authentication, you will be automatically redirected back to this site.",
     "passwordCompatHint": "This deployment has the password compatibility layer enabled. The form will route to {{name}} instead of the fixed local account endpoint.",
     "enterpriseSsoTitle": "Enterprise SSO",
-    "enterpriseSsoHint": "This deployment has the compatibility layer enabled. If your browser already has a {{name}} session, you can try establishing a SkillHub session directly.",
+    "enterpriseSsoHint": "This deployment has the compatibility layer enabled. If your browser already has a {{name}} session, you can try establishing a WeaveHub session directly.",
     "enterpriseSsoAutoHint": "This deployment has automatic {{name}} probing enabled. If it does not succeed, you can continue with the standard login methods.",
     "enterpriseSsoAction": "Try {{name}}",
     "enterpriseSsoSubmitting": "Trying {{name}}...",
@@ -1170,11 +1170,11 @@
     "community": "Community",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "copyright": "© 2026 SkillHub. All rights reserved."
+    "copyright": "© 2026 WeaveHub. All rights reserved."
   },
   "publish": {
     "title": "Publish Skill",
-    "subtitle": "Upload skill package to SkillHub",
+    "subtitle": "Upload skill package to WeaveHub",
     "reviewNotice": {
       "title": "Review Notice",
       "description": "Submitted skill packages require admin review before publication."
