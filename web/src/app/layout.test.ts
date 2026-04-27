@@ -1,12 +1,16 @@
-import { describe, expect, it, vi } from 'vitest'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Layout is a component-only file with no exported pure functions or constants.
 // We verify that the named export exists for the router to consume.
 
+const useRouterStateMock = vi.fn()
+
 vi.mock('@tanstack/react-router', () => ({
   Outlet: () => null,
   Link: ({ children }: { children: unknown }) => children,
-  useRouterState: () => ({ pathname: '/', resolvedPathname: '/' }),
+  useRouterState: () => useRouterStateMock(),
 }))
 
 vi.mock('react-i18next', async () => {
@@ -47,11 +51,24 @@ vi.mock('./layout-main-content', () => ({
   }),
 }))
 
+vi.mock('@/shared/components/landing-footer', () => ({
+  LandingFooter: () => 'landing-footer-component',
+}))
+
 import { Layout } from './layout'
 
 describe('Layout', () => {
+  beforeEach(() => {
+    useRouterStateMock.mockReturnValue({ pathname: '/', resolvedPathname: '/' })
+  })
+
   it('exports a named Layout component function', () => {
     expect(typeof Layout).toBe('function')
     expect(Layout.name).toBe('Layout')
+  })
+
+  it('renders landing footer on landing route through layout', () => {
+    const html = renderToStaticMarkup(createElement(Layout))
+    expect(html).toContain('landing-footer-component')
   })
 })

@@ -15,19 +15,14 @@ vi.mock('@/shared/components/landing-recent-section', () => ({
 vi.mock('@/shared/components/landing-workspace', () => ({
   LandingWorkspace: () => <div data-testid="workspace">workspace</div>,
 }))
-vi.mock('@/shared/components/landing-footer', () => ({
-  LandingFooter: () => <div data-testid="footer">footer</div>,
-}))
-
 afterEach(() => cleanup())
 
 describe('LandingPage', () => {
-  it('renders 4 sections + footer in correct order', () => {
+  it('renders 4 content sections in correct order', () => {
     const { container } = render(<LandingPage />)
     expect(container.textContent).toContain('hero')
     expect(container.textContent).toContain('hot')
     expect(container.textContent).toContain('recent')
     expect(container.textContent).toContain('workspace')
-    expect(container.textContent).toContain('footer')
   })
 })

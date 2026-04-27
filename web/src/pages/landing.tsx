@@ -2,7 +2,6 @@ import { LandingHero } from '@/shared/components/landing-hero'
 import { LandingHotSection } from '@/shared/components/landing-hot-section'
 import { LandingRecentSection } from '@/shared/components/landing-recent-section'
 import { LandingWorkspace } from '@/shared/components/landing-workspace'
-import { LandingFooter } from '@/shared/components/landing-footer'
 
 /**
  * 知连 WeaveHub landing page — 4-section IA per spec §3.1.
@@ -20,7 +19,6 @@ export function LandingPage() {
           <LandingWorkspace />
         </div>
       </main>
-      <LandingFooter />
     </>
   )
 }

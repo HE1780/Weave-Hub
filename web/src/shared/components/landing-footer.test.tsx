@@ -4,6 +4,8 @@ import { render, cleanup } from '@testing-library/react'
 import { I18nextProvider } from 'react-i18next'
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import en from '@/i18n/locales/en.json'
+import zh from '@/i18n/locales/zh.json'
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, ...props }: { children?: React.ReactNode; to?: string; className?: string }) => (
@@ -17,28 +19,10 @@ i18n.use(initReactI18next).init({
   lng: 'zh',
   resources: {
     zh: {
-      translation: {
-        landing: {
-          footer: {
-            tagline: 'WeaveHub 知连:连接每一种智力片段。',
-            documentation: 'Documentation',
-            community: 'Community',
-            links: {
-              apiReferences: 'API References',
-              cloudSync: 'Cloud Sync',
-              security: 'Security',
-              integration: 'Integration',
-              openSource: 'Open Source',
-              forum: 'Forum',
-              privacy: 'Privacy',
-              support: 'Support',
-            },
-            copyright: '© 2026 WEAVEHUB INTELLIGENCE.',
-            version: 'VER 0.1.0',
-            networkReady: 'NETWORK READY',
-          },
-        },
-      },
+      translation: zh,
+    },
+    en: {
+      translation: en,
     },
   },
 })
@@ -57,17 +41,37 @@ describe('LandingFooter', () => {
     expect(brandHeading?.textContent).not.toContain('知连')
   })
 
-  it('renders Documentation and Community columns with 4 links each', () => {
+  it('renders zh footer labels and supports language toggle to en', async () => {
+    await i18n.changeLanguage('zh')
+
     const { container } = render(
       <I18nextProvider i18n={i18n}>
         <LandingFooter />
       </I18nextProvider>,
     )
     const text = container.textContent ?? ''
-    expect(text).toContain('Documentation')
-    expect(text).toContain('Community')
-    expect(text).toContain('API References')
-    expect(text).toContain('Open Source')
-    expect(text).toContain('NETWORK READY')
+    expect(text).toContain('文档')
+    expect(text).toContain('社区')
+    expect(text).toContain('API 参考')
+    expect(text).toContain('开源')
+    expect(text).toContain('网络就绪')
+
+    await i18n.changeLanguage('en')
+    const textAfterSwitch = container.textContent ?? ''
+    expect(textAfterSwitch).toContain('Documentation')
+    expect(textAfterSwitch).toContain('Community')
+    expect(textAfterSwitch).toContain('API references')
+    expect(textAfterSwitch).toContain('Open source')
+    expect(textAfterSwitch).toContain('Network ready')
+  })
+
+  it('uses actionable links instead of hash placeholders', async () => {
+    await i18n.changeLanguage('en')
+    const { container } = render(
+      <I18nextProvider i18n={i18n}>
+        <LandingFooter />
+      </I18nextProvider>,
+    )
+    expect(container.innerHTML).not.toContain('href="#"')
   })
 })

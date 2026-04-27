@@ -10,6 +10,11 @@ import { Layout, Zap, Grid, Sparkles } from 'lucide-react'
  */
 export function LandingFooter() {
   const { t } = useTranslation()
+  const externalLinkClassName = 'hover:text-brand-600 transition-colors'
+  const externalLinkProps = {
+    target: '_blank',
+    rel: 'noopener noreferrer',
+  } as const
 
   return (
     <footer className="mt-40 border-t border-brand-50/50 bg-white/40 backdrop-blur-md pt-20 pb-10 px-6">
@@ -35,26 +40,26 @@ export function LandingFooter() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-2 gap-20">
-          <div className="space-y-8 font-black uppercase tracking-[0.2em] text-[11px]">
-            <h4 className="text-slate-900 border-b-2 border-brand-500 w-fit pb-1">
+          <div className="space-y-8 font-black uppercase tracking-[0.2em] text-[13px]">
+            <h4 className="text-slate-900 text-[14px] border-b-2 border-brand-500 w-fit pb-1">
               {t('landing.footer.documentation')}
             </h4>
             <ul className="space-y-4 text-slate-400">
-              <li><a href="#" className="hover:text-brand-600 transition-colors">{t('landing.footer.links.apiReferences')}</a></li>
-              <li><a href="#" className="hover:text-brand-600 transition-colors">{t('landing.footer.links.cloudSync')}</a></li>
-              <li><Link to="/privacy" className="hover:text-brand-600 transition-colors">{t('landing.footer.links.security')}</Link></li>
-              <li><a href="#" className="hover:text-brand-600 transition-colors">{t('landing.footer.links.integration')}</a></li>
+              <li><a href="https://zread.ai/iflytek/skillhub" className={externalLinkClassName} {...externalLinkProps}>{t('landing.footer.links.apiReferences')}</a></li>
+              <li><a href="https://iflytek.github.io/skillhub/" className={externalLinkClassName} {...externalLinkProps}>{t('landing.footer.links.cloudSync')}</a></li>
+              <li><a href="https://github.com/iflytek/skillhub/security" className={externalLinkClassName} {...externalLinkProps}>{t('landing.footer.links.security')}</a></li>
+              <li><a href="https://iflytek.github.io/skillhub/" className={externalLinkClassName} {...externalLinkProps}>{t('landing.footer.links.integration')}</a></li>
             </ul>
           </div>
-          <div className="space-y-8 font-black uppercase tracking-[0.2em] text-[11px]">
-            <h4 className="text-slate-900 border-b-2 border-brand-500 w-fit pb-1">
+          <div className="space-y-8 font-black uppercase tracking-[0.2em] text-[13px]">
+            <h4 className="text-slate-900 text-[14px] border-b-2 border-brand-500 w-fit pb-1">
               {t('landing.footer.community')}
             </h4>
             <ul className="space-y-4 text-slate-400">
-              <li><a href="#" className="hover:text-brand-600 transition-colors">{t('landing.footer.links.openSource')}</a></li>
-              <li><a href="#" className="hover:text-brand-600 transition-colors">{t('landing.footer.links.forum')}</a></li>
+              <li><a href="https://github.com/iflytek/skillhub" className={externalLinkClassName} {...externalLinkProps}>{t('landing.footer.links.openSource')}</a></li>
+              <li><a href="https://github.com/iflytek/skillhub/discussions" className={externalLinkClassName} {...externalLinkProps}>{t('landing.footer.links.forum')}</a></li>
               <li><Link to="/privacy" className="hover:text-brand-600 transition-colors">{t('landing.footer.links.privacy')}</Link></li>
-              <li><a href="#" className="hover:text-brand-600 transition-colors">{t('landing.footer.links.support')}</a></li>
+              <li><a href="https://github.com/iflytek/skillhub/issues" className={externalLinkClassName} {...externalLinkProps}>{t('landing.footer.links.support')}</a></li>
             </ul>
           </div>
         </div>
