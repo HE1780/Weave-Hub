@@ -2,6 +2,7 @@ package com.iflytek.skillhub.dto;
 
 import com.iflytek.skillhub.domain.agent.Agent;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public record AgentResponse(
@@ -13,6 +14,9 @@ public record AgentResponse(
         String visibility,
         String ownerId,
         String status,
+        Integer starCount,
+        BigDecimal ratingAvg,
+        Integer ratingCount,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -26,6 +30,9 @@ public record AgentResponse(
                 agent.getVisibility().name(),
                 agent.getOwnerId(),
                 agent.getStatus().name(),
+                agent.getStarCount(),
+                agent.getRatingAvg(),
+                agent.getRatingCount(),
                 agent.getCreatedAt(),
                 agent.getUpdatedAt()
         );
