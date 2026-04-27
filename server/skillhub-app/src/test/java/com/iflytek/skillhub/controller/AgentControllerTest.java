@@ -8,6 +8,7 @@ import com.iflytek.skillhub.domain.agent.service.AgentService;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,15 +19,20 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -151,6 +157,58 @@ class AgentControllerTest {
     }
 
     @Test
+    void getOne_anonymous_response_has_canManageLifecycle_false() throws Exception {
+        Agent a = agent(7L, 1L, "agent-a");
+        when(agentService.getByNamespaceAndSlug(eq(1L), eq("agent-a"), isNull(), any(), any()))
+                .thenReturn(a);
+        when(agentService.canManageLifecycle(eq(a), isNull(), any())).thenReturn(false);
+
+        mockMvc.perform(get("/api/web/agents/global/agent-a"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.canManageLifecycle").value(false));
+    }
+
+    @Test
+    void getOne_owner_response_has_canManageLifecycle_true() throws Exception {
+        Agent a = agent(7L, 1L, "agent-a");
+        when(agentService.getByNamespaceAndSlug(eq(1L), eq("agent-a"), eq("owner-1"), any(), any()))
+                .thenReturn(a);
+        when(agentService.canManageLifecycle(eq(a), eq("owner-1"), any())).thenReturn(true);
+
+        mockMvc.perform(get("/api/web/agents/global/agent-a")
+                        .with(authentication(auth("owner-1", Set.of()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.canManageLifecycle").value(true));
+    }
+
+    @Test
+    void getOne_namespace_admin_response_has_canManageLifecycle_true() throws Exception {
+        Agent a = agent(7L, 1L, "agent-a");
+        when(agentService.getByNamespaceAndSlug(eq(1L), eq("agent-a"), eq("ns-admin"), any(), any()))
+                .thenReturn(a);
+        when(agentService.canManageLifecycle(eq(a), eq("ns-admin"), any())).thenReturn(true);
+
+        mockMvc.perform(get("/api/web/agents/global/agent-a")
+                        .requestAttr("userNsRoles", Map.of(1L, NamespaceRole.ADMIN))
+                        .with(authentication(auth("ns-admin", Set.of()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.canManageLifecycle").value(true));
+    }
+
+    @Test
+    void getOne_stranger_response_has_canManageLifecycle_false() throws Exception {
+        Agent a = agent(7L, 1L, "agent-a");
+        when(agentService.getByNamespaceAndSlug(eq(1L), eq("agent-a"), eq("some-user"), any(), any()))
+                .thenReturn(a);
+        when(agentService.canManageLifecycle(eq(a), eq("some-user"), any())).thenReturn(false);
+
+        mockMvc.perform(get("/api/web/agents/global/agent-a")
+                        .with(authentication(auth("some-user", Set.of()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.canManageLifecycle").value(false));
+    }
+
+    @Test
     void list_versions_returns_summary_projection() throws Exception {
         when(agentService.getByNamespaceAndSlug(eq(1L), eq("agent-a"), isNull(), any(), any()))
                 .thenReturn(agent(7L, 1L, "agent-a"));
@@ -177,5 +235,14 @@ class AgentControllerTest {
                 .andExpect(jsonPath("$.data.version").value("1.0.0"))
                 .andExpect(jsonPath("$.data.soulMd").value("soul"))
                 .andExpect(jsonPath("$.data.workflowYaml").value("wf"));
+    }
+
+    private UsernamePasswordAuthenticationToken auth(String userId, Set<String> platformRoles) {
+        PlatformPrincipal principal = new PlatformPrincipal(
+                userId, userId, userId + "@example.com", null, "test", platformRoles);
+        var authorities = platformRoles.stream()
+                .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                .toList();
+        return new UsernamePasswordAuthenticationToken(principal, "n/a", authorities);
     }
 }

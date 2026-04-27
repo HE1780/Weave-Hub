@@ -75,6 +75,22 @@
 
 ---
 
+## 2026-04-27 — Spring Boot 服务运行时跑 mvn clean,nested jar 类懒加载会炸
+
+**症状**: 前端点击 prompts 卡片跳到 skill-detail,toast 弹 "服务器错误,请稍后重试"。日志显示 `GET /api/web/skill-versions/14/comments` 500;栈是 `NoClassDefFoundError: org/hibernate/event/spi/ClearEvent`(以及 `ConcreteSqmSelectQueryPlan$1` 也加载失败)。诡异处是这两个类在 hibernate-core-6.4.4.Final.jar 里**确实存在**,启动时 `org.hibernate.Version` 也打印 `6.4.4.Final`。
+
+**根因**: 后端进程启动时打开的是 `target/skillhub-app-0.1.0.jar`(Spring Boot 的 fat jar),期间有人跑了 `mvn clean` 或重打包,把那个 jar 文件删掉/换掉了。Spring Boot 的 `LaunchedURLClassLoader` 加载 nested jar (`BOOT-INF/lib/*.jar`) 是**懒加载**的:启动时已加载的类继续可用,但首次需要的类(像 `ClearEvent`,只有 `@Transactional(readOnly=true)` 收尾时调 `entityManager.clear()` 才会触发加载)就找不到了——因为外层 jar 已经不在了,nested entry 也就读不到。`lsof` 显示进程在抓 `skillhub-app-0.1.0.jar.original`(thin jar,559K),fat jar 文件 inode 没了,这是关键证据。
+
+**修复**: 重打包 + 重启进程(`./mvnw -DskipTests package` 然后重启 `java -jar`)。源码无需改动。
+
+**规则**:
+- **Spring Boot 服务运行期间不要 `mvn clean`,也不要重打包**。要么先 `kill` 服务再 clean,要么用 `-Dmaven.clean.skip=true` 之类方式跳过 clean。
+- 看到 `NoClassDefFoundError` + `ClassNotFoundException` 找的是某个**应该存在**的依赖里的类,且日志开头 `org.hibernate.Version`/`Started`Application 之类启动信息正常 —— 第一反应**不是**升降级依赖,而是 `lsof -p <pid> | grep jar` 看看 fat jar 文件还在不在。
+- 大多数请求看起来正常、只有少数偶发 500 也是这个症状的特征:经常用的类启动时已加载,只有冷门 code path 触发的类才会现场加载现场失败。
+- Backend 重启完一定要 curl 复跑一次原失败 endpoint 验证 200,而不是只看启动日志没报错就完事。
+
+---
+
 ## 2026-04-27 — 并行 claude 实例之间会抢 git index
 
 **症状**: 在 P3-2a → P2-2 → P2-4 三连任务里，P2-2 用 `git add <files...>` 暂存了七个后端文件后，紧接着 `git commit -m '...'` 命令报 "no changes added to commit"。`git log` 显示我刚暂存的七个 P2-2 文件出现在了**另一个 commit** 里（`3d4d0e0d feat(web): register /my-weave route (auth-gated)`），跟一个完全无关的 `web/src/app/router.tsx` 改动放一起。该 commit message 描述的是 P0-1b 工作，但内容大头是我的 P2-2。

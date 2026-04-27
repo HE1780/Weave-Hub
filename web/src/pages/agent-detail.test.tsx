@@ -201,4 +201,28 @@ describe('AgentDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Unarchive' })).toBeInTheDocument()
     expect(screen.getAllByText('Archived').length).toBeGreaterThan(0)
   })
+
+  it('shows Archive button to a namespace ADMIN who is NOT the owner (canManageLifecycle gates by backend permission, not local owner check)', async () => {
+    useAgentDetailMock.mockReturnValue({
+      data: {
+        name: 'planner',
+        description: 'plans things',
+        agentId: 1,
+        slug: 'planner',
+        displayName: 'Planner',
+        ownerId: 'u-1',
+        status: 'ACTIVE',
+        namespace: 'global',
+        canManageLifecycle: true,
+      },
+      isLoading: false,
+      isError: false,
+    })
+    useAuthMock.mockReturnValue({ user: { userId: 'ns-admin-99' } })
+
+    render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
+
+    await waitFor(() => expect(screen.getByText('Manage agent')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Archive' })).toBeInTheDocument()
+  })
 })
