@@ -17,6 +17,7 @@ public record AgentResponse(
         Integer starCount,
         BigDecimal ratingAvg,
         Integer ratingCount,
+        Integer downloadCount,
         boolean canManageLifecycle,
         Instant createdAt,
         Instant updatedAt
@@ -44,6 +45,7 @@ public record AgentResponse(
                 agent.getStarCount(),
                 agent.getRatingAvg(),
                 agent.getRatingCount(),
+                agent.getDownloadCount(),
                 canManageLifecycle,
                 agent.getCreatedAt(),
                 agent.getUpdatedAt()

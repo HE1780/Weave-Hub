@@ -28,6 +28,7 @@ export function useAgentDetail(namespace: string, slug: string): UseQueryResult<
         namespace: agent.namespace,
         body: full.manifestYaml ?? undefined,
         soul: full.soulMd ?? undefined,
+        workflowYaml: full.workflowYaml ?? undefined,
         workflow: parseWorkflow(full.workflowYaml),
         frontmatter: undefined,
         agentId: agent.id,
@@ -40,6 +41,7 @@ export function useAgentDetail(namespace: string, slug: string): UseQueryResult<
         ratingAvg:
           typeof agent.ratingAvg === 'string' ? Number(agent.ratingAvg) : (agent.ratingAvg ?? 0),
         ratingCount: agent.ratingCount ?? 0,
+        downloadCount: agent.downloadCount ?? 0,
         versions: versions.map((version) => ({
           id: version.id,
           version: version.version,

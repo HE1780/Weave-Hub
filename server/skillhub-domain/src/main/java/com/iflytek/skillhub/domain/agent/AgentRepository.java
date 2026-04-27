@@ -37,4 +37,10 @@ public interface AgentRepository {
     void delete(Agent agent);
 
     void flush();
+
+    /**
+     * Atomically increments the agent's denormalized download_count column.
+     * Mirrors SkillRepository.incrementDownloadCount.
+     */
+    void incrementDownloadCount(Long agentId);
 }

@@ -7,6 +7,7 @@ import com.iflytek.skillhub.domain.agent.AgentTag;
 import com.iflytek.skillhub.domain.agent.AgentTagRepository;
 import com.iflytek.skillhub.domain.agent.AgentVersion;
 import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
+import com.iflytek.skillhub.domain.agent.AgentVersionStatsRepository;
 import com.iflytek.skillhub.domain.agent.AgentVersionStatus;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.AgentVisibilityChecker;
@@ -45,6 +46,7 @@ public class AgentDownloadService {
     private final NamespaceRepository namespaceRepository;
     private final AgentRepository agentRepository;
     private final AgentVersionRepository agentVersionRepository;
+    private final AgentVersionStatsRepository agentVersionStatsRepository;
     private final AgentTagRepository agentTagRepository;
     private final ObjectStorageService objectStorageService;
     private final AgentVisibilityChecker visibilityChecker;
@@ -53,6 +55,7 @@ public class AgentDownloadService {
     public AgentDownloadService(NamespaceRepository namespaceRepository,
                                 AgentRepository agentRepository,
                                 AgentVersionRepository agentVersionRepository,
+                                AgentVersionStatsRepository agentVersionStatsRepository,
                                 AgentTagRepository agentTagRepository,
                                 ObjectStorageService objectStorageService,
                                 AgentVisibilityChecker visibilityChecker,
@@ -60,6 +63,7 @@ public class AgentDownloadService {
         this.namespaceRepository = namespaceRepository;
         this.agentRepository = agentRepository;
         this.agentVersionRepository = agentVersionRepository;
+        this.agentVersionStatsRepository = agentVersionStatsRepository;
         this.agentTagRepository = agentTagRepository;
         this.objectStorageService = objectStorageService;
         this.visibilityChecker = visibilityChecker;
@@ -130,6 +134,8 @@ public class AgentDownloadService {
     private DownloadResult downloadVersion(Agent agent, AgentVersion version) {
         DownloadResult result = buildDownloadResult(agent, version);
         if (version.getStatus() == AgentVersionStatus.PUBLISHED) {
+            agentRepository.incrementDownloadCount(agent.getId());
+            agentVersionStatsRepository.incrementDownloadCount(version.getId(), agent.getId());
             eventPublisher.publishEvent(new AgentDownloadedEvent(agent.getId(), version.getId()));
         }
         return result;

@@ -1447,6 +1447,7 @@ export interface AgentDto {
   starCount?: number
   ratingAvg?: number | string
   ratingCount?: number
+  downloadCount?: number
   /**
    * Backend-computed: true when the current viewer is the agent owner
    * OR a namespace ADMIN/OWNER. Drives UI gating for archive/unarchive

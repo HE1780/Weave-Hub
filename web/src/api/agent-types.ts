@@ -8,14 +8,18 @@
 
 export interface AgentSummary {
   name: string
+  displayName?: string
   description: string
   version?: string
   namespace?: string
+  starCount?: number
+  downloadCount?: number
 }
 
 export interface AgentDetail extends AgentSummary {
   body?: string
   soul?: string
+  workflowYaml?: string
   workflow?: AgentWorkflow
   frontmatter?: Record<string, unknown>
   agentId?: number
@@ -26,6 +30,7 @@ export interface AgentDetail extends AgentSummary {
   starCount?: number
   ratingAvg?: number
   ratingCount?: number
+  downloadCount?: number
   visibility?: 'PUBLIC' | 'NAMESPACE_ONLY' | 'PRIVATE'
   versions?: AgentVersionSummary[]
   /**

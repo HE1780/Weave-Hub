@@ -29,9 +29,14 @@ export function useAgents(params: UseAgentsParams = {}): UseQueryResult<AgentSum
 }
 
 function toSummary(dto: AgentDto): AgentSummary {
+  const versionFromDto = (dto as AgentDto & { version?: string }).version
   return {
     name: dto.slug,
+    displayName: dto.displayName,
     description: dto.description ?? '',
+    version: versionFromDto,
     namespace: dto.namespace,
+    starCount: dto.starCount ?? 0,
+    downloadCount: dto.downloadCount ?? 0,
   }
 }

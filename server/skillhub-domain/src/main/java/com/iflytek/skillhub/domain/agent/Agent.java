@@ -44,6 +44,9 @@ public class Agent {
     @Column(name = "rating_count", nullable = false)
     private Integer ratingCount = 0;
 
+    @Column(name = "download_count", nullable = false)
+    private Integer downloadCount = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -72,6 +75,7 @@ public class Agent {
     public Integer getStarCount() { return starCount; }
     public BigDecimal getRatingAvg() { return ratingAvg; }
     public Integer getRatingCount() { return ratingCount; }
+    public Integer getDownloadCount() { return downloadCount; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 

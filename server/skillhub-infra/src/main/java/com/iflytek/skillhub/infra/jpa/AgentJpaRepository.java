@@ -7,9 +7,11 @@ import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,4 +49,10 @@ public interface AgentJpaRepository extends JpaRepository<Agent, Long>, AgentRep
     Page<Agent> searchPublic(@Param("keyword") String keyword,
                              @Param("namespaceId") Long namespaceId,
                              Pageable pageable);
+
+    @Override
+    @Modifying
+    @Transactional
+    @Query("UPDATE Agent a SET a.downloadCount = a.downloadCount + 1 WHERE a.id = :agentId")
+    void incrementDownloadCount(@Param("agentId") Long agentId);
 }

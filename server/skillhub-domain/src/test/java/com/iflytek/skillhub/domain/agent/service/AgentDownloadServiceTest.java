@@ -7,6 +7,7 @@ import com.iflytek.skillhub.domain.agent.AgentTag;
 import com.iflytek.skillhub.domain.agent.AgentTagRepository;
 import com.iflytek.skillhub.domain.agent.AgentVersion;
 import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
+import com.iflytek.skillhub.domain.agent.AgentVersionStatsRepository;
 import com.iflytek.skillhub.domain.agent.AgentVersionStatus;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.AgentVisibilityChecker;
@@ -45,6 +46,7 @@ class AgentDownloadServiceTest {
     private final NamespaceRepository namespaceRepository = mock(NamespaceRepository.class);
     private final AgentRepository agentRepository = mock(AgentRepository.class);
     private final AgentVersionRepository agentVersionRepository = mock(AgentVersionRepository.class);
+    private final AgentVersionStatsRepository agentVersionStatsRepository = mock(AgentVersionStatsRepository.class);
     private final AgentTagRepository agentTagRepository = mock(AgentTagRepository.class);
     private final ObjectStorageService objectStorageService = mock(ObjectStorageService.class);
     private final ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
@@ -60,6 +62,7 @@ class AgentDownloadServiceTest {
                 namespaceRepository,
                 agentRepository,
                 agentVersionRepository,
+                agentVersionStatsRepository,
                 agentTagRepository,
                 objectStorageService,
                 visibilityChecker,
@@ -94,6 +97,8 @@ class AgentDownloadServiceTest {
             throw new RuntimeException(e);
         }
         verify(eventPublisher).publishEvent(any(AgentDownloadedEvent.class));
+        verify(agentRepository).incrementDownloadCount(100L);
+        verify(agentVersionStatsRepository).incrementDownloadCount(200L, 100L);
     }
 
     @Test
