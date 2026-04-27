@@ -1,0 +1,119 @@
+package com.iflytek.skillhub.domain.agent.service;
+
+import com.iflytek.skillhub.domain.agent.Agent;
+import com.iflytek.skillhub.domain.agent.AgentRepository;
+import com.iflytek.skillhub.domain.agent.AgentStatus;
+import com.iflytek.skillhub.domain.agent.AgentVisibility;
+import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
+import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class AgentLifecycleServiceTest {
+
+    @Mock private AgentRepository agentRepository;
+
+    @InjectMocks private AgentLifecycleService service;
+
+    private Agent agent;
+
+    private void setId(Agent a, long id) throws Exception {
+        Field f = Agent.class.getDeclaredField("id");
+        f.setAccessible(true);
+        f.set(a, id);
+    }
+
+    @BeforeEach
+    void setUp() throws Exception {
+        agent = new Agent(1L, "agent-a", "Agent A", "owner-1", AgentVisibility.PUBLIC);
+        setId(agent, 7L);
+        lenient().when(agentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    }
+
+    @Test
+    void archive_by_owner_marks_archived() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        Agent result = service.archive(7L, "owner-1", Map.of());
+
+        assertEquals(AgentStatus.ARCHIVED, result.getStatus());
+        verify(agentRepository).save(agent);
+    }
+
+    @Test
+    void archive_by_namespace_admin_succeeds() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        Agent result = service.archive(7L, "admin-2", Map.of(1L, NamespaceRole.ADMIN));
+
+        assertEquals(AgentStatus.ARCHIVED, result.getStatus());
+    }
+
+    @Test
+    void archive_by_namespace_owner_succeeds() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        Agent result = service.archive(7L, "ns-owner", Map.of(1L, NamespaceRole.OWNER));
+
+        assertEquals(AgentStatus.ARCHIVED, result.getStatus());
+    }
+
+    @Test
+    void archive_by_unrelated_member_throws_Forbidden() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        assertThrows(DomainForbiddenException.class, () ->
+                service.archive(7L, "stranger", Map.of(1L, NamespaceRole.MEMBER)));
+        verify(agentRepository, never()).save(any());
+    }
+
+    @Test
+    void archive_with_null_roles_treats_as_empty() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        assertThrows(DomainForbiddenException.class, () ->
+                service.archive(7L, "stranger", null));
+    }
+
+    @Test
+    void archive_unknown_id_throws_NotFound() {
+        when(agentRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(DomainNotFoundException.class, () ->
+                service.archive(99L, "owner-1", Map.of()));
+    }
+
+    @Test
+    void unarchive_by_owner_returns_to_active() {
+        agent.archive();
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        Agent result = service.unarchive(7L, "owner-1", Map.of());
+
+        assertEquals(AgentStatus.ACTIVE, result.getStatus());
+        verify(agentRepository).save(agent);
+    }
+
+    @Test
+    void unarchive_by_unrelated_user_throws_Forbidden() {
+        agent.archive();
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        assertThrows(DomainForbiddenException.class, () ->
+                service.unarchive(7L, "stranger", Map.of()));
+    }
+}

@@ -77,6 +77,11 @@ public class Agent {
         touch();
     }
 
+    public void unarchive() {
+        this.status = AgentStatus.ACTIVE;
+        touch();
+    }
+
     private void touch() {
         this.updatedAt = Instant.now();
     }

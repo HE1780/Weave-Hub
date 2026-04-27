@@ -70,6 +70,7 @@ const PrivacyPolicyPage = createLazyRouteComponent(() => import('@/pages/privacy
 const SearchPage = createLazyRouteComponent(() => import('@/pages/search'), 'SearchPage')
 const AgentsPage = createLazyRouteComponent(() => import('@/pages/agents'), 'AgentsPage')
 const AgentDetailPage = createLazyRouteComponent(() => import('@/pages/agent-detail'), 'AgentDetailPage')
+const MyWeavePage = createLazyRouteComponent(() => import('@/pages/my-weave'), 'MyWeavePage')
 const TermsOfServicePage = createLazyRouteComponent(() => import('@/pages/terms'), 'TermsOfServicePage')
 const NamespacePage = createLazyRouteComponent(() => import('@/pages/namespace'), 'NamespacePage')
 const SkillDetailPage = createLazyRouteComponent(() => import('@/pages/skill-detail'), 'SkillDetailPage')
@@ -246,6 +247,13 @@ const agentDetailRoute = createRoute({
     const { namespace, slug } = agentDetailRoute.useParams()
     return <AgentDetailPage namespace={namespace} slug={slug} />
   },
+})
+
+const myWeaveRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'my-weave',
+  beforeLoad: requireAuth,
+  component: MyWeavePage,
 })
 
 const termsRoute = createRoute({
@@ -487,6 +495,7 @@ const routeTree = rootRoute.addChildren([
   agentsRoute,
   agentDetailLegacyRoute,
   agentDetailRoute,
+  myWeaveRoute,
   termsRoute,
   namespaceRoute,
   skillDetailRoute,
