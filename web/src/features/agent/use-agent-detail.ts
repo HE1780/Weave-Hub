@@ -39,6 +39,7 @@ export function useAgentDetail(namespace: string, slug: string): UseQueryResult<
         ratingAvg:
           typeof agent.ratingAvg === 'string' ? Number(agent.ratingAvg) : (agent.ratingAvg ?? 0),
         ratingCount: agent.ratingCount ?? 0,
+        canManageLifecycle: agent.canManageLifecycle ?? false,
       }
     },
     enabled: namespace.length > 0 && slug.length > 0,

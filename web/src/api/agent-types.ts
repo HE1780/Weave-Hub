@@ -26,6 +26,11 @@ export interface AgentDetail extends AgentSummary {
   starCount?: number
   ratingAvg?: number
   ratingCount?: number
+  /**
+   * Backend-computed governance permission: true when the viewer is the
+   * agent owner OR has namespace ADMIN/OWNER role. Mirrors AgentDto.canManageLifecycle.
+   */
+  canManageLifecycle?: boolean
 }
 
 export interface AgentWorkflow {

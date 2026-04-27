@@ -79,8 +79,13 @@ public class AgentController extends BaseApiController {
                 PageRequest.of(Math.max(page, 0), safeSize));
 
         Map<Long, String> namespaceSlugs = resolveNamespaceSlugs(result.getContent());
+        String currentUserId = principal == null ? null : principal.userId();
+        Map<Long, NamespaceRole> rolesForCheck = rolesOrEmpty(userNsRoles);
         List<AgentResponse> items = result.getContent().stream()
-                .map(a -> AgentResponse.from(a, namespaceSlugs.getOrDefault(a.getNamespaceId(), "")))
+                .map(a -> AgentResponse.from(
+                        a,
+                        namespaceSlugs.getOrDefault(a.getNamespaceId(), ""),
+                        agentService.canManageLifecycle(a, currentUserId, rolesForCheck)))
                 .toList();
 
         return ok("response.success.read", new PageResponse<>(
@@ -106,13 +111,17 @@ public class AgentController extends BaseApiController {
             @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
 
         Namespace ns = resolveNamespaceOr404(namespace);
+        String currentUserId = principal == null ? null : principal.userId();
+        Map<Long, NamespaceRole> roles = rolesOrEmpty(userNsRoles);
         Agent agent = agentService.getByNamespaceAndSlug(
                 ns.getId(), slug,
-                principal == null ? null : principal.userId(),
-                rolesOrEmpty(userNsRoles),
+                currentUserId,
+                roles,
                 principal == null ? Set.of() : principal.platformRoles());
 
-        return ok("response.success.read", AgentResponse.from(agent, namespace));
+        return ok("response.success.read",
+                AgentResponse.from(agent, namespace,
+                        agentService.canManageLifecycle(agent, currentUserId, roles)));
     }
 
     @GetMapping("/{namespace}/{slug}/versions")

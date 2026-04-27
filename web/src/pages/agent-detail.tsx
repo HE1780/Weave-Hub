@@ -7,7 +7,6 @@ import { useArchiveAgent } from '@/features/agent/use-archive-agent'
 import { useUnarchiveAgent } from '@/features/agent/use-unarchive-agent'
 import { AgentStarButton } from '@/features/agent/social/agent-star-button'
 import { AgentRatingInput } from '@/features/agent/social/agent-rating-input'
-import { useAuth } from '@/features/auth/use-auth'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
@@ -28,7 +27,6 @@ interface AgentDetailPageProps {
 export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user } = useAuth()
   const { data: agent, isLoading, isError, error } = useAgentDetail(namespace ?? '', slug ?? '')
   const archiveMutation = useArchiveAgent()
   const unarchiveMutation = useUnarchiveAgent()
@@ -61,9 +59,10 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
     )
   }
 
-  const canManageLifecycle = Boolean(
-    agent.ownerId && user?.userId && agent.ownerId === user.userId,
-  )
+  // Backend computes canManageLifecycle as (owner OR namespace ADMIN/OWNER).
+  // Anonymous viewers see false. Falling back to false on missing field keeps
+  // older API responses safe.
+  const canManageLifecycle = agent.canManageLifecycle ?? false
   const targetNamespace = agent.namespace ?? namespace ?? ''
   const targetSlug = agent.slug ?? slug ?? ''
   const targetName = agent.displayName ?? agent.name

@@ -20,12 +20,15 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AgentLifecycleServiceTest {
 
     @Mock private AgentRepository agentRepository;
+    @Mock private AgentService agentService;
 
     @InjectMocks private AgentLifecycleService service;
 
@@ -47,6 +50,7 @@ class AgentLifecycleServiceTest {
     @Test
     void archive_by_owner_marks_archived() {
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
 
         Agent result = service.archive(7L, "owner-1", Map.of());
 
@@ -57,6 +61,7 @@ class AgentLifecycleServiceTest {
     @Test
     void archive_by_namespace_admin_succeeds() {
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("admin-2"), anyMap())).thenReturn(true);
 
         Agent result = service.archive(7L, "admin-2", Map.of(1L, NamespaceRole.ADMIN));
 
@@ -66,6 +71,7 @@ class AgentLifecycleServiceTest {
     @Test
     void archive_by_namespace_owner_succeeds() {
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("ns-owner"), anyMap())).thenReturn(true);
 
         Agent result = service.archive(7L, "ns-owner", Map.of(1L, NamespaceRole.OWNER));
 
@@ -75,6 +81,7 @@ class AgentLifecycleServiceTest {
     @Test
     void archive_by_unrelated_member_throws_Forbidden() {
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("stranger"), anyMap())).thenReturn(false);
 
         assertThrows(DomainForbiddenException.class, () ->
                 service.archive(7L, "stranger", Map.of(1L, NamespaceRole.MEMBER)));
@@ -84,6 +91,7 @@ class AgentLifecycleServiceTest {
     @Test
     void archive_with_null_roles_treats_as_empty() {
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("stranger"), any())).thenReturn(false);
 
         assertThrows(DomainForbiddenException.class, () ->
                 service.archive(7L, "stranger", null));
@@ -101,6 +109,7 @@ class AgentLifecycleServiceTest {
     void unarchive_by_owner_returns_to_active() {
         agent.archive();
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
 
         Agent result = service.unarchive(7L, "owner-1", Map.of());
 
@@ -112,6 +121,7 @@ class AgentLifecycleServiceTest {
     void unarchive_by_unrelated_user_throws_Forbidden() {
         agent.archive();
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("stranger"), anyMap())).thenReturn(false);
 
         assertThrows(DomainForbiddenException.class, () ->
                 service.unarchive(7L, "stranger", Map.of()));

@@ -7,6 +7,7 @@ import com.iflytek.skillhub.domain.agent.AgentRepository;
 import com.iflytek.skillhub.domain.agent.AgentVersion;
 import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewService;
+import com.iflytek.skillhub.domain.agent.service.AgentService;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTask;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskStatus;
 import com.iflytek.skillhub.domain.namespace.Namespace;
@@ -41,17 +42,20 @@ public class AgentReviewController extends BaseApiController {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final AgentReviewService reviewService;
+    private final AgentService agentService;
     private final AgentRepository agentRepository;
     private final AgentVersionRepository agentVersionRepository;
     private final NamespaceRepository namespaceRepository;
 
     public AgentReviewController(AgentReviewService reviewService,
+                                 AgentService agentService,
                                  AgentRepository agentRepository,
                                  AgentVersionRepository agentVersionRepository,
                                  NamespaceRepository namespaceRepository,
                                  ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.reviewService = reviewService;
+        this.agentService = agentService;
         this.agentRepository = agentRepository;
         this.agentVersionRepository = agentVersionRepository;
         this.namespaceRepository = namespaceRepository;
@@ -146,9 +150,11 @@ public class AgentReviewController extends BaseApiController {
                 .orElseThrow(() -> new DomainNotFoundException(
                         "Namespace not found: " + agent.getNamespaceId()));
 
+        boolean canManageLifecycle = agentService.canManageLifecycle(
+                agent, principal.userId(), rolesOrEmpty(userNsRoles));
         AgentReviewVersionDetailResponse body = new AgentReviewVersionDetailResponse(
                 AgentReviewTaskResponse.from(task),
-                AgentResponse.from(agent, namespace.getSlug()),
+                AgentResponse.from(agent, namespace.getSlug(), canManageLifecycle),
                 AgentVersionResponse.from(version));
         return ok("response.success.read", body);
     }

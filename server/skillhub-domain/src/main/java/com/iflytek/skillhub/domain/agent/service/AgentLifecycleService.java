@@ -21,9 +21,11 @@ import java.util.Map;
 public class AgentLifecycleService {
 
     private final AgentRepository agentRepository;
+    private final AgentService agentService;
 
-    public AgentLifecycleService(AgentRepository agentRepository) {
+    public AgentLifecycleService(AgentRepository agentRepository, AgentService agentService) {
         this.agentRepository = agentRepository;
+        this.agentService = agentService;
     }
 
     @Transactional
@@ -49,12 +51,7 @@ public class AgentLifecycleService {
                                    Map<Long, NamespaceRole> userNamespaceRoles) {
         Agent agent = agentRepository.findById(agentId)
                 .orElseThrow(() -> new DomainNotFoundException("error.agent.notFound", agentId));
-        Map<Long, NamespaceRole> roles = userNamespaceRoles == null ? Map.of() : userNamespaceRoles;
-        NamespaceRole role = roles.get(agent.getNamespaceId());
-        boolean canManage = agent.getOwnerId().equals(actorUserId)
-                || role == NamespaceRole.ADMIN
-                || role == NamespaceRole.OWNER;
-        if (!canManage) {
+        if (!agentService.canManageLifecycle(agent, actorUserId, userNamespaceRoles)) {
             throw new DomainForbiddenException("error.agent.lifecycle.noPermission");
         }
         return agent;

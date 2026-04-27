@@ -128,7 +128,7 @@ describe('AgentDetailPage', () => {
     await waitFor(() => expect(screen.getByText('Failed to load agents.')).toBeInTheDocument())
   })
 
-  it('shows the manage section with Archive button when the viewer owns the agent', async () => {
+  it('shows the manage section with Archive button when the backend says the viewer can manage', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
         name: 'planner',
@@ -139,6 +139,7 @@ describe('AgentDetailPage', () => {
         ownerId: 'u-1',
         status: 'ACTIVE',
         namespace: 'global',
+        canManageLifecycle: true,
       },
       isLoading: false,
       isError: false,
@@ -151,7 +152,7 @@ describe('AgentDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Archive' })).toBeInTheDocument()
   })
 
-  it('hides the manage section for non-owners', async () => {
+  it('hides the manage section when canManageLifecycle is false', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
         name: 'planner',
@@ -162,6 +163,7 @@ describe('AgentDetailPage', () => {
         ownerId: 'u-1',
         status: 'ACTIVE',
         namespace: 'global',
+        canManageLifecycle: false,
       },
       isLoading: false,
       isError: false,
@@ -175,7 +177,7 @@ describe('AgentDetailPage', () => {
     expect(screen.queryByRole('button', { name: 'Archive' })).toBeNull()
   })
 
-  it('shows Unarchive button + Archived badge when the agent is archived and viewer owns it', async () => {
+  it('shows Unarchive button + Archived badge when the agent is archived and viewer can manage', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
         name: 'planner',
@@ -186,6 +188,7 @@ describe('AgentDetailPage', () => {
         ownerId: 'u-1',
         status: 'ARCHIVED',
         namespace: 'global',
+        canManageLifecycle: true,
       },
       isLoading: false,
       isError: false,

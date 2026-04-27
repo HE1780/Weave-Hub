@@ -1348,6 +1348,12 @@ export interface AgentDto {
   starCount?: number
   ratingAvg?: number | string
   ratingCount?: number
+  /**
+   * Backend-computed: true when the current viewer is the agent owner
+   * OR a namespace ADMIN/OWNER. Drives UI gating for archive/unarchive
+   * controls and other governance actions. Anonymous viewers always see false.
+   */
+  canManageLifecycle?: boolean
   createdAt: string
   updatedAt: string
 }

@@ -141,6 +141,27 @@ public class AgentService {
                 .toList();
     }
 
+    /**
+     * Whether {@code currentUserId} can perform agent-level governance actions
+     * (archive / unarchive). Mirrors {@link AgentLifecycleService}'s authorization rule:
+     * agent owner OR namespace ADMIN / OWNER. Anonymous callers always get {@code false}.
+     *
+     * <p>This is the authoritative read used by {@code AgentResponse.canManageLifecycle}
+     * so the frontend can show governance UI to the same users the backend would accept.
+     */
+    public boolean canManageLifecycle(Agent agent,
+                                      String currentUserId,
+                                      Map<Long, NamespaceRole> userNamespaceRoles) {
+        if (currentUserId == null) {
+            return false;
+        }
+        if (isOwner(agent, currentUserId)) {
+            return true;
+        }
+        Map<Long, NamespaceRole> roles = userNamespaceRoles == null ? Map.of() : userNamespaceRoles;
+        return isAdminOrAbove(roles.get(agent.getNamespaceId()));
+    }
+
     private boolean isOwner(Agent agent, String currentUserId) {
         return currentUserId != null && agent.getOwnerId().equals(currentUserId);
     }
