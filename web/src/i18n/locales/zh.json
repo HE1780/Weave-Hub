@@ -1466,6 +1466,26 @@
       "title": "我的智能体",
       "empty": "您还未发布任何智能体。",
       "publish": "发布新智能体"
+    },
+    "lifecycle": {
+      "statusActive": "在用",
+      "statusArchived": "已归档",
+      "archive": "归档",
+      "unarchive": "取消归档",
+      "manageHeading": "管理智能体",
+      "archiveDescription": "将此智能体从公开列表中隐藏，不删除其历史版本。",
+      "unarchiveDescription": "将此智能体恢复至公开列表。",
+      "processing": "处理中…",
+      "archiveConfirmTitle": "归档此智能体？",
+      "archiveConfirmDescription": "归档 {{agent}} 后将不再出现在公开列表中，可以随时取消归档。",
+      "unarchiveConfirmTitle": "取消归档此智能体？",
+      "unarchiveConfirmDescription": "将 {{agent}} 恢复到公开列表？",
+      "archiveSuccessTitle": "智能体已归档",
+      "archiveSuccessDescription": "{{agent}} 已归档。",
+      "unarchiveSuccessTitle": "智能体已恢复",
+      "unarchiveSuccessDescription": "{{agent}} 已重新可见。",
+      "archiveErrorTitle": "归档智能体失败",
+      "unarchiveErrorTitle": "取消归档智能体失败"
     }
   },
   "agentReviews": {

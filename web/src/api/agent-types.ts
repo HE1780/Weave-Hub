@@ -18,6 +18,11 @@ export interface AgentDetail extends AgentSummary {
   soul?: string
   workflow?: AgentWorkflow
   frontmatter?: Record<string, unknown>
+  agentId?: number
+  slug?: string
+  displayName?: string
+  ownerId?: string
+  status?: 'ACTIVE' | 'ARCHIVED'
 }
 
 export interface AgentWorkflow {

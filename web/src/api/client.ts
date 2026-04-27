@@ -1452,6 +1452,44 @@ export const agentsApi = {
   },
 }
 
+export interface AgentLifecycleMutationDto {
+  agentId: number
+  action: 'ARCHIVE' | 'UNARCHIVE'
+  status: AgentDtoStatus
+}
+
+export const agentLifecycleApi = {
+  async archiveAgent(
+    namespace: string,
+    slug: string,
+    reason?: string,
+  ): Promise<AgentLifecycleMutationDto> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    return fetchJson<AgentLifecycleMutationDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}/archive`,
+      {
+        method: 'POST',
+        headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(reason?.trim() ? { reason: reason.trim() } : {}),
+      },
+    )
+  },
+
+  async unarchiveAgent(
+    namespace: string,
+    slug: string,
+  ): Promise<AgentLifecycleMutationDto> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    return fetchJson<AgentLifecycleMutationDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}/unarchive`,
+      {
+        method: 'POST',
+        headers: await ensureCsrfHeaders(),
+      },
+    )
+  },
+}
+
 export const agentReviewsApi = {
   async list(params: {
     namespaceId: number

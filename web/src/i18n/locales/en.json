@@ -1466,6 +1466,26 @@
       "title": "My Agents",
       "empty": "You haven't published any agents yet.",
       "publish": "Publish a new agent"
+    },
+    "lifecycle": {
+      "statusActive": "Active",
+      "statusArchived": "Archived",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "manageHeading": "Manage agent",
+      "archiveDescription": "Hide this agent from public listings without deleting its versions.",
+      "unarchiveDescription": "Restore this agent to public listings.",
+      "processing": "Processing…",
+      "archiveConfirmTitle": "Archive this agent?",
+      "archiveConfirmDescription": "Archive {{agent}} so it stops appearing in public listings? You can unarchive it later.",
+      "unarchiveConfirmTitle": "Unarchive this agent?",
+      "unarchiveConfirmDescription": "Restore {{agent}} to public listings?",
+      "archiveSuccessTitle": "Agent archived",
+      "archiveSuccessDescription": "{{agent}} has been archived.",
+      "unarchiveSuccessTitle": "Agent restored",
+      "unarchiveSuccessDescription": "{{agent}} is visible again.",
+      "archiveErrorTitle": "Failed to archive agent",
+      "unarchiveErrorTitle": "Failed to unarchive agent"
     }
   },
   "agentReviews": {
