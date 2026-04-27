@@ -16,5 +16,7 @@ public interface AgentReviewTaskRepository {
 
     AgentReviewTask save(AgentReviewTask task);
 
+    void delete(AgentReviewTask task);
+
     void flush();
 }

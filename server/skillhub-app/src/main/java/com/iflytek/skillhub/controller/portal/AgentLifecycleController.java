@@ -2,6 +2,7 @@ package com.iflytek.skillhub.controller.portal;
 
 import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.domain.agent.Agent;
+import com.iflytek.skillhub.domain.agent.AgentVersion;
 import com.iflytek.skillhub.domain.agent.service.AgentLifecycleService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.namespace.Namespace;
@@ -10,10 +11,13 @@ import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.dto.AdminSkillActionRequest;
 import com.iflytek.skillhub.dto.AgentLifecycleMutationResponse;
+import com.iflytek.skillhub.dto.AgentVersionMutationResponse;
+import com.iflytek.skillhub.dto.AgentVersionRereleaseRequest;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.service.AuditRequestContext;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -93,6 +97,68 @@ public class AgentLifecycleController extends BaseApiController {
                 null);
         return ok("response.success.updated",
                 new AgentLifecycleMutationResponse(restored.getId(), "UNARCHIVE", restored.getStatus().name()));
+    }
+
+    @PostMapping("/{namespace}/{slug}/versions/{version}/withdraw-review")
+    public ApiResponse<AgentVersionMutationResponse> withdrawReview(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @PathVariable String version,
+            @RequestAttribute("userId") String userId,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles,
+            HttpServletRequest httpRequest) {
+
+        Agent agent = resolve(namespace, slug);
+        AgentVersion withdrawn = agentLifecycleService.withdrawReview(
+                agent.getId(), version, userId, rolesOrEmpty(userNsRoles));
+        auditLogService.record(
+                userId,
+                "WITHDRAW_AGENT_REVIEW",
+                "AGENT_VERSION",
+                withdrawn.getId(),
+                null,
+                AuditRequestContext.from(httpRequest).clientIp(),
+                AuditRequestContext.from(httpRequest).userAgent(),
+                null);
+        return ok("response.success.updated",
+                new AgentVersionMutationResponse(
+                        agent.getId(),
+                        withdrawn.getId(),
+                        withdrawn.getVersion(),
+                        "WITHDRAW_REVIEW",
+                        withdrawn.getStatus().name()));
+    }
+
+    @PostMapping("/{namespace}/{slug}/versions/{version}/rerelease")
+    public ApiResponse<AgentVersionMutationResponse> rereleaseVersion(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @PathVariable String version,
+            @Valid @RequestBody AgentVersionRereleaseRequest request,
+            @RequestAttribute("userId") String userId,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles,
+            HttpServletRequest httpRequest) {
+
+        Agent agent = resolve(namespace, slug);
+        AgentVersion fresh = agentLifecycleService.rereleaseVersion(
+                agent.getId(), version, request.targetVersion(),
+                userId, rolesOrEmpty(userNsRoles));
+        auditLogService.record(
+                userId,
+                "RERELEASE_AGENT_VERSION",
+                "AGENT_VERSION",
+                fresh.getId(),
+                null,
+                AuditRequestContext.from(httpRequest).clientIp(),
+                AuditRequestContext.from(httpRequest).userAgent(),
+                null);
+        return ok("response.success.updated",
+                new AgentVersionMutationResponse(
+                        agent.getId(),
+                        fresh.getId(),
+                        fresh.getVersion(),
+                        "RERELEASE",
+                        fresh.getStatus().name()));
     }
 
     private Agent resolve(String namespaceSlug, String slug) {

@@ -3,7 +3,9 @@ package com.iflytek.skillhub.domain.agent.service;
 import com.iflytek.skillhub.domain.agent.Agent;
 import com.iflytek.skillhub.domain.agent.AgentRepository;
 import com.iflytek.skillhub.domain.agent.AgentStatus;
+import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
+import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -29,6 +32,9 @@ class AgentLifecycleServiceTest {
 
     @Mock private AgentRepository agentRepository;
     @Mock private AgentService agentService;
+    @Mock private AgentVersionRepository agentVersionRepository;
+    @Mock private AgentReviewTaskRepository agentReviewTaskRepository;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private AgentLifecycleService service;
 
@@ -125,5 +131,121 @@ class AgentLifecycleServiceTest {
 
         assertThrows(DomainForbiddenException.class, () ->
                 service.unarchive(7L, "stranger", Map.of()));
+    }
+
+    @Test
+    void withdrawReview_pending_version_returns_to_DRAFT_and_deletes_review_task() throws Exception {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion v =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.0.0", "owner-1", "manifest", "soul", "wf", null, 100L);
+        java.lang.reflect.Field statusField =
+                com.iflytek.skillhub.domain.agent.AgentVersion.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(v, com.iflytek.skillhub.domain.agent.AgentVersionStatus.PENDING_REVIEW);
+
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(v));
+        when(agentVersionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        com.iflytek.skillhub.domain.agent.review.AgentReviewTask task =
+                new com.iflytek.skillhub.domain.agent.review.AgentReviewTask(99L, 1L, "owner-1");
+        when(agentReviewTaskRepository.findByAgentVersionId(any())).thenReturn(Optional.of(task));
+
+        com.iflytek.skillhub.domain.agent.AgentVersion result =
+                service.withdrawReview(7L, "1.0.0", "owner-1", Map.of());
+
+        assertEquals(com.iflytek.skillhub.domain.agent.AgentVersionStatus.DRAFT, result.getStatus());
+        verify(agentReviewTaskRepository).delete(task);
+    }
+
+    @Test
+    void withdrawReview_non_pending_version_throws_BadRequest() throws Exception {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion v =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.0.0", "owner-1", "manifest", "soul", "wf", null, 100L);
+        java.lang.reflect.Field statusField =
+                com.iflytek.skillhub.domain.agent.AgentVersion.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(v, com.iflytek.skillhub.domain.agent.AgentVersionStatus.PUBLISHED);
+
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(v));
+
+        assertThrows(com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException.class, () ->
+                service.withdrawReview(7L, "1.0.0", "owner-1", Map.of()));
+    }
+
+    @Test
+    void rereleaseVersion_clones_published_source_to_new_version() throws Exception {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion source =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.0.0", "owner-1",
+                        "---\nname: agent-a\nversion: 1.0.0\n---\nbody",
+                        "soul-content", "workflow-content",
+                        "packages/7/20/bundle.zip", 1234L);
+        java.lang.reflect.Field statusField =
+                com.iflytek.skillhub.domain.agent.AgentVersion.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(source, com.iflytek.skillhub.domain.agent.AgentVersionStatus.PUBLISHED);
+
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(source));
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.1.0")).thenReturn(Optional.empty());
+        when(agentVersionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        com.iflytek.skillhub.domain.agent.AgentVersion result =
+                service.rereleaseVersion(7L, "1.0.0", "1.1.0", "owner-1", Map.of());
+
+        assertEquals("1.1.0", result.getVersion());
+        // PUBLIC visibility → PENDING_REVIEW + new review task
+        assertEquals(com.iflytek.skillhub.domain.agent.AgentVersionStatus.PENDING_REVIEW, result.getStatus());
+        verify(agentReviewTaskRepository).save(any(com.iflytek.skillhub.domain.agent.review.AgentReviewTask.class));
+        // manifest version field rewritten
+        org.assertj.core.api.Assertions.assertThat(result.getManifestYaml()).contains("version: 1.1.0");
+    }
+
+    @Test
+    void rereleaseVersion_target_collides_with_existing_throws_BadRequest() throws Exception {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion source =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.0.0", "owner-1", "manifest", "soul", "wf", null, 100L);
+        java.lang.reflect.Field statusField =
+                com.iflytek.skillhub.domain.agent.AgentVersion.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(source, com.iflytek.skillhub.domain.agent.AgentVersionStatus.PUBLISHED);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion existing =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.1.0", "owner-1", "manifest", "soul", "wf", null, 100L);
+
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(source));
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.1.0")).thenReturn(Optional.of(existing));
+
+        assertThrows(com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException.class, () ->
+                service.rereleaseVersion(7L, "1.0.0", "1.1.0", "owner-1", Map.of()));
+    }
+
+    @Test
+    void rereleaseVersion_non_published_source_throws_BadRequest() throws Exception {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion source =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.0.0", "owner-1", "manifest", "soul", "wf", null, 100L);
+        // status = DRAFT by default
+
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(source));
+
+        assertThrows(com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException.class, () ->
+                service.rereleaseVersion(7L, "1.0.0", "1.1.0", "owner-1", Map.of()));
     }
 }

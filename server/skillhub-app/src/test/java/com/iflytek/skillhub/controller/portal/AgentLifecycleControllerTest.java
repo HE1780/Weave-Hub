@@ -5,6 +5,8 @@ import com.iflytek.skillhub.auth.device.DeviceAuthService;
 import com.iflytek.skillhub.domain.agent.Agent;
 import com.iflytek.skillhub.domain.agent.AgentRepository;
 import com.iflytek.skillhub.domain.agent.AgentStatus;
+import com.iflytek.skillhub.domain.agent.AgentVersion;
+import com.iflytek.skillhub.domain.agent.AgentVersionStatus;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.service.AgentLifecycleService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
@@ -152,6 +154,79 @@ class AgentLifecycleControllerTest {
     @Test
     void archiveAgent_rejects_anonymous_with_401() throws Exception {
         mockMvc.perform(post("/api/web/agents/global/agent-a/archive")
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    private AgentVersion version(long id, long agentId, String version, AgentVersionStatus status) {
+        AgentVersion v = new AgentVersion(agentId, version, "owner-1",
+                "manifest", "soul", "wf", null, 100L);
+        ReflectionTestUtils.setField(v, "id", id);
+        ReflectionTestUtils.setField(v, "status", status);
+        return v;
+    }
+
+    @Test
+    void withdrawReview_returns_unified_envelope_with_DRAFT_status() throws Exception {
+        Namespace ns = namespace(1L, "global");
+        Agent active = agent(7L, 1L, "agent-a", AgentStatus.ACTIVE);
+        AgentVersion drafted = version(20L, 7L, "1.0.0", AgentVersionStatus.DRAFT);
+
+        given(namespaceRepository.findBySlug("global")).willReturn(Optional.of(ns));
+        given(agentRepository.findByNamespaceIdAndSlug(1L, "agent-a")).willReturn(Optional.of(active));
+        given(agentLifecycleService.withdrawReview(eq(7L), eq("1.0.0"), eq("usr_1"), anyMap()))
+                .willReturn(drafted);
+
+        mockMvc.perform(post("/api/web/agents/global/agent-a/versions/1.0.0/withdraw-review")
+                        .requestAttr("userId", "usr_1")
+                        .with(user("usr_1"))
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.versionId").value(20))
+                .andExpect(jsonPath("$.data.action").value("WITHDRAW_REVIEW"))
+                .andExpect(jsonPath("$.data.status").value("DRAFT"));
+    }
+
+    @Test
+    void rereleaseVersion_returns_envelope_for_new_pending_version() throws Exception {
+        Namespace ns = namespace(1L, "global");
+        Agent active = agent(7L, 1L, "agent-a", AgentStatus.ACTIVE);
+        AgentVersion fresh = version(21L, 7L, "1.1.0", AgentVersionStatus.PENDING_REVIEW);
+
+        given(namespaceRepository.findBySlug("global")).willReturn(Optional.of(ns));
+        given(agentRepository.findByNamespaceIdAndSlug(1L, "agent-a")).willReturn(Optional.of(active));
+        given(agentLifecycleService.rereleaseVersion(eq(7L), eq("1.0.0"), eq("1.1.0"), eq("usr_1"), anyMap()))
+                .willReturn(fresh);
+
+        mockMvc.perform(post("/api/web/agents/global/agent-a/versions/1.0.0/rerelease")
+                        .requestAttr("userId", "usr_1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetVersion\":\"1.1.0\"}")
+                        .with(user("usr_1"))
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.versionId").value(21))
+                .andExpect(jsonPath("$.data.version").value("1.1.0"))
+                .andExpect(jsonPath("$.data.action").value("RERELEASE"))
+                .andExpect(jsonPath("$.data.status").value("PENDING_REVIEW"));
+    }
+
+    @Test
+    void rereleaseVersion_with_blank_targetVersion_returns_400() throws Exception {
+        mockMvc.perform(post("/api/web/agents/global/agent-a/versions/1.0.0/rerelease")
+                        .requestAttr("userId", "usr_1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"targetVersion\":\"\"}")
+                        .with(user("usr_1"))
+                        .with(csrf()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void withdrawReview_rejects_anonymous_with_401() throws Exception {
+        mockMvc.perform(post("/api/web/agents/global/agent-a/versions/1.0.0/withdraw-review")
                         .with(csrf()))
                 .andExpect(status().isUnauthorized());
     }

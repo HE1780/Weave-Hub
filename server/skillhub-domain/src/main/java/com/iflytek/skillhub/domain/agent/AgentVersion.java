@@ -112,6 +112,12 @@ public class AgentVersion {
         this.status = AgentVersionStatus.DRAFT;
     }
 
+    public void withdrawReview() {
+        require(status == AgentVersionStatus.PENDING_REVIEW,
+                "Only PENDING_REVIEW versions can be withdrawn (was " + status + ")");
+        this.status = AgentVersionStatus.DRAFT;
+    }
+
     private static void require(boolean condition, String message) {
         if (!condition) {
             throw new DomainBadRequestException(message);
