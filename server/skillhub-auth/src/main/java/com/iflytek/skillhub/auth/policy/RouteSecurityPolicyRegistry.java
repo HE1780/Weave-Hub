@@ -60,6 +60,8 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/agents/*/*/archive"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/v1/agents/*/*/unarchive"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/agents/*/*/unarchive"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/v1/agents/*/*/reports"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/agents/*/*/reports"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/agents/*/*/star"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/agents/*/*/star"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/agents/*/*/rating"),

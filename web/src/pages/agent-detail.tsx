@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Clock, Globe, Lock, Star, Users } from 'lucide-react'
 import { useAgentDetail } from '@/features/agent/use-agent-detail'
 import { useArchiveAgent } from '@/features/agent/use-archive-agent'
 import { useUnarchiveAgent } from '@/features/agent/use-unarchive-agent'
+import { useReportAgent } from '@/features/agent/use-report-agent'
 import { useDeleteAgent } from '@/features/agent/use-delete-agent'
 import { useWithdrawAgentReview } from '@/features/agent/use-withdraw-agent-review'
 import { useRereleaseAgentVersion } from '@/features/agent/use-rerelease-agent-version'
@@ -15,6 +16,10 @@ import { AgentVersionCommentsSection } from '@/features/agent/comments'
 import { useAuth } from '@/features/auth/use-auth'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
+import { FileTree } from '@/features/skill/file-tree'
+import { FilePreviewDialog } from '@/features/skill/file-preview-dialog'
+import type { FileTreeNode } from '@/features/skill/file-tree-builder'
+import type { SkillFile } from '@/api/types'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
@@ -27,6 +32,7 @@ import {
   DialogTitle,
 } from '@/shared/ui/dialog'
 import { Input } from '@/shared/ui/input'
+import { Textarea } from '@/shared/ui/textarea'
 import { ConfirmDialog } from '@/shared/components/confirm-dialog'
 import { toast } from '@/shared/lib/toast'
 import { NamespaceBadge } from '@/shared/components/namespace-badge'
@@ -42,6 +48,53 @@ interface AgentDetailPageProps {
 }
 
 /**
+ * Builds a minimal virtual package file list from inline agent version content.
+ * This keeps the file-tree UX aligned with skill detail while using real data.
+ */
+function buildInlineAgentFiles(agent: {
+  body?: string
+  soul?: string
+  workflowYaml?: string
+}): SkillFile[] {
+  const files: SkillFile[] = []
+  const pushFile = (filePath: string, content: string, contentType: string) => {
+    files.push({
+      id: files.length + 1,
+      filePath,
+      fileSize: new Blob([content]).size,
+      contentType,
+      sha256: `inline-${filePath}`,
+    })
+  }
+
+  if (agent.body) {
+    pushFile('agent.md', agent.body, 'text/markdown')
+  }
+  if (agent.soul) {
+    pushFile('soul.md', agent.soul, 'text/markdown')
+  }
+  if (agent.workflowYaml) {
+    pushFile('workflow.yaml', agent.workflowYaml, 'application/x-yaml')
+  }
+  return files
+}
+
+/**
+ * Triggers browser download for inline agent file content.
+ */
+function triggerBrowserDownload(fileName: string, content: string, contentType: string) {
+  const blob = new Blob([content], { type: contentType })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = fileName
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+  URL.revokeObjectURL(url)
+}
+
+/**
  * Detail page for a single agent. Renders metadata + soul + workflow.
  */
 export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
@@ -52,6 +105,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const { data: agent, isLoading, isError, error } = useAgentDetail(namespace ?? '', slug ?? '')
   const archiveMutation = useArchiveAgent()
   const unarchiveMutation = useUnarchiveAgent()
+  const reportMutation = useReportAgent(namespace ?? '', slug ?? '')
   const deleteMutation = useDeleteAgent()
   const withdrawMutation = useWithdrawAgentReview()
   const rereleaseMutation = useRereleaseAgentVersion()
@@ -65,7 +119,33 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const [rereleaseTarget, setRereleaseTarget] = useState<string | null>(null)
   const [rereleaseInput, setRereleaseInput] = useState('')
   const [deleteVersionTarget, setDeleteVersionTarget] = useState<string | null>(null)
+  const [reportDialogOpen, setReportDialogOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportDetails, setReportDetails] = useState('')
+  const [hasReported, setHasReported] = useState(false)
   const [activeDoc, setActiveDoc] = useState<'agent' | 'soul'>('agent')
+  const [selectedFileNode, setSelectedFileNode] = useState<FileTreeNode | null>(null)
+  const [filePreviewOpen, setFilePreviewOpen] = useState(false)
+  const inlineFiles = useMemo(
+    () =>
+      buildInlineAgentFiles({
+        body: agent?.body,
+        soul: agent?.soul,
+        workflowYaml: agent?.workflowYaml,
+      }),
+    [agent?.body, agent?.soul, agent?.workflowYaml],
+  )
+  const inlineContentByPath = useMemo<Record<string, string>>(
+    () => ({
+      ...(agent?.body ? { 'agent.md': agent.body } : {}),
+      ...(agent?.soul ? { 'soul.md': agent.soul } : {}),
+      ...(agent?.workflowYaml ? { 'workflow.yaml': agent.workflowYaml } : {}),
+    }),
+    [agent?.body, agent?.soul, agent?.workflowYaml],
+  )
+  const selectedFileContent = selectedFileNode?.path
+    ? (inlineContentByPath[selectedFileNode.path] ?? null)
+    : null
   const handleRequireLogin = () => {
     navigate({
       to: '/login',
@@ -161,6 +241,39 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
     setDeleteInputOpen(true)
   }
 
+  const handleOpenReport = () => {
+    if (!viewerUserId) {
+      handleRequireLogin()
+      return
+    }
+    setReportReason('')
+    setReportDetails('')
+    setReportDialogOpen(true)
+  }
+
+  const handleSubmitReport = async () => {
+    if (!reportReason.trim()) {
+      toast.error(t('agents.detail.reportReasonRequired'))
+      return
+    }
+    try {
+      await reportMutation.mutateAsync({
+        reason: reportReason.trim(),
+        details: reportDetails.trim() || undefined,
+      })
+      setReportDialogOpen(false)
+      setReportReason('')
+      setReportDetails('')
+      setHasReported(true)
+      toast.success(t('agents.detail.reportSuccessTitle'), t('agents.detail.reportSuccessDescription'))
+    } catch (err) {
+      toast.error(
+        t('agents.detail.reportErrorTitle'),
+        err instanceof Error ? err.message : '',
+      )
+    }
+  }
+
   const handleDeleteAgent = async () => {
     if (deleteSlugInput !== targetSlug) return
     try {
@@ -252,6 +365,26 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
     }
   }
 
+  /**
+   * Opens the preview dialog for a clicked inline file node.
+   */
+  const handleInlineFileClick = (node: FileTreeNode) => {
+    setSelectedFileNode(node)
+    setFilePreviewOpen(true)
+  }
+
+  /**
+   * Downloads the currently selected inline file content.
+   */
+  const handleInlineFileDownload = () => {
+    if (!selectedFileNode || !selectedFileContent) return
+    triggerBrowserDownload(
+      selectedFileNode.name,
+      selectedFileContent,
+      selectedFileNode.file?.contentType ?? 'text/plain;charset=utf-8',
+    )
+  }
+
   return (
     <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 animate-fade-up">
       <div className="flex-1 min-w-0 space-y-8">
@@ -300,6 +433,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
           <TabsList>
             <TabsTrigger value="overview">{t('agents.detail.tabOverview')}</TabsTrigger>
             <TabsTrigger value="workflow">{t('agents.detail.tabWorkflow')}</TabsTrigger>
+            <TabsTrigger value="files">{t('agents.detail.tabFiles')}</TabsTrigger>
             <TabsTrigger value="versions">{t('agents.detail.tabVersions')}</TabsTrigger>
             <TabsTrigger value="comments">{t('agents.detail.tabComments')}</TabsTrigger>
           </TabsList>
@@ -344,6 +478,16 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
             <Card className="p-6 space-y-4">
               <div className="text-sm font-semibold text-foreground">{t('agents.detail.workflowHeading')}</div>
               <WorkflowSteps workflow={agent.workflow} />
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="files" className="mt-6">
+            <Card className="p-0 overflow-hidden">
+              {inlineFiles.length > 0 ? (
+                <FileTree files={inlineFiles} onFileClick={handleInlineFileClick} />
+              ) : (
+                <div className="p-8 text-muted-foreground text-center">{t('skillDetail.noFiles')}</div>
+              )}
             </Card>
           </TabsContent>
 
@@ -479,6 +623,14 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
               slug={targetSlug}
               onRequireLogin={handleRequireLogin}
             />
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleOpenReport}
+              disabled={hasReported}
+            >
+              {hasReported ? t('agents.detail.reportAlreadySubmitted') : t('agents.detail.reportButton')}
+            </Button>
           </Card>
         )}
 
@@ -597,6 +749,39 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('agents.detail.reportDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('agents.detail.reportDialogDescription')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={reportReason}
+              onChange={(event) => setReportReason(event.target.value)}
+              placeholder={t('agents.detail.reportReasonPlaceholder')}
+              maxLength={200}
+            />
+            <Textarea
+              value={reportDetails}
+              onChange={(event) => setReportDetails(event.target.value)}
+              placeholder={t('agents.detail.reportDetailsPlaceholder')}
+              rows={5}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
+              {t('dialog.cancel')}
+            </Button>
+            <Button onClick={handleSubmitReport} disabled={reportMutation.isPending}>
+              {reportMutation.isPending
+                ? t('agents.lifecycle.processing')
+                : t('agents.detail.submitReport')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDialog
         open={!!withdrawTarget}
         onOpenChange={(open) => {
@@ -678,6 +863,19 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <FilePreviewDialog
+        open={filePreviewOpen}
+        onOpenChange={(open) => {
+          setFilePreviewOpen(open)
+          if (!open) setSelectedFileNode(null)
+        }}
+        node={selectedFileNode}
+        content={selectedFileContent}
+        isLoading={false}
+        error={null}
+        onDownload={handleInlineFileDownload}
+      />
     </div>
   )
 }

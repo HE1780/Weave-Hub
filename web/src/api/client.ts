@@ -898,6 +898,23 @@ export const reportApi = {
     })
   },
 
+  /**
+   * Files an abuse report against an agent. Mirrors {@link submitSkillReport}
+   * — the response envelope wraps {@code {reportId, status}} but the caller
+   * generally only needs to know the request succeeded, so the return type
+   * stays {@code void}.
+   */
+  async submitAgentReport(namespace: string, slug: string, request: { reason: string; details?: string }): Promise<void> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    await fetchJson<void>(`${WEB_API_PREFIX}/agents/${cleanNamespace}/${encodeURIComponent(slug)}/reports`, {
+      method: 'POST',
+      headers: getCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(request),
+    })
+  },
+
   async listSkillReports(params: { status?: string; page?: number; size?: number }) {
     const searchParams = new URLSearchParams()
     searchParams.set('status', params.status ?? 'PENDING')
