@@ -25,6 +25,17 @@ vi.mock('@/features/agent/use-unarchive-agent', () => ({
   useUnarchiveAgent: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }))
 
+vi.mock('@/features/agent/social/agent-star-button', () => ({
+  AgentStarButton: () => null,
+}))
+vi.mock('@/features/agent/social/agent-rating-input', () => ({
+  AgentRatingInput: () => null,
+}))
+
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => vi.fn(),
+}))
+
 i18n.use(initReactI18next).init({
   lng: 'en',
   resources: {

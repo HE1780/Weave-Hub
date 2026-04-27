@@ -1345,6 +1345,9 @@ export interface AgentDto {
   visibility: AgentDtoVisibility
   ownerId: string
   status: AgentDtoStatus
+  starCount?: number
+  ratingAvg?: number | string
+  ratingCount?: number
   createdAt: string
   updatedAt: string
 }

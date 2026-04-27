@@ -1,8 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { Star } from 'lucide-react'
 import { useAgentDetail } from '@/features/agent/use-agent-detail'
 import { useArchiveAgent } from '@/features/agent/use-archive-agent'
 import { useUnarchiveAgent } from '@/features/agent/use-unarchive-agent'
+import { AgentStarButton } from '@/features/agent/social/agent-star-button'
+import { AgentRatingInput } from '@/features/agent/social/agent-rating-input'
 import { useAuth } from '@/features/auth/use-auth'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
 import { Button } from '@/shared/ui/button'
@@ -23,12 +27,19 @@ interface AgentDetailPageProps {
  */
 export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { data: agent, isLoading, isError, error } = useAgentDetail(namespace ?? '', slug ?? '')
   const archiveMutation = useArchiveAgent()
   const unarchiveMutation = useUnarchiveAgent()
   const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
   const [unarchiveConfirmOpen, setUnarchiveConfirmOpen] = useState(false)
+  const handleRequireLogin = () => {
+    navigate({
+      to: '/login',
+      search: { returnTo: `${window.location.pathname}${window.location.search}` },
+    })
+  }
 
   if (isLoading) {
     return (
@@ -108,7 +119,39 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
           )}
         </div>
         <p className="text-lg text-muted-foreground mt-3">{agent.description}</p>
+        {(agent.starCount !== undefined || agent.ratingAvg !== undefined) && (
+          <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+            {typeof agent.ratingAvg === 'number' && (agent.ratingCount ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="font-medium text-foreground">
+                  {agent.ratingAvg.toFixed(1)}
+                </span>
+                <span>({agent.ratingCount})</span>
+              </span>
+            )}
+            {typeof agent.starCount === 'number' && (
+              <span>{t('agents.detail.starCount', { count: agent.starCount })}</span>
+            )}
+          </div>
+        )}
       </header>
+
+      {agent.agentId && targetNamespace && targetSlug && (
+        <section className="flex flex-wrap items-center gap-4">
+          <AgentStarButton
+            namespace={targetNamespace}
+            slug={targetSlug}
+            starCount={agent.starCount ?? 0}
+            onRequireLogin={handleRequireLogin}
+          />
+          <AgentRatingInput
+            namespace={targetNamespace}
+            slug={targetSlug}
+            onRequireLogin={handleRequireLogin}
+          />
+        </section>
+      )}
 
       <section>
         <h2 className="text-xl font-semibold mb-3">{t('agents.detail.soulHeading')}</h2>

@@ -35,6 +35,10 @@ export function useAgentDetail(namespace: string, slug: string): UseQueryResult<
         displayName: agent.displayName,
         ownerId: agent.ownerId,
         status: agent.status,
+        starCount: agent.starCount ?? 0,
+        ratingAvg:
+          typeof agent.ratingAvg === 'string' ? Number(agent.ratingAvg) : (agent.ratingAvg ?? 0),
+        ratingCount: agent.ratingCount ?? 0,
       }
     },
     enabled: namespace.length > 0 && slug.length > 0,

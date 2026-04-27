@@ -1440,7 +1440,8 @@
       "typeLabel": "类型",
       "skillLabel": "技能",
       "promptLabel": "提示词",
-      "inputsLabel": "输入"
+      "inputsLabel": "输入",
+      "starCount": "{{count}} 个收藏"
     },
     "publish": {
       "title": "发布智能体",

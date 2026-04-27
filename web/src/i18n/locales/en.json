@@ -1440,7 +1440,9 @@
       "typeLabel": "Type",
       "skillLabel": "Skill",
       "promptLabel": "Prompt",
-      "inputsLabel": "Inputs"
+      "inputsLabel": "Inputs",
+      "starCount": "{{count}} star",
+      "starCount_other": "{{count}} stars"
     },
     "publish": {
       "title": "Publish Agent",

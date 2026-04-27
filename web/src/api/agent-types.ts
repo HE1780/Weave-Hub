@@ -23,6 +23,9 @@ export interface AgentDetail extends AgentSummary {
   displayName?: string
   ownerId?: string
   status?: 'ACTIVE' | 'ARCHIVED'
+  starCount?: number
+  ratingAvg?: number
+  ratingCount?: number
 }
 
 export interface AgentWorkflow {
