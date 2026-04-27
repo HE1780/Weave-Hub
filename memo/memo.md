@@ -4,6 +4,63 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-27 — Agent–Skill 能力对齐集群（A4/A7/A8/A10 完成，A9 延后）
+
+**Plan:** [docs/plans/2026-04-27-agent-skill-parity-cluster.md](../docs/plans/2026-04-27-agent-skill-parity-cluster.md)
+**Range:** `fb592b03` → `8fab7f20` （4 commits）
+
+### What shipped
+
+| 项 | Commit | 测试增量 |
+|---|---|---|
+| A4 Label | `fb592b03` | backend +17, web +2 |
+| A7 Download | `ef9be96f` | backend +13, web ±0 |
+| A8 CLI type=agent | `1715dec7` | backend +6, web ±0 |
+| A10 Stats | `8fab7f20` | backend ±0, web +1 |
+
+最终：**backend 554/554 passing，web 682/682 passing**。
+
+### A9 Promotion — 延后未实施
+
+**原因**：plan 估时 1 天且 backlog 标"mirror PromotionService"，实际 audit 后发现：
+
+- `PromotionService` 360 行，硬编码 `sourceSkillId/sourceVersionId/targetSkillId`
+- approve 路径会**物化**一份资源到目标 namespace（拷 SkillVersion + 文件 metadata + 重置 latestVersionId）
+- 同等的 agent 路径要拷 AgentVersion + `package_object_key`（涉及对象存储）+ AgentVersionStats（A10 刚加） + AgentTag 等等
+- 控制层 `PromotionController` 用的 `PromotionRequestDto` 和 `GovernanceWorkflowAppService` 的 method 签名也是 skill-only，加 agent 路径要么扩大签名要么抽 polymorphism
+- 需要独立 brainstorm 决定：拆表 (`agent_promotion_request`) vs 加 polymorphism column (`target_type` 在 `promotion_request` 表) vs 全新 service (`AgentPromotionService` 平行)
+
+**建议**：A9 重新走一次 brainstorm + ADR，独立 plan。当前 backlog 的 1 天估时是错的，实际更接近 2-3 天（含数据迁移 + UI + 测试）。
+
+### Spec 偏离
+
+**A7 frontend** — plan 列了"加下载按钮"，但读 `agent-detail.tsx` 发现 `handleDownloadPackage` 已经在 tree 里、调用 `/agents/{ns}/{slug}/versions/{v}/download` 这个尚未存在的端点。所以 A7 后端落地后前端零改动就工作了，commit message 已记录此节。
+
+**A4 frontend** — `agent-detail.test.tsx` 9 个 test 全部因为引入 `hasRole` 依赖而需要 patch（mockReturnValue 现在要带 `hasRole: () => false`）。属于 useAuth 共享 mock 的合理扩散，记录在 commit body。
+
+**A10** — backend 542 → 554 看上去没变是因为 surefire summary 是 per-module（被 skillhub-app 的 548 数字遮蔽），实际跨模块测试增加 5+8+2=15 个。
+
+### Known follow-ups
+
+1. **A9 重新 brainstorm**（最高优先级）：plan/backlog 里的"mirror PromotionService"误导，需要先决定 polymorphism vs 独立表/service 再拆任务
+2. **agent_search_document 与 label 同步**：A4 没接 search index 因为 fork 暂无 agent_search_document 表（P3-3 留待）
+3. **CLI publish/star for agents**：A8 只覆盖 read-and-pull，CLI 端推送场景仍只支持 skill
+4. **LandingHotSection 接 promotion 数据源**：当 A9 落地后才能做
+5. **Bean validation 仍未生效**（P2-4 既有项，与本次工作无关但所有 `@Valid` 仍 silent；当前所有 A 项依赖 domain 层守门）
+
+### How to resume
+
+A9 入口：
+
+1. brainstorm（建议 superpowers:brainstorming 半小时）：决定 polymorphism 形态 + 数据迁移策略
+2. 写 ADR 0004-agent-promotion 锁定决策
+3. 起独立 plan `docs/plans/YYYY-MM-DD-agent-promotion.md`
+4. 实施
+
+不建议直接照 backlog 的 1 天估时跑——那个估时基于错误的"mirror"假设。
+
+---
+
 ## Fork scope (read first)
 
 This fork (`HE1780/Weave-Hub`) takes Agent management, independent visual UI,
@@ -815,3 +872,216 @@ cd /Users/lydoc/projectscoding/skillhub/web && pnpm tsc --noEmit 2>&1 | grep -v 
 ```
 
 P0 全部清空。下一站候选（按 backlog 顺序）：P2-1 Agent star + rating，或独立 brainstorm 启动 P1-2 Agent 评论 / P3-1 Workflow Executor / P3-3 Agent search FTS。
+
+---
+
+## 2026-04-27 — Agents 页面对齐 Skills 风格（保留搜索，移除筛选）
+
+**范围**: `web/src/pages/agents.tsx` + `web/src/pages/agents.test.tsx`
+
+### 本次交付
+
+- `agents` 页面保留搜索能力，但改为仅关键词搜索（`q`），移除命名空间与可见性筛选控件。
+- 搜索输入区改用与 `skills` 同款 `SearchBar` 组件，风格与交互保持一致。
+- 页面骨架向 `skills` 对齐：居中 Hero（大标题/副标题）+ 搜索区 + 登录态发布按钮；列表区保留 AgentCard 网格展示。
+- 网格间距从 `gap-4` 调整为 `gap-5`，与 `skills` 页面卡片节奏一致。
+
+### 测试与验证
+
+- 更新 `agents.test.tsx`：删除“可见性筛选显示/隐藏”预期，改为“筛选控件不存在 + 登录态仍有发布按钮”。
+- 执行：`pnpm vitest run src/pages/agents.test.tsx src/pages/home.test.tsx` → **6/6 通过**
+- `agents.tsx`、`agents.test.tsx` diagnostics 均为 **0**。
+
+---
+
+## 2026-04-27 — 修复智能体发布页按钮被前端状态误判禁用
+
+**范围**: `web/src/pages/dashboard/publish-agent.tsx` + `web/src/pages/dashboard/publish-agent.test.tsx`
+
+### 问题
+
+- 用户反馈“发布智能体全部填写完成后，发布按钮仍不可用”。
+- 根因在于按钮禁用依赖前端本地状态组合（`selectedFile && namespace`），一旦某个 UI 事件未及时同步，就会被卡死，无法触发表单点击校验。
+
+### 修复
+
+- 按钮禁用条件改为仅 `publish.isPending`（提交中才禁用）。
+- 必填校验继续保留在 `handleSubmit` 中（缺文件/缺命名空间依旧 toast 提示），避免误禁用。
+- 新增测试覆盖该行为：非 pending 时提交按钮应可点击，以便触发校验逻辑。
+
+### 验证
+
+- `pnpm vitest run src/pages/dashboard/publish-agent.test.tsx src/pages/dashboard/publish.test.ts` → **5/5 通过**
+- `publish-agent.tsx`、`publish-agent.test.tsx` diagnostics 均为 **0**。
+
+---
+
+## 2026-04-27 — Agent 详情页对齐 Skill 详情样式（主文档双标签）
+
+**范围**:
+- `web/src/pages/agent-detail.tsx`
+- `web/src/features/agent/use-agent-detail.ts`
+- `web/src/api/agent-types.ts`
+- `web/src/pages/agent-detail.test.tsx`
+- `web/src/i18n/locales/en.json`
+- `web/src/i18n/locales/zh.json`
+
+### 本次交付
+
+- `agent-detail` 从单栏调整为与 `skill-detail` 同风格的双栏布局（主内容 + 侧栏）。
+- 主内容改为 Tabs：`概览 / 工作流 / 版本`，并保留智能体既有业务能力（评分、收藏、归档治理）。
+- 概览区实现主文档双标签切换：`agent.md` 与 `soul.md`，默认打开 `agent.md`（用户确认 B）。
+- 不引入假功能：版本区仅展示后端真实返回数据（版本号、状态、时间、包大小）。
+- `useAgentDetail` 透传 `visibility` 与 `versions`，供详情页真实渲染。
+
+### 测试与验证
+
+- 先写失败测试（新增 tabs + 双标签切换断言）后再实现，按 TDD 完成改造。
+- `pnpm vitest run src/pages/agent-detail.test.tsx` → **6/6 通过**
+- `pnpm vitest run src/pages/agent-detail.test.tsx src/pages/agents.test.tsx` → **10/10 通过**
+- diagnostics:
+  - `agent-detail.tsx` = 0
+  - `use-agent-detail.ts` = 0
+  - `agent-types.ts` = 0
+  - `agent-detail.test.tsx` = 0
+
+---
+
+## 2026-04-27 — 智能体发布页可见性文案与 Skills 完全对齐
+
+**范围**: `web/src/pages/dashboard/publish-agent.tsx` + `web/src/pages/dashboard/publish-agent.test.tsx`
+
+### 本次交付
+
+- `publish-agent` 可见性文案改为直接复用 `skills` 发布页同一套 i18n key：
+  - `publish.visibility`
+  - `publish.visibilityOptions.public`
+  - `publish.visibilityOptions.namespaceOnly` / `publish.visibilityOptions.loggedInUsersOnly`
+  - `publish.visibilityOptions.private`
+- 命名空间为 `GLOBAL` 时，保持与 skills 一致显示 `loggedInUsersOnly`，否则显示 `namespaceOnly`。
+
+### 验证
+
+- 先补失败用例（RED）：断言页面不再出现 `agents.publish.visibility*`，必须出现 `publish.visibilityOptions.*`。
+- 再实现（GREEN）后回归：
+  - `pnpm vitest run src/pages/dashboard/publish-agent.test.tsx src/pages/dashboard/publish.test.ts` → **5/5 通过**
+  - diagnostics：`publish-agent.tsx` / `publish-agent.test.tsx` 均为 **0**
+
+### 补充（A 方案）
+
+- 用户明确选择 `A`（按 skills 当前短文案），已将 `agents.publish.visibilityPublic/visibilityNamespace/visibilityPrivate` 也同步改为短文本（en/zh），避免任何后续误引用旧长文案造成视觉不一致。
+- 回归：`pnpm vitest run src/pages/dashboard/publish-agent.test.tsx src/pages/dashboard/publish.test.ts` 继续 **5/5 通过**。
+
+---
+
+## 2026-04-27 — Agents 列表卡片对齐 Skills 信息层（含固定高度）
+
+**范围**:
+- `web/src/features/agent/agent-card.tsx`
+- `web/src/features/agent/use-agents.ts`
+- `web/src/api/agent-types.ts`
+- `web/src/features/agent/agent-card.test.tsx`
+- `web/src/features/agent/use-agents.test.tsx`
+
+### 本次交付
+
+- `AgentCard` 按 skills 卡片节奏补齐信息：
+  - 标题：优先 `displayName`，回退 `name`
+  - 命名空间徽标：显示 `@{namespace}`，缺省为 `@global`
+  - 底部元信息：版本（无则 `—`）、下载量（占位 `—`）、收藏量（`starCount`）
+- 卡片高度统一：新增 `min-h-[220px]`，并保留 `h-full + mt-auto`，使同排卡片视觉高度更一致。
+- `useAgents` 透传新增字段到 `AgentSummary`：`displayName`、`version`、`starCount`（下载量仍按用户选择显示 `—`，不伪造数据）。
+
+### 测试与验证
+
+- TDD：先改测试使其失败，再实现。
+- `pnpm vitest run src/features/agent/agent-card.test.tsx src/features/agent/use-agents.test.tsx src/pages/agents.test.tsx` → **12/12 通过**
+- diagnostics:
+  - `agent-card.tsx` = 0
+  - `use-agents.ts` = 0
+  - `agent-types.ts` = 0
+  - `agent-card.test.tsx` = 0
+
+---
+
+## 2026-04-27 — Agent 详情页补齐 Files 视图与文件下载（对齐 Skills 体验）
+
+**范围**:
+- `web/src/pages/agent-detail.tsx`
+- `web/src/pages/agent-detail.test.tsx`
+- `web/src/features/agent/use-agent-detail.ts`
+- `web/src/api/agent-types.ts`
+- `web/src/i18n/locales/en.json`
+- `web/src/i18n/locales/zh.json`
+
+### 本次交付
+
+- 在 `agent-detail` 的主 Tabs 中新增 `Files` 标签（对齐 skills detail 的信息架构）。
+- 基于当前后端已返回的真实内容（`agent.body` / `agent.soul` / `workflowYaml`）构建虚拟文件清单：
+  - `agent.md`
+  - `soul.md`
+  - `workflow.yaml`
+- 复用现有 `FileTree` + `FilePreviewDialog` 组件，支持：
+  - 文件树浏览
+  - 文件内容预览
+  - 单文件下载（浏览器 Blob 下载）
+- `AgentDetail` 类型补充 `workflowYaml?: string`，`useAgentDetail` 同步透传该字段。
+- i18n 补充 `agents.detail.tabFiles`（en/zh）。
+
+### 测试与验证
+
+- 先补失败测试（RED）：`agent-detail.test.tsx` 增加 Files tab 断言与文件预览交互断言。
+- 再实现并回归（GREEN）：
+  - `pnpm vitest run src/pages/agent-detail.test.tsx src/features/agent/agent-card.test.tsx src/features/agent/use-agents.test.tsx src/pages/agents.test.tsx` → **20/20 通过**
+- diagnostics:
+  - `agent-detail.tsx` = 0
+  - `use-agent-detail.ts` = 0
+  - `agent-types.ts` = 0
+  - `agent-detail.test.tsx` = 0
+
+---
+
+## 2026-04-27 — Agent 详情页补齐安装/下载/分享操作区（继续对齐 Skills）
+
+**范围**:
+- `web/src/pages/agent-detail.tsx`
+- `web/src/pages/agent-detail.test.tsx`
+
+### 本次交付
+
+- 在 `agent-detail` 侧栏新增与 skills 风格一致的操作区：
+  - `Install` 卡片：复用 `InstallCommand`（`npx clawhub install ... --registry ...`）
+  - `Download` 按钮：走后端真实路径 `/api/web/agents/{namespace}/{slug}/versions/{version}/download`
+  - `Share` 按钮：复制 `namespace/slug + 描述 + agents 详情页 URL`
+- 保持“无假功能”原则：下载直接调用真实接口 URL，不做假数据模拟。
+
+### 测试与验证
+
+- 更新 `agent-detail.test.tsx`，断言操作区文案与按钮存在。
+- 回归：
+  - `pnpm vitest run src/pages/agent-detail.test.tsx src/features/agent/agent-card.test.tsx src/features/agent/use-agents.test.tsx src/pages/agents.test.tsx` → **20/20 通过**
+- diagnostics:
+  - `agent-detail.tsx` = 0
+  - `agent-detail.test.tsx` = 0
+
+---
+
+## 2026-04-27 — Agent 详情页补齐：侧栏文件浏览卡片 + 举报按钮拆分
+
+**范围**:
+- `web/src/pages/agent-detail.tsx`
+- `web/src/pages/agent-detail.test.tsx`
+
+### 本次交付
+
+- 在 Agent 详情页右侧栏新增与 Skill 详情同风格的“文件浏览”折叠卡片（含文件数、展开/收起、`FileTree bare` 列表）。
+- 保留主区 `Files` tab，同时补齐侧栏快速文件浏览入口，满足“详情页侧栏可直接看文件”的使用习惯。
+- 将“举报”按钮从“收藏/评分”卡片中拆出，单独成卡片；社交卡只保留 `AgentStarButton` 与 `AgentRatingInput`。
+
+### 测试与验证
+
+- 新增测试：断言侧栏文件浏览卡片可见、且举报按钮所在卡片不包含收藏/评分组件。
+- 回归：`pnpm vitest run src/pages/agent-detail.test.tsx` → **9/9 通过**
+- diagnostics:
+  - `agent-detail.tsx` = 0
+  - `agent-detail.test.tsx` = 0

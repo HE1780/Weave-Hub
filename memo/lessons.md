@@ -102,3 +102,18 @@
 - 即便分两个调用，**commit 命令的 message 写好后立即提交**，中间不要穿插任何其他工具调用——index 在那期间是并行 agent 也能写的。
 - 如果还是被抢了：**不要 rebase 别人的 commit**（他们也在改写历史的话会更乱）。最稳妥是接受现状，在 memo 里写清楚 "X 文件其实在 commit Y 里，虽然 message 说的是 Z"，方便未来搜索。
 - 对于"我自己的多个独立 commit"场景，**先全部 stage + commit 完才开下一个任务**；不要中途让 cwd 暴露给并行 agent。
+
+---
+
+## 2026-04-27 — backlog 估时不要照搬，先 audit 既有代码
+
+**症状**：fork-backlog A9 标"~1 天 · mirror PromotionService"，实际打开 `PromotionService` 360 行，硬编码 `sourceSkillId/sourceVersionId/targetSkillId`，approve 路径还要**物化资源**（拷 SkillVersion + 文件 metadata + 重置 latestVersionId）。Mirror 到 agent 端要拷 AgentVersion + `package_object_key`（涉及对象存储） + AgentTag + AgentVersionStats，外加 controller DTO 都是 skill-only — 实际工作量 2-3 天 + brainstorm + ADR。同 commit 集群里另一项 A7 也类似：plan 假设要 tar.gz 重打包，audit 后发现 `package_object_key` 本就是发布时上传的 .zip，直接流式回传就行——工作量从 1 天降到 1.5 小时。
+
+**原因**：backlog 的"mirror X"描述是签名级别的相似性，不代表实现级别的相似性。estimate 写出来时没人逐个 audit 既有 service 的复杂度，于是在 plan 里固化成了错误的工作量假设。
+
+**规则**：
+- **执行 plan 前先抽样 audit 一两个"mirror"项的既有 service 行数和职责**：< 100 行的 service mirror 一般估时是对的；200+ 行且涉及 cross-entity 物化/复制的 service mirror 一定是低估。
+- backlog 的 estimate 是 hint 不是合同。看到 plan 的 hour 估时和 audit 出来的实际复杂度差超过 2x 时，**不要硬扛着按 plan 干**。停下来重新写 plan 那一节、明确"这条比想象的大"，然后挑下一条做。
+- 如果一条延后了，**当场把延后的原因写进 backlog 那条目录**（不是只在 commit 里说），未来接手的人才能在打开 backlog 第一眼就看到 "这条还没做且原因是 X"。
+- 用 backlog 评估"这一会话能搞定几条"时，按 audit 后的真实估时算，不是 backlog 上写的。
+

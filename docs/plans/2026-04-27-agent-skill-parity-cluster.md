@@ -2,9 +2,10 @@
 
 **Date:** 2026-04-27
 **ADR:** 0003 §1.1（Agent registry 与 Skill 在能力层面对齐；不引入运行时语义）
-**Status:** Drafted, not started
+**Status:** A4 / A7 / A8 / A10 ✅ 完成（2026-04-27）；A9 ⏸️ 延后需独立 brainstorm
 **Owner:** HE1780/Weave-Hub fork
 **Backlog source:** [docs/plans/2026-04-27-fork-backlog.md](2026-04-27-fork-backlog.md) "Agent–Skill 能力对齐集群"
+**Commit range:** `fb592b03` (A4) → `ef9be96f` (A7) → `1715dec7` (A8) → `8fab7f20` (A10)
 
 ## 范围
 
