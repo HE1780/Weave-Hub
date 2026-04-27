@@ -1326,6 +1326,67 @@ export const commentsApi = {
   },
 }
 
+/**
+ * Agent-version comments. Mirrors {@link commentsApi} on a separate URL space
+ * so the two comment types stay independent (sibling-table architecture). The
+ * response payload reuses the same {@code VersionComment} TypeScript shape
+ * since the only structural difference between skill and agent comments is
+ * the version-id field name on the server side, and the response normalizes
+ * that to {@code agentVersionId}.
+ */
+export const agentCommentsApi = {
+  async list(versionId: number, params: { page?: number; size?: number } = {}) {
+    const search = new URLSearchParams()
+    if (params.page !== undefined) search.set('page', String(params.page))
+    if (params.size !== undefined) search.set('size', String(params.size))
+    const qs = search.toString()
+    const suffix = qs ? `?${qs}` : ''
+    return fetchJson<import('@/features/agent/comments/types').AgentVersionCommentsPage>(
+      `${WEB_API_PREFIX}/agent-versions/${versionId}/comments${suffix}`,
+    )
+  },
+
+  async post(versionId: number, body: string) {
+    return fetchJson<import('@/features/agent/comments/types').AgentVersionComment>(
+      `${WEB_API_PREFIX}/agent-versions/${versionId}/comments`,
+      {
+        method: 'POST',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ body }),
+      },
+    )
+  },
+
+  async edit(commentId: number, body: string) {
+    return fetchJson<import('@/features/agent/comments/types').AgentVersionComment>(
+      `${WEB_API_PREFIX}/agent-comments/${commentId}`,
+      {
+        method: 'PATCH',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ body }),
+      },
+    )
+  },
+
+  async delete(commentId: number) {
+    await fetchJson<void>(`${WEB_API_PREFIX}/agent-comments/${commentId}`, {
+      method: 'DELETE',
+      headers: getCsrfHeaders(),
+    })
+  },
+
+  async togglePin(commentId: number, pinned: boolean) {
+    return fetchJson<import('@/features/agent/comments/types').AgentVersionComment>(
+      `${WEB_API_PREFIX}/agent-comments/${commentId}/pin`,
+      {
+        method: 'POST',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ pinned }),
+      },
+    )
+  },
+}
+
 export type AgentDtoVisibility = 'PUBLIC' | 'NAMESPACE_ONLY' | 'PRIVATE'
 export type AgentDtoStatus = 'ACTIVE' | 'ARCHIVED'
 export type AgentVersionDtoStatus =

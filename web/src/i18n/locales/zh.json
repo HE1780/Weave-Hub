@@ -1415,7 +1415,7 @@
   },
   "agents": {
     "title": "智能体",
-    "subtitle": "带人格的多技能编排",
+    "subtitle": "围绕职责、品味、流程编排与工具包，构建可执行的智能体",
     "emptyTitle": "暂无智能体",
     "emptyDescription": "智能体发布后将显示在这里。",
     "loading": "正在加载智能体…",
@@ -1434,6 +1434,7 @@
       "tabOverview": "概览",
       "tabWorkflow": "工作流",
       "tabVersions": "版本",
+      "tabComments": "评论",
       "docTagAgent": "agent.md",
       "docTagSoul": "soul.md",
       "docEmpty": "（未提供文档）",

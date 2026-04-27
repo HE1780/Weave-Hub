@@ -1434,6 +1434,7 @@
       "tabOverview": "Overview",
       "tabWorkflow": "Workflow",
       "tabVersions": "Versions",
+      "tabComments": "Comments",
       "docTagAgent": "agent.md",
       "docTagSoul": "soul.md",
       "docEmpty": "(no document provided)",

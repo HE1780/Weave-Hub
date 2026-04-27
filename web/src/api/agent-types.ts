@@ -26,11 +26,27 @@ export interface AgentDetail extends AgentSummary {
   starCount?: number
   ratingAvg?: number
   ratingCount?: number
+  visibility?: 'PUBLIC' | 'NAMESPACE_ONLY' | 'PRIVATE'
+  versions?: AgentVersionSummary[]
+  /**
+   * The id of the latest PUBLISHED agent version. Comments and other
+   * per-version surfaces key off this rather than walking versions[].
+   */
+  latestPublishedVersionId?: number
   /**
    * Backend-computed governance permission: true when the viewer is the
    * agent owner OR has namespace ADMIN/OWNER role. Mirrors AgentDto.canManageLifecycle.
    */
   canManageLifecycle?: boolean
+}
+
+export interface AgentVersionSummary {
+  id: number
+  version: string
+  status: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'ARCHIVED'
+  submittedAt: string
+  publishedAt?: string | null
+  packageSizeBytes: number
 }
 
 export interface AgentWorkflow {

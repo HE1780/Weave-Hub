@@ -11,6 +11,8 @@ import { useRereleaseAgentVersion } from '@/features/agent/use-rerelease-agent-v
 import { useDeleteAgentVersion } from '@/features/agent/use-delete-agent-version'
 import { AgentStarButton } from '@/features/agent/social/agent-star-button'
 import { AgentRatingInput } from '@/features/agent/social/agent-rating-input'
+import { AgentVersionCommentsSection } from '@/features/agent/comments'
+import { useAuth } from '@/features/auth/use-auth'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
 import { Button } from '@/shared/ui/button'
@@ -45,6 +47,8 @@ interface AgentDetailPageProps {
 export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const viewerUserId = user?.userId ?? null
   const { data: agent, isLoading, isError, error } = useAgentDetail(namespace ?? '', slug ?? '')
   const archiveMutation = useArchiveAgent()
   const unarchiveMutation = useUnarchiveAgent()
@@ -297,6 +301,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
             <TabsTrigger value="overview">{t('agents.detail.tabOverview')}</TabsTrigger>
             <TabsTrigger value="workflow">{t('agents.detail.tabWorkflow')}</TabsTrigger>
             <TabsTrigger value="versions">{t('agents.detail.tabVersions')}</TabsTrigger>
+            <TabsTrigger value="comments">{t('agents.detail.tabComments')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
@@ -408,6 +413,19 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                 </div>
               ) : (
                 <div className="p-8 text-muted-foreground text-center">{t('skillDetail.noVersions')}</div>
+              )}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="comments" className="mt-6">
+            <Card className="p-6">
+              {agent.latestPublishedVersionId ? (
+                <AgentVersionCommentsSection
+                  versionId={agent.latestPublishedVersionId}
+                  canPost={!!viewerUserId}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">{t('agents.noPublishedVersion')}</p>
               )}
             </Card>
           </TabsContent>

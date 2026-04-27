@@ -35,10 +35,23 @@ export function useAgentDetail(namespace: string, slug: string): UseQueryResult<
         displayName: agent.displayName,
         ownerId: agent.ownerId,
         status: agent.status,
+        visibility: agent.visibility,
         starCount: agent.starCount ?? 0,
         ratingAvg:
           typeof agent.ratingAvg === 'string' ? Number(agent.ratingAvg) : (agent.ratingAvg ?? 0),
         ratingCount: agent.ratingCount ?? 0,
+        versions: versions.map((version) => ({
+          id: version.id,
+          version: version.version,
+          status: version.status,
+          submittedAt: version.submittedAt,
+          publishedAt: version.publishedAt,
+          packageSizeBytes: version.packageSizeBytes,
+        })),
+        // Surface the latest PUBLISHED version's id so consumers (e.g. the
+        // comments tab) can scope per-version queries without re-walking the
+        // versions array.
+        latestPublishedVersionId: latestPublished.id,
         canManageLifecycle: agent.canManageLifecycle ?? false,
       }
     },
