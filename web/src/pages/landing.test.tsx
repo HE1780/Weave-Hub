@@ -1,89 +1,33 @@
-import { describe, expect, it, vi } from 'vitest'
-
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children }: { children: unknown }) => children,
-  useNavigate: () => vi.fn(),
-}))
-
-vi.mock('react-i18next', async () => {
-  const actual = await vi.importActual<typeof import('react-i18next')>('react-i18next')
-  return {
-    ...actual,
-    useTranslation: () => ({
-      t: (key: string) => key,
-    }),
-  }
-})
-
-vi.mock('lucide-react', () => ({
-  PackageOpen: () => null,
-  Terminal: () => null,
-  Shield: () => null,
-  Users: () => null,
-  GitBranch: () => null,
-  Search: () => null,
-  Settings: () => null,
-  ChevronDown: () => null,
-}))
-
-vi.mock('@/shared/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: unknown }) => children,
-  DropdownMenuTrigger: ({ children }: { children: unknown }) => children,
-  DropdownMenuContent: ({ children }: { children: unknown }) => children,
-  DropdownMenuItem: ({ children }: { children: unknown }) => children,
-}))
-
-vi.mock('@/shared/components/landing-quick-start', () => ({
-  LandingQuickStartSection: () => null,
-}))
-
-vi.mock('@/shared/components/landing-channels', () => ({
-  LandingChannelsSection: () => null,
-}))
-
-vi.mock('@/shared/components/popular-agents', () => ({
-  PopularAgents: () => null,
-}))
-
-vi.mock('@/features/skill/skill-card', () => ({
-  SkillCard: () => null,
-}))
-
-vi.mock('@/shared/components/skeleton-loader', () => ({
-  SkeletonList: () => null,
-}))
-
-vi.mock('@/shared/hooks/use-skill-queries', () => ({
-  useSearchSkills: () => ({
-    data: { items: [] },
-    isLoading: false,
-  }),
-}))
-
-vi.mock('@/shared/hooks/use-in-view', () => ({
-  useInView: () => ({ ref: vi.fn(), inView: true }),
-}))
-
-vi.mock('@/shared/lib/search-query', () => ({
-  normalizeSearchQuery: (q: string) => q.trim(),
-}))
-
-vi.mock('@/shared/ui/button', () => ({
-  Button: ({ children }: { children: unknown }) => children,
-}))
-
-import { renderToStaticMarkup } from 'react-dom/server'
+// @vitest-environment jsdom
+import { describe, expect, it, afterEach, vi } from 'vitest'
+import { render, cleanup } from '@testing-library/react'
 import { LandingPage } from './landing'
 
+vi.mock('@/shared/components/landing-hero', () => ({
+  LandingHero: () => <div data-testid="hero">hero</div>,
+}))
+vi.mock('@/shared/components/landing-hot-section', () => ({
+  LandingHotSection: () => <div data-testid="hot">hot</div>,
+}))
+vi.mock('@/shared/components/landing-recent-section', () => ({
+  LandingRecentSection: () => <div data-testid="recent">recent</div>,
+}))
+vi.mock('@/shared/components/landing-workspace', () => ({
+  LandingWorkspace: () => <div data-testid="workspace">workspace</div>,
+}))
+vi.mock('@/shared/components/landing-footer', () => ({
+  LandingFooter: () => <div data-testid="footer">footer</div>,
+}))
+
+afterEach(() => cleanup())
+
 describe('LandingPage', () => {
-  it('exports a named component function', () => {
-    expect(typeof LandingPage).toBe('function')
-  })
-
-  it('renders the brand name in the hero section', () => {
-    const html = renderToStaticMarkup(<LandingPage />)
-
-    expect(html).toContain('SkillHub')
-    expect(html).toContain('landing.hero.title')
+  it('renders 4 sections + footer in correct order', () => {
+    const { container } = render(<LandingPage />)
+    expect(container.textContent).toContain('hero')
+    expect(container.textContent).toContain('hot')
+    expect(container.textContent).toContain('recent')
+    expect(container.textContent).toContain('workspace')
+    expect(container.textContent).toContain('footer')
   })
 })
