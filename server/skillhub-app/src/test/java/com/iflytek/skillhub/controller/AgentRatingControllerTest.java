@@ -8,6 +8,7 @@ import com.iflytek.skillhub.domain.agent.social.AgentRatingService;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceMemberRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
+import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -118,5 +122,46 @@ class AgentRatingControllerTest {
         mockMvc.perform(get("/api/v1/agents/global/planner/rating"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value(401));
+    }
+
+    @Test
+    void rate_agent_with_null_score_returns_400_via_bean_validation() throws Exception {
+        mockMvc.perform(put("/api/v1/agents/global/planner/rating")
+                        .with(authentication(auth()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"score\": null}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+        // bean validation short-circuits the request before reaching the service
+        verify(agentRatingService, never()).rate(any(), any(), any(short.class));
+    }
+
+    @Test
+    void rate_agent_with_score_below_range_returns_400_via_domain_validation() throws Exception {
+        doThrow(new DomainBadRequestException("error.rating.score.invalid"))
+                .when(agentRatingService).rate(eq(10L), eq("user-42"), eq((short) 0));
+
+        mockMvc.perform(put("/api/v1/agents/global/planner/rating")
+                        .with(authentication(auth()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"score\": 0}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+    }
+
+    @Test
+    void rate_agent_with_score_above_range_returns_400_via_domain_validation() throws Exception {
+        doThrow(new DomainBadRequestException("error.rating.score.invalid"))
+                .when(agentRatingService).rate(eq(10L), eq("user-42"), eq((short) 6));
+
+        mockMvc.perform(put("/api/v1/agents/global/planner/rating")
+                        .with(authentication(auth()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"score\": 6}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
     }
 }
