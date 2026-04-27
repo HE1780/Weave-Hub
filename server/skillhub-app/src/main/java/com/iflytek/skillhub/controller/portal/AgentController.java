@@ -5,6 +5,7 @@ import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.domain.agent.Agent;
 import com.iflytek.skillhub.domain.agent.AgentVersion;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
+import com.iflytek.skillhub.domain.agent.service.AgentDownloadService;
 import com.iflytek.skillhub.domain.agent.service.AgentService;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
@@ -16,8 +17,12 @@ import com.iflytek.skillhub.dto.AgentVersionResponse;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.PageResponse;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,13 +44,16 @@ public class AgentController extends BaseApiController {
 
     private final AgentService agentService;
     private final NamespaceRepository namespaceRepository;
+    private final AgentDownloadService agentDownloadService;
 
     public AgentController(AgentService agentService,
                            NamespaceRepository namespaceRepository,
+                           AgentDownloadService agentDownloadService,
                            ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.agentService = agentService;
         this.namespaceRepository = namespaceRepository;
+        this.agentDownloadService = agentDownloadService;
     }
 
     @GetMapping
@@ -174,6 +182,58 @@ public class AgentController extends BaseApiController {
                 .orElseThrow(() -> new DomainNotFoundException("Agent version not found"));
 
         return ok("response.success.read", AgentVersionResponse.from(v));
+    }
+
+    @GetMapping("/{namespace}/{slug}/download")
+    public ResponseEntity<InputStreamResource> downloadLatest(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+
+        AgentDownloadService.DownloadResult result = agentDownloadService.downloadLatest(
+                namespace, slug,
+                principal == null ? null : principal.userId(),
+                rolesOrEmpty(userNsRoles));
+        return buildDownloadResponse(result);
+    }
+
+    @GetMapping("/{namespace}/{slug}/versions/{version}/download")
+    public ResponseEntity<InputStreamResource> downloadVersion(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @PathVariable String version,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+
+        AgentDownloadService.DownloadResult result = agentDownloadService.downloadVersion(
+                namespace, slug, version,
+                principal == null ? null : principal.userId(),
+                rolesOrEmpty(userNsRoles));
+        return buildDownloadResponse(result);
+    }
+
+    @GetMapping("/{namespace}/{slug}/tags/{tagName}/download")
+    public ResponseEntity<InputStreamResource> downloadByTag(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @PathVariable String tagName,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+
+        AgentDownloadService.DownloadResult result = agentDownloadService.downloadByTag(
+                namespace, slug, tagName,
+                principal == null ? null : principal.userId(),
+                rolesOrEmpty(userNsRoles));
+        return buildDownloadResponse(result);
+    }
+
+    private ResponseEntity<InputStreamResource> buildDownloadResponse(AgentDownloadService.DownloadResult result) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.filename() + "\"")
+                .contentType(MediaType.parseMediaType(result.contentType()))
+                .contentLength(result.contentLength())
+                .body(new InputStreamResource(result.openContent()));
     }
 
     private Namespace resolveNamespaceOr404(String slug) {
