@@ -1,6 +1,7 @@
 package com.iflytek.skillhub.domain.agent;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -34,6 +35,15 @@ public class Agent {
     @Column(nullable = false, length = 16)
     private AgentStatus status = AgentStatus.ACTIVE;
 
+    @Column(name = "star_count", nullable = false)
+    private Integer starCount = 0;
+
+    @Column(name = "rating_avg", precision = 3, scale = 2, nullable = false)
+    private BigDecimal ratingAvg = BigDecimal.ZERO;
+
+    @Column(name = "rating_count", nullable = false)
+    private Integer ratingCount = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -59,6 +69,9 @@ public class Agent {
     public AgentVisibility getVisibility() { return visibility; }
     public String getOwnerId() { return ownerId; }
     public AgentStatus getStatus() { return status; }
+    public Integer getStarCount() { return starCount; }
+    public BigDecimal getRatingAvg() { return ratingAvg; }
+    public Integer getRatingCount() { return ratingCount; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 
