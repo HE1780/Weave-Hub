@@ -1,19 +1,47 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import { Upload } from 'lucide-react'
+import type { AgentVisibilityFilter } from '@/api/client'
 import { useAgents } from '@/features/agent/use-agents'
 import { AgentCard } from '@/features/agent/agent-card'
 import { useAuth } from '@/features/auth/use-auth'
+import { useMyNamespaces } from '@/shared/hooks/use-namespace-queries'
+import { useDebounce } from '@/shared/hooks/use-debounce'
 import { EmptyState } from '@/shared/components/empty-state'
+import { Input } from '@/shared/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select'
 import { buttonVariants } from '@/shared/ui/button'
+
+const ALL = '__all__'
 
 /**
  * Agents list page. Reads from useAgents() — real backend.
+ * Search input has 300ms debounce; namespace + visibility selectors apply immediately.
  */
 export function AgentsPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
-  const { data: agents, isLoading, isError } = useAgents()
+  const { data: myNamespaces } = useMyNamespaces()
+
+  const [rawQ, setRawQ] = useState('')
+  const debouncedQ = useDebounce(rawQ, 300)
+  const [namespace, setNamespace] = useState<string | undefined>(undefined)
+  const [visibility, setVisibility] = useState<AgentVisibilityFilter | undefined>(undefined)
+
+  const { data: agents, isLoading, isError } = useAgents({
+    q: debouncedQ.trim() || undefined,
+    namespace,
+    visibility,
+  })
+
+  const hasActiveFilter = !!(debouncedQ.trim() || namespace || visibility)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
@@ -42,6 +70,52 @@ export function AgentsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center">
+          <Input
+            placeholder={t('agents.search.placeholder')}
+            value={rawQ}
+            onChange={(e) => setRawQ(e.target.value)}
+            className="md:flex-1"
+            aria-label={t('agents.search.placeholder')}
+          />
+          <Select
+            value={namespace ?? ALL}
+            onValueChange={(v) => setNamespace(v === ALL ? undefined : v)}
+          >
+            <SelectTrigger className="md:w-48" aria-label={t('agents.search.allNamespaces')}>
+              <SelectValue placeholder={t('agents.search.allNamespaces')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{t('agents.search.allNamespaces')}</SelectItem>
+              {(myNamespaces ?? []).map((ns) => (
+                <SelectItem key={ns.id} value={ns.slug}>
+                  {ns.displayName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {user && (
+            <Select
+              value={visibility ?? ALL}
+              onValueChange={(v) =>
+                setVisibility(v === ALL ? undefined : (v as AgentVisibilityFilter))
+              }
+            >
+              <SelectTrigger className="md:w-40" aria-label={t('agents.search.allVisibility')}>
+                <SelectValue placeholder={t('agents.search.allVisibility')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>{t('agents.search.allVisibility')}</SelectItem>
+                <SelectItem value="PUBLIC">{t('agents.search.visibilityPublic')}</SelectItem>
+                <SelectItem value="NAMESPACE_ONLY">
+                  {t('agents.search.visibilityNamespace')}
+                </SelectItem>
+                <SelectItem value="PRIVATE">{t('agents.search.visibilityPrivate')}</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
         {isLoading && (
           <p className="text-center text-muted-foreground">{t('agents.loading')}</p>
         )}
@@ -50,8 +124,8 @@ export function AgentsPage() {
         )}
         {!isLoading && !isError && agents && agents.length === 0 && (
           <EmptyState
-            title={t('agents.emptyTitle')}
-            description={t('agents.emptyDescription')}
+            title={hasActiveFilter ? t('agents.search.noResults') : t('agents.emptyTitle')}
+            description={hasActiveFilter ? '' : t('agents.emptyDescription')}
           />
         )}
         {!isLoading && !isError && agents && agents.length > 0 && (

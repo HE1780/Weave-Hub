@@ -33,7 +33,7 @@
     },
     "recent": {
       "eyebrow": "Live Updates",
-      "title": "Latest activity",
+      "title": "Recent updates",
       "loadMore": "Load discovery stream"
     },
     "workspace": {
@@ -1421,6 +1421,15 @@
     "loading": "Loading agents…",
     "loadError": "Failed to load agents.",
     "noPublishedVersion": "This agent has no published version yet.",
+    "search": {
+      "placeholder": "Search agents…",
+      "allNamespaces": "All namespaces",
+      "allVisibility": "All visibility",
+      "visibilityPublic": "Public",
+      "visibilityNamespace": "Namespace only",
+      "visibilityPrivate": "Private",
+      "noResults": "No agents match your search."
+    },
     "detail": {
       "soulHeading": "Soul",
       "workflowHeading": "Workflow",

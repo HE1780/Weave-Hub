@@ -33,7 +33,7 @@
     },
     "recent": {
       "eyebrow": "Live updates",
-      "title": "全域动态流",
+      "title": "最近更新",
       "loadMore": "Load discovery stream"
     },
     "workspace": {
@@ -48,21 +48,21 @@
     },
     "footer": {
       "tagline": "WeaveHub 知连:连接每一种智力片段,编织未来的无限可能。致力于构建全球最高效的 AI 协作枢纽。",
-      "documentation": "Documentation",
-      "community": "Community",
+      "documentation": "文档",
+      "community": "社区",
       "links": {
-        "apiReferences": "API References",
-        "cloudSync": "Cloud Sync",
-        "security": "Security",
-        "integration": "Integration",
-        "openSource": "Open Source",
-        "forum": "Forum",
-        "privacy": "Privacy",
-        "support": "Support"
+        "apiReferences": "API 参考",
+        "cloudSync": "云端同步",
+        "security": "安全",
+        "integration": "集成",
+        "openSource": "开源",
+        "forum": "论坛",
+        "privacy": "隐私",
+        "support": "支持"
       },
-      "copyright": "© 2026 WEAVEHUB INTELLIGENCE. ALL RIGHTS RESERVED.",
+      "copyright": "© 2026 WEAVEHUB INTELLIGENCE. 保留所有权利。",
       "version": "VER 0.1.0",
-      "networkReady": "NETWORK READY"
+      "networkReady": "网络就绪"
     },
     "badge": "企业级技能注册中心",
     "tagline": "发布、发现、管理",
@@ -1421,6 +1421,15 @@
     "loading": "正在加载智能体…",
     "loadError": "加载智能体失败。",
     "noPublishedVersion": "该智能体尚未发布任何版本。",
+    "search": {
+      "placeholder": "搜索智能体…",
+      "allNamespaces": "全部命名空间",
+      "allVisibility": "全部可见性",
+      "visibilityPublic": "公开",
+      "visibilityNamespace": "仅命名空间",
+      "visibilityPrivate": "私有",
+      "noResults": "没有匹配的智能体。"
+    },
     "detail": {
       "soulHeading": "灵魂",
       "workflowHeading": "工作流",

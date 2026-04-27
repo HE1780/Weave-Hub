@@ -1396,11 +1396,24 @@ export interface AgentReviewVersionDetailDto {
   version: AgentVersionDto
 }
 
+export type AgentVisibilityFilter = 'PUBLIC' | 'PRIVATE' | 'NAMESPACE_ONLY'
+
 export const agentsApi = {
-  async list(params: { page?: number; size?: number } = {}) {
+  async list(
+    params: {
+      page?: number
+      size?: number
+      q?: string
+      namespace?: string
+      visibility?: AgentVisibilityFilter
+    } = {},
+  ) {
     const search = new URLSearchParams()
     if (params.page !== undefined) search.set('page', String(params.page))
     if (params.size !== undefined) search.set('size', String(params.size))
+    if (params.q) search.set('q', params.q)
+    if (params.namespace) search.set('namespace', params.namespace)
+    if (params.visibility) search.set('visibility', params.visibility)
     const qs = search.toString()
     const suffix = qs ? `?${qs}` : ''
     return fetchJson<PagedResponse<AgentDto>>(`${WEB_API_PREFIX}/agents${suffix}`)

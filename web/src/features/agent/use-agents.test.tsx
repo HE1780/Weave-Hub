@@ -54,4 +54,37 @@ describe('useAgents', () => {
 
     expect(result.current.data).toEqual([])
   })
+
+  it('forwards q/namespace/visibility to agentsApi.list', async () => {
+    listMock.mockResolvedValueOnce({ items: [], total: 0, page: 0, size: 50 })
+
+    const { result } = renderHook(
+      () => useAgents({ q: 'hello', namespace: 'team-x', visibility: 'PRIVATE' }),
+      { wrapper: createWrapper() },
+    )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(listMock).toHaveBeenCalledWith({
+      page: 0,
+      size: 50,
+      q: 'hello',
+      namespace: 'team-x',
+      visibility: 'PRIVATE',
+    })
+  })
+
+  it('uses different cache keys for different params', async () => {
+    listMock.mockResolvedValue({ items: [], total: 0, page: 0, size: 50 })
+    const wrapper = createWrapper()
+
+    const { result: first } = renderHook(() => useAgents({ q: 'foo' }), { wrapper })
+    await waitFor(() => expect(first.current.isSuccess).toBe(true))
+    const { result: second } = renderHook(() => useAgents({ q: 'bar' }), { wrapper })
+    await waitFor(() => expect(second.current.isSuccess).toBe(true))
+
+    // Two distinct fetches because the queryKey hashes the params object.
+    expect(listMock).toHaveBeenCalledTimes(2)
+    expect(listMock.mock.calls[0]?.[0]).toMatchObject({ q: 'foo' })
+    expect(listMock.mock.calls[1]?.[0]).toMatchObject({ q: 'bar' })
+  })
 })
