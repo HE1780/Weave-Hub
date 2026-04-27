@@ -129,9 +129,13 @@
 
 ---
 
-### P0-1b: Landing 信息架构重写 + my-weave 路由 + nav 重排 + 站名变更
+### ~~P0-1b: Landing 信息架构重写 + my-weave 路由 + nav 重排 + 站名变更~~ ✅ 已完成 (2026-04-27)
 
-**ADR 0003 §1.2** · 估时 ~1.5 天 · 纯前端 · 版面层 · 依赖 P0-1a 完成
+**ADR 0003 §1.2** · 实际 ~3 小时(subagent-driven) · 纯前端 · 版面层 · 依赖 P0-1a 完成
+**Plan:** [docs/plans/2026-04-27-weavehub-landing-ia.md](2026-04-27-weavehub-landing-ia.md)
+**Range:** `9402e3aa` (plan) → `f28ee2fe` (final task) — 14 task commits + 1 cleanup
+**Tests:** 635 → 632 passing(net -3 from heavy delete + new tests)
+**Memo:** see `memo/memo.md` 2026-04-27 P0-1b session entry for divergences and known gaps
 
 承接 [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)
 §4.2。token 层稳定后,把 landing 信息架构按 weavehub 4 段重写。

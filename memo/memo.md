@@ -600,3 +600,99 @@ Natural next stops per ADR 0003:
 - P2-1 (Agent star + rating, mirrors skill_star/skill_rating) — backlog says ~1 day full-stack.
 - Wire archive/unarchive UI buttons into My Agents + agent-detail pages.
 - P3-2b (extend validator rule chain — needs brainstorm per backlog).
+
+---
+
+## 2026-04-27 — P0-1b: WeaveHub landing IA + my-weave + nav reshuffle
+
+**Plan:** [docs/plans/2026-04-27-weavehub-landing-ia.md](../docs/plans/2026-04-27-weavehub-landing-ia.md)
+**Spec:** [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md) §3 + §4.2
+**ADR clause:** [ADR 0003](../docs/adr/0003-fork-scope-and-upstream-boundary.md) §1.2
+**Branch:** `main`
+**Range:** `9402e3aa` (plan commit) → `f28ee2fe` (final task commit) — 14 task commits + 1 cleanup commit + 1 plan commit
+**Method:** subagent-driven (mostly haiku, sonnet for complex tasks)
+
+### What shipped (15 commits since plan)
+
+```
+f28ee2fe feat(web): update browser tab title to 知连 WeaveHub
+ce5074b9 feat(web): reshuffle nav, rename brand to WeaveHub via i18n
+3d4d0e0d feat(web): register /my-weave route (auth-gated)
+08beaeb5 feat(web): add /my-weave aggregate page
+65941145 feat(web): delete obsolete landing-channels/popular-agents/landing-quick-start
+c9481160 feat(web): rewrite landing.tsx as weavehub 4-section IA
+8dadf519 feat(web): add LandingFooter with WeaveHub brand and link columns
+a396018c feat(web): add LandingWorkspace guest/auth two-state right rail
+b0b70449 feat(web): add LandingRecentSection compact mixed grid
+93cb9874 feat(web): add LandingHotSection mixed skill+agent grid
+96ded009 feat(web): add LandingHero with weavehub visual + B copy
+f9c9f482 fix(web): drop unused rest spread in resource-card test motion mock
+41f963a1 feat(i18n): replace landing keys with weavehub vocabulary
+16113c1c feat(web): add ResourceCard with featured + compact variants
+9402e3aa docs(plans): P0-1b WeaveHub landing IA implementation plan
+```
+
+End-to-end landing page rewritten from 9-section old structure to weavehub
+4-section IA: LandingHero / LandingHotSection / LandingRecentSection +
+LandingWorkspace / LandingFooter. New `/my-weave` route surfaces the user's own
+skills and agents. Nav reshuffled per spec §3.3:
+- 未登录: 首页 / 搜索
+- 已登录: 首页 / 发布 / 技能 / 智能体 / 我的 Weave / 控制台 / 搜索
+
+Brand renamed via i18n: `nav.brand` returns "知连 WeaveHub" (zh) /
+"WeaveHub" (en). Browser tab title now "知连 WeaveHub".
+
+Visual className strings mirror prototype web/weavehub---知连/src/App.tsx
+1:1 — only mock data was replaced with real `useSearchSkills` + `useAgents` +
+`useMySkills` calls, and copy was simplified per the brainstorming "B" decision
+(no "全球领先", Hero "持续进化的 AI 能力" + "让团队的技能包和智能体在一起协作").
+
+### Tests
+
+- Web: 635 → **632 passing**(net -3 from heavy delete + new tests; deleted ~12 obsolete tests, added 9 new)
+- Backend: 460 (unchanged, untouched)
+- Typecheck: only pre-existing `registry-skill.tsx` errors (3)
+- Lint: only pre-existing `registry-skill.tsx` warnings (2) — 1 *less* than after P0-1a (the lint warning on weavehub prototype directory disappeared, likely because the prototype `App.tsx` was overwritten by the user during P0-1b)
+
+### Spec divergences (intentional, all approved during execution)
+
+1. **Task 9 expanded** — plan only listed 6 files to delete; final review found `web/src/i18n/landing-quick-start-locale.test.ts` also referenced deleted i18n keys. Added to plan and to deletion list.
+2. **Task 6 useMySkills signature** — plan suggested `useMySkills({}, { enabled })` but the actual hook signature is `useMySkills(params)` only. Implementer correctly adapted: call unconditionally, then filter at the consumer.
+3. **Task 1 vi.mock additions** — implementer added `vi.mock('@tanstack/react-router')` and `vi.mock('motion/react')` to resource-card.test.tsx because Link + motion.div both throw in jsdom without provider. Acceptable. Cleanup commit (f9c9f482) tightened the motion mock signature.
+4. **Test count** — plan estimated 642ish; actual 632. Difference is from larger-than-estimated obsolete test deletions in Task 9 (landing-channels.test.tsx + popular-agents.test.tsx had 5 tests each, not the 1 each I estimated).
+5. **Layout test** — plan flagged it might need updates; turns out it was a barrel-export shape test and needed no changes.
+
+### Visual delta
+
+- Landing page is now the weavehub 4-section IA: Hero with serif italic
+  highlight + 小绿条徽章 + 搜索 + 开始探索 / 热门推荐 (3-col featured cards) / 全域动态流 (compact cards left col-span-8) + 工作台 (col-span-4 guest/auth toggle) / Footer with English-only WeaveHub brand
+- Site name 知连 WeaveHub (zh) / WeaveHub (en) via i18n
+- Browser title 知连 WeaveHub
+- Nav 链表 reshuffled to 7 items per spec
+- All mock prototype data replaced with real query hooks
+- All className strings mirror prototype 1:1
+
+### Known gaps for future work
+
+1. **Footer 双轨**: layout.tsx still has the old SkillHub-style footer for non-landing routes; landing uses the new LandingFooter. Future cleanup could unify if desired.
+2. **`/skills` 路由** is in the nav as "Skills"; it currently routes to HomePage component. May want a dedicated skills marketplace page later.
+3. **WorkspaceCard "open control panel"** routes to /dashboard — consider whether it should route to /my-weave instead (more discovery-oriented).
+4. **Hot/Recent section data source** uses skill `useSearchSkills(downloads/newest)` + agent `useAgents`. When agent search lands (P0-2), wire it through here too.
+5. **Footer links** — API References, Cloud Sync, etc. point to `#`. They need real targets; treat as a placeholder until docs/marketing pages exist.
+6. **Hero search button "开始探索"** with empty query — currently routes to `/search?q=`. Could improve UX by focusing the search input instead.
+
+### How to resume
+
+Browser smoke recommended before declaring done:
+
+```bash
+pnpm dev
+```
+
+Walk: `/` (landing — should match user-provided 4 screenshots), `/my-weave`
+(double-list shell), `/search` (no regression), `/agents` (no regression),
+login → re-test `/` to see workspace authenticated state.
+
+Backlog after P0-1b:
+- Update fork backlog to mark P0-1a + P0-1b ✅, refresh visual baseline notes
+- P0-2 (Agent list search backend + frontend) — next per backlog priority
