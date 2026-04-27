@@ -39,12 +39,12 @@ describe('ResourceCard', () => {
     expect(container.textContent?.toUpperCase()).toContain('EXPLORE')
   })
 
-  it('renders compact variant without category subtitle and without EXPLORE row', () => {
+  it('renders compact variant with category subtitle and without EXPLORE row', () => {
     const { container } = render(
       <ResourceCard variant="compact" resource={baseResource} index={0} />,
     )
     expect(container.textContent).toContain('Prompt Optimizer')
-    expect(container.textContent).not.toContain('文案优化')
+    expect(container.textContent).toContain('文案优化')
     expect(container.textContent?.toUpperCase()).not.toContain('EXPLORE')
   })
 

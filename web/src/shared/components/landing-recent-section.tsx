@@ -2,16 +2,21 @@ import { useTranslation } from 'react-i18next'
 import { Zap, Wand2, ShieldCheck, BarChart3, FileSearch, Cpu, Grid, PlusCircle, type LucideIcon } from 'lucide-react'
 import { ResourceCard, type ResourceCardData } from './resource-card'
 import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
-import { useAgents } from '@/features/agent/use-agents'
 import { SkeletonList } from './skeleton-loader'
 
+/**
+ * Returns a stable pseudo-random icon based on id/name to keep variety
+ * without causing icon flicker between renders.
+ */
 const TYPE_ICON_POOL: LucideIcon[] = [Wand2, ShieldCheck, BarChart3, FileSearch, Cpu, Zap, Grid, PlusCircle]
-
 function pickIcon(seed: string | number): LucideIcon {
   const hash = String(seed).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
   return TYPE_ICON_POOL[hash % TYPE_ICON_POOL.length]
 }
 
+/**
+ * Formats ISO time into a compact relative text for recent cards.
+ */
 function relativeTime(iso?: string): string {
   if (!iso) return ''
   const ms = Date.now() - new Date(iso).getTime()
@@ -26,42 +31,27 @@ function relativeTime(iso?: string): string {
 }
 
 /**
- * "全域动态流" section — compact mixed grid (4 cards, 2 columns).
+ * "最近更新" section — compact grid with 4 newest skill cards.
  * Visual mirrors web/weavehub---知连/src/App.tsx lines 254-291.
  */
 export function LandingRecentSection() {
   const { t } = useTranslation()
   const { data: skills, isLoading: skillsLoading } = useSearchSkills({
     sort: 'newest',
-    size: 2,
+    size: 4,
   })
-  const { data: agents, isLoading: agentsLoading } = useAgents()
 
-  const isLoading = skillsLoading || agentsLoading
+  const isLoading = skillsLoading
 
-  const skillCards: ResourceCardData[] = (skills?.items ?? []).slice(0, 2).map((s) => ({
+  const latestCards: ResourceCardData[] = (skills?.items ?? []).slice(0, 4).map((s) => ({
     id: s.id,
     title: s.displayName,
     type: 'skill',
+    category: s.summary ?? undefined,
     updatedAt: relativeTime(s.updatedAt),
     href: `/space/${s.namespace}/${encodeURIComponent(s.slug)}`,
     icon: pickIcon(s.id),
   }))
-
-  const agentCards: ResourceCardData[] = (agents ?? []).slice(0, 2).map((a) => ({
-    id: a.name,
-    title: a.name,
-    type: 'agent',
-    updatedAt: 'now',
-    href: `/agents/${a.namespace ?? 'global'}/${a.name}`,
-    icon: pickIcon(a.name),
-  }))
-
-  const mixed: ResourceCardData[] = []
-  for (let i = 0; i < 2; i += 1) {
-    if (skillCards[i]) mixed.push(skillCards[i])
-    if (agentCards[i]) mixed.push(agentCards[i])
-  }
 
   return (
     <section className="lg:col-span-8 flex flex-col">
@@ -83,15 +73,11 @@ export function LandingRecentSection() {
         <SkeletonList count={4} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
-          {mixed.map((resource, idx) => (
+          {latestCards.map((resource, idx) => (
             <ResourceCard key={resource.id} variant="compact" resource={resource} index={idx} />
           ))}
         </div>
       )}
-
-      <button className="mt-8 py-5 rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-500 hover:bg-white transition-all text-xs font-black uppercase tracking-[0.2em]">
-        {t('landing.recent.loadMore')}
-      </button>
     </section>
   )
 }

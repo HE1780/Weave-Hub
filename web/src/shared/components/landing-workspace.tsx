@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'motion/react'
 import { useTranslation } from 'react-i18next'
-import { Grid, User as UserIcon, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
 import { useMySkills } from '@/shared/hooks/use-user-queries'
 import { agentsApi, type AgentDto } from '@/api/client'
@@ -39,9 +39,12 @@ export function LandingWorkspace() {
     <section className="lg:col-span-4 h-full">
       <div className="glass-card h-full flex flex-col bg-brand-50/20 border-white/80 p-8">
         <div className="flex items-center gap-4 mb-10">
-          <div className="w-12 h-12 rounded-2xl bg-brand-600 text-white flex items-center justify-center shadow-xl shadow-brand-600/20">
-            <Grid size={24} />
-          </div>
+          <img
+            src="/avatar-sample.svg"
+            alt="avatar sample"
+            className="w-12 h-12 rounded-2xl object-cover shadow-sm border border-brand-100/80"
+            loading="lazy"
+          />
           <h3 className="text-2xl font-black text-slate-800 tracking-tighter">
             {t('landing.workspace.title')}
           </h3>
@@ -57,9 +60,12 @@ export function LandingWorkspace() {
                 exit={{ opacity: 0, y: -10 }}
                 className="flex flex-col items-center justify-center h-full py-12 text-center"
               >
-                <div className="w-24 h-24 rounded-full bg-white border border-brand-50 flex items-center justify-center text-slate-200 mb-8 shadow-inner shadow-slate-100">
-                  <UserIcon size={48} />
-                </div>
+                <img
+                  src="/avatar-sample.svg"
+                  alt="avatar sample"
+                  className="w-24 h-24 rounded-2xl object-cover mb-8 shadow-sm border border-brand-100/80"
+                  loading="lazy"
+                />
                 <p className="text-sm font-black text-slate-800 mb-3 uppercase tracking-widest leading-none">
                   {t('landing.workspace.guestEyebrow')}
                 </p>

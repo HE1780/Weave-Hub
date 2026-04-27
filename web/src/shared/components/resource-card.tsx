@@ -38,17 +38,22 @@ export function ResourceCard({ resource, variant, index }: ResourceCardProps) {
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ delay: index * 0.1 }}
-        className="glass-card !p-6 group flex items-start gap-6 hover:bg-white border-white/40 shadow-sm"
+        className="glass-card !p-7 group flex items-start gap-5 hover:bg-white border-white/40 shadow-sm"
       >
-        <Link to={resource.href} className="flex items-start gap-6 flex-1 no-underline">
-          <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-all duration-500 border border-white shrink-0">
-            <Icon size={26} />
+        <Link to={resource.href} className="flex items-start gap-5 flex-1 no-underline">
+          <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-all duration-500 border border-white shrink-0">
+            <Icon size={22} />
           </div>
           <div className="flex-1 pt-1">
-            <h4 className="font-bold text-slate-800 text-lg group-hover:text-brand-600 transition-all tracking-tight leading-tight">
+            <h4 className="line-clamp-2 min-h-[3.5rem] font-bold text-slate-800 text-xl group-hover:text-brand-600 transition-all tracking-tight leading-snug">
               {resource.title}
             </h4>
-            <div className="flex items-center justify-between mt-3 text-[10px] font-black uppercase tracking-widest text-slate-400">
+            {resource.category && (
+              <p className="line-clamp-2 min-h-[2.75rem] mt-2 text-sm text-slate-500 font-medium leading-relaxed">
+                {resource.category}
+              </p>
+            )}
+            <div className="flex items-center justify-between mt-4 text-[10px] font-black uppercase tracking-widest text-slate-400">
               <span className="bg-slate-100 px-2 py-0.5 rounded-md">{resource.type}</span>
               <span className="flex items-center gap-1">
                 <Clock size={10} /> {resource.updatedAt}
@@ -66,31 +71,33 @@ export function ResourceCard({ resource, variant, index }: ResourceCardProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.05, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="glass-card group flex flex-col justify-between h-full"
+      className="glass-card !p-8 group flex flex-col justify-between h-full"
     >
       <Link to={resource.href} className="no-underline flex flex-col justify-between h-full">
         <div>
-          <div className="flex items-start justify-between mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-all duration-500 shadow-sm border border-white">
-              <Icon size={26} />
+          <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-brand-50/80 flex items-center justify-center text-brand-600 group-hover:bg-brand-100 group-hover:text-brand-700 transition-all duration-500 shadow-sm border border-brand-100 shrink-0">
+              <Icon size={20} />
             </div>
-            <span className="text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-lg bg-slate-100/80 text-slate-500 border border-white">
-              {resource.type}
-            </span>
+            <h3 className="line-clamp-2 text-xl font-bold text-slate-800 group-hover:text-brand-600 transition-colors tracking-tight leading-snug">
+              {resource.title}
+            </h3>
           </div>
-          <h3 className="text-xl font-bold text-slate-800 group-hover:text-brand-600 transition-colors tracking-tight mb-2">
-            {resource.title}
-          </h3>
           {resource.category && (
-            <p className="text-xs text-slate-400 font-medium tracking-wide uppercase italic">
+            <p className="line-clamp-2 min-h-[2.75rem] mt-2 text-sm text-slate-500 font-medium leading-relaxed">
               {resource.category}
             </p>
           )}
         </div>
         <div className="mt-8 pt-5 border-t border-brand-50/50 flex items-center justify-between text-[11px] text-slate-400 font-bold uppercase tracking-tighter">
-          <span className="flex items-center gap-1.5 opacity-70">
-            <Clock size={14} /> {resource.updatedAt}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-widest font-black px-2.5 py-1 rounded-md bg-slate-100/80 text-slate-500 border border-white">
+              {resource.type}
+            </span>
+            <span className="flex items-center gap-1.5 opacity-70">
+              <Clock size={14} /> {resource.updatedAt}
+            </span>
+          </div>
           <div className="text-brand-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
             EXPLORE <ChevronRight size={14} />
           </div>
