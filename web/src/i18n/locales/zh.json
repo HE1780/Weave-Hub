@@ -1517,7 +1517,13 @@
       "rereleasePlaceholder": "新版本号（如 1.1.0）",
       "rereleaseSuccessTitle": "新版本已创建",
       "rereleaseSuccessDescription": "版本 {{source}} 已克隆为 {{target}}。",
-      "rereleaseErrorTitle": "重新发布失败"
+      "rereleaseErrorTitle": "重新发布失败",
+      "deleteVersion": "删除版本",
+      "deleteVersionConfirmTitle": "确认删除此版本？",
+      "deleteVersionConfirmDescription": "永久删除版本 {{version}}。已发布版本无法删除，请改为归档智能体。",
+      "deleteVersionSuccessTitle": "版本已删除",
+      "deleteVersionSuccessDescription": "版本 {{version}} 已删除。",
+      "deleteVersionErrorTitle": "删除版本失败"
     }
   },
   "agentReviews": {

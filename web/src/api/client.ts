@@ -1558,6 +1558,21 @@ export const agentLifecycleApi = {
       },
     )
   },
+
+  async deleteAgentVersion(
+    namespace: string,
+    slug: string,
+    version: string,
+  ): Promise<AgentVersionMutationDto> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    return fetchJson<AgentVersionMutationDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(version)}`,
+      {
+        method: 'DELETE',
+        headers: await ensureCsrfHeaders(),
+      },
+    )
+  },
 }
 
 export const agentReviewsApi = {

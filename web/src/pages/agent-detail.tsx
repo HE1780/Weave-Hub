@@ -8,6 +8,7 @@ import { useUnarchiveAgent } from '@/features/agent/use-unarchive-agent'
 import { useDeleteAgent } from '@/features/agent/use-delete-agent'
 import { useWithdrawAgentReview } from '@/features/agent/use-withdraw-agent-review'
 import { useRereleaseAgentVersion } from '@/features/agent/use-rerelease-agent-version'
+import { useDeleteAgentVersion } from '@/features/agent/use-delete-agent-version'
 import { AgentStarButton } from '@/features/agent/social/agent-star-button'
 import { AgentRatingInput } from '@/features/agent/social/agent-rating-input'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
@@ -50,6 +51,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const deleteMutation = useDeleteAgent()
   const withdrawMutation = useWithdrawAgentReview()
   const rereleaseMutation = useRereleaseAgentVersion()
+  const deleteVersionMutation = useDeleteAgentVersion()
   const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
   const [unarchiveConfirmOpen, setUnarchiveConfirmOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -58,6 +60,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const [withdrawTarget, setWithdrawTarget] = useState<string | null>(null)
   const [rereleaseTarget, setRereleaseTarget] = useState<string | null>(null)
   const [rereleaseInput, setRereleaseInput] = useState('')
+  const [deleteVersionTarget, setDeleteVersionTarget] = useState<string | null>(null)
   const [activeDoc, setActiveDoc] = useState<'agent' | 'soul'>('agent')
   const handleRequireLogin = () => {
     navigate({
@@ -224,6 +227,27 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
     }
   }
 
+  const handleDeleteVersion = async () => {
+    if (!deleteVersionTarget) return
+    try {
+      await deleteVersionMutation.mutateAsync({
+        namespace: targetNamespace,
+        slug: targetSlug,
+        version: deleteVersionTarget,
+      })
+      toast.success(
+        t('agents.lifecycle.deleteVersionSuccessTitle'),
+        t('agents.lifecycle.deleteVersionSuccessDescription', { version: deleteVersionTarget }),
+      )
+      setDeleteVersionTarget(null)
+    } catch (err) {
+      toast.error(
+        t('agents.lifecycle.deleteVersionErrorTitle'),
+        err instanceof Error ? err.message : '',
+      )
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 animate-fade-up">
       <div className="flex-1 min-w-0 space-y-8">
@@ -362,6 +386,18 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                                 disabled={rereleaseMutation.isPending}
                               >
                                 {t('agents.lifecycle.rerelease')}
+                              </Button>
+                            )}
+                            {(version.status === 'DRAFT' ||
+                              version.status === 'REJECTED' ||
+                              version.status === 'ARCHIVED') && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setDeleteVersionTarget(version.version)}
+                                disabled={deleteVersionMutation.isPending}
+                              >
+                                {t('agents.lifecycle.deleteVersion')}
                               </Button>
                             )}
                           </div>
@@ -556,6 +592,22 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
         }
         confirmText={t('agents.lifecycle.withdraw')}
         onConfirm={handleWithdraw}
+      />
+
+      <ConfirmDialog
+        open={!!deleteVersionTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteVersionTarget(null)
+        }}
+        title={t('agents.lifecycle.deleteVersionConfirmTitle')}
+        description={
+          deleteVersionTarget
+            ? t('agents.lifecycle.deleteVersionConfirmDescription', { version: deleteVersionTarget })
+            : ''
+        }
+        confirmText={t('agents.lifecycle.deleteVersion')}
+        variant="destructive"
+        onConfirm={handleDeleteVersion}
       />
 
       <Dialog

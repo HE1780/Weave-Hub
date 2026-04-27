@@ -1518,7 +1518,13 @@
       "rereleasePlaceholder": "New version (e.g. 1.1.0)",
       "rereleaseSuccessTitle": "Rerelease created",
       "rereleaseSuccessDescription": "Version {{source}} cloned to {{target}}.",
-      "rereleaseErrorTitle": "Failed to rerelease version"
+      "rereleaseErrorTitle": "Failed to rerelease version",
+      "deleteVersion": "Delete version",
+      "deleteVersionConfirmTitle": "Delete this version?",
+      "deleteVersionConfirmDescription": "Permanently delete version {{version}}. Published versions cannot be deleted; archive the agent instead.",
+      "deleteVersionSuccessTitle": "Version deleted",
+      "deleteVersionSuccessDescription": "Version {{version}} has been deleted.",
+      "deleteVersionErrorTitle": "Failed to delete version"
     }
   },
   "agentReviews": {
