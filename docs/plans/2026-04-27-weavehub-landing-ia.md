@@ -1353,6 +1353,7 @@ cd /Users/lydoc/projectscoding/skillhub && git add web/src/pages/landing.tsx web
 - Delete: `web/src/shared/components/popular-agents.test.tsx`
 - Delete: `web/src/shared/components/landing-quick-start.tsx`
 - Delete: `web/src/shared/components/landing-quick-start.test.ts`
+- Delete: `web/src/i18n/landing-quick-start-locale.test.ts` (locale-shape test specifically for the deleted i18n quickStart block)
 
 These components were used by the old 9-section landing. Now obsolete.
 
