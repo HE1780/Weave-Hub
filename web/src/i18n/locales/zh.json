@@ -1,83 +1,68 @@
 {
   "nav": {
+    "brand": "知连 WeaveHub",
     "landing": "首页",
-    "home": "技能中心",
+    "publish": "发布",
+    "publishSkill": "发布技能",
+    "publishAgent": "发布智能体",
     "search": "搜索",
-    "skillDetail": "技能详情",
-    "explore": "探索",
+    "skills": "技能",
+    "agents": "智能体",
+    "myWeave": "我的 Weave",
     "dashboard": "控制台",
     "mySkills": "我的技能",
-    "publish": "发布",
     "login": "登录",
-    "agents": "智能体"
+    "home": "首页"
   },
   "landing": {
     "hero": {
-      "title": "发现与分享 AI 技能",
-      "subtitle": "使用社区驱动的技能构建强大的 AI 代理",
-      "searchPlaceholder": "搜索技能...",
-      "exploreSkills": "探索技能",
-      "browseAgents": "浏览智能体",
+      "badge": "REDEFINING INTELLIGENCE CONNECTION",
+      "titleStart": "持续进化的",
+      "titleAccent": "AI 能力",
+      "subtitle": "让团队的技能包和智能体在一起协作。",
+      "searchPlaceholder": "搜索技能包或智能体...",
+      "exploreCta": "开始探索",
       "publish": "发布",
       "publishSkill": "发布技能",
       "publishAgent": "发布智能体"
     },
-    "channels": {
-      "title": "两种组合 AI 能力的方式",
-      "subtitle": "Skills 是基础积木，Agents 是组装好的方案。可独立使用，也可协同使用。",
-      "skill": {
-        "label": "Skills",
-        "tagline": "能力单元",
-        "description": "单一功能、可复用的技能包 —— 提示词、数据工具、代码助手等。",
-        "cta": "浏览技能包"
-      },
-      "agent": {
-        "label": "Agents",
-        "tagline": "智能配置",
-        "description": "组合多个技能的预制智能体，开箱即用。",
-        "cta": "浏览智能体"
-      }
+    "hot": {
+      "eyebrow": "Handpicked selection",
+      "title": "热门推荐",
+      "browseAll": "浏览所有资源"
     },
-    "popularAgents": {
-      "title": "热门智能体",
-      "description": "组合多个技能的预制智能体。",
-      "viewAll": "查看全部"
+    "recent": {
+      "eyebrow": "Live updates",
+      "title": "全域动态流",
+      "loadMore": "Load discovery stream"
     },
-    "features": {
-      "secure": {
-        "title": "安全私密",
-        "description": "企业级安全保护您的 AI 工作流"
-      },
-      "community": {
-        "title": "社区驱动",
-        "description": "与全球开发者分享和发现技能"
-      },
-      "integration": {
-        "title": "轻松集成",
-        "description": "无缝集成到您现有的工具中"
-      },
-      "versionControl": {
-        "title": "版本控制",
-        "description": "完善的版本管理和发布流程，确保技能包的质量和可追溯性。"
-      },
-      "cli": {
-        "title": "CLI 工具",
-        "description": "强大的命令行工具，支持快速发布、安装和管理技能包。"
-      },
-      "governance": {
-        "title": "审核治理",
-        "description": "内置审核流程和权限管理，保障企业级技能质量。"
-      }
+    "workspace": {
+      "title": "工作台",
+      "guestEyebrow": "SYNC REQUIRED",
+      "guestPrompt": "登录以同步你在各平台的 AI 资产。",
+      "guestCta": "立即认证登录",
+      "skillsSection": "技能市场资产",
+      "agentsSection": "智能体开发集",
+      "openPanel": "OPEN CONTROL PANEL",
+      "pcs": "PCS"
     },
-    "stats": {
-      "skills": "项目库",
-      "agents": "智能体",
-      "downloads": "下载量",
-      "teams": "团队"
-    },
-    "whySkillHub": {
-      "title": "为什么选择 SkillHub",
-      "subtitle": "专为企业打造的私有化 Agent 技能管理平台"
+    "footer": {
+      "tagline": "WeaveHub 知连:连接每一种智力片段,编织未来的无限可能。致力于构建全球最高效的 AI 协作枢纽。",
+      "documentation": "Documentation",
+      "community": "Community",
+      "links": {
+        "apiReferences": "API References",
+        "cloudSync": "Cloud Sync",
+        "security": "Security",
+        "integration": "Integration",
+        "openSource": "Open Source",
+        "forum": "Forum",
+        "privacy": "Privacy",
+        "support": "Support"
+      },
+      "copyright": "© 2026 WEAVEHUB INTELLIGENCE. ALL RIGHTS RESERVED.",
+      "version": "VER 0.1.0",
+      "networkReady": "NETWORK READY"
     },
     "badge": "企业级技能注册中心",
     "tagline": "发布、发现、管理",
@@ -121,42 +106,7 @@
     "footerLicense": "© 2026 SkillHub。Apache License 2.0。",
     "footerDocs": "文档",
     "footerGithub": "GitHub",
-    "footerCommunity": "社区",
-    "quickStart": {
-      "title": "快速开始",
-      "subtitle": "Quick Start",
-      "description": "选择你的使用方式，复制说明后继续完成接入",
-      "tip": "💡 提示：访问技能详情页可获取带环境变量的一键复制安装命令",
-      "tabs": {
-        "agent": "我是 Agent",
-        "human": "我是 Human"
-      },
-      "agent": {
-        "description": "发送提示词给你的 Agent，以设置SkillHub Registry",
-        "command": "阅读 https://www.example.com/registry/skill.md，并按照说明完成 SkillHub Skills Registry 的配置",
-        "commandTemplate": "阅读 {{url}}，并按照说明完成 SkillHub Skills Registry 的配置"
-      },
-      "human": {
-        "description": "使用CLI工具安装Skills",
-        "command": "npx clawhub search <keyword>"
-      },
-      "steps": {
-        "configureEnv": {
-          "title": "1. 配置环境变量",
-          "description": "设置 ClawHub CLI 连接到 SkillHub"
-        },
-        "installSkills": {
-          "title": "2. 安装技能",
-          "description": "搜索并安装你需要的技能",
-          "code": "# 搜索技能\nclawhub search <keyword>\n\n# 安装技能\nclawhub install <skill>"
-        },
-        "publishSkills": {
-          "title": "3. 发布技能",
-          "description": "分享你的技能给团队使用",
-          "code": "# 发布技能\nclawhub publish\n\n# 或使用网页界面\n# 点击\"发布技能\""
-        }
-      }
-    }
+    "footerCommunity": "社区"
   },
   "home": {
     "subtitle": "技能注册中心",
@@ -895,7 +845,6 @@
     "submitReviewSuccessTitle": "已提交审核",
     "submitReviewSuccessDescription": "版本 {{version}} 已提交审核。",
     "submitReviewErrorTitle": "提交审核失败",
-    "withdrawReviewErrorTitle": "撤销审核失败",
     "deleteVersion": "删除版本",
     "deleteVersionConfirmTitle": "确认删除版本",
     "deleteVersionConfirmDescription": "版本 {{version}} 删除后无法恢复，确定继续吗？",
@@ -1566,5 +1515,14 @@
       "noSoul": "（未提供灵魂）",
       "noWorkflow": "（未定义工作流）"
     }
+  },
+  "myWeave": {
+    "title": "我的 Weave",
+    "subtitle": "你的技能包和智能体,集中查看。",
+    "skillsHeading": "我的技能包",
+    "agentsHeading": "我的智能体",
+    "viewAll": "查看全部",
+    "skillsEmpty": "暂无技能包",
+    "agentsEmpty": "暂无智能体"
   }
 }
