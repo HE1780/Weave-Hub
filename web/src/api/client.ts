@@ -1467,6 +1467,13 @@ export interface AgentLifecycleMutationDto {
   status: AgentDtoStatus
 }
 
+export interface AgentDeleteResultDto {
+  agentId: number | null
+  namespace: string
+  slug: string
+  deleted: boolean
+}
+
 export const agentLifecycleApi = {
   async archiveAgent(
     namespace: string,
@@ -1493,6 +1500,20 @@ export const agentLifecycleApi = {
       `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}/unarchive`,
       {
         method: 'POST',
+        headers: await ensureCsrfHeaders(),
+      },
+    )
+  },
+
+  async deleteAgent(
+    namespace: string,
+    slug: string,
+  ): Promise<AgentDeleteResultDto> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    return fetchJson<AgentDeleteResultDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}`,
+      {
+        method: 'DELETE',
         headers: await ensureCsrfHeaders(),
       },
     )

@@ -1431,6 +1431,12 @@
       "noResults": "No agents match your search."
     },
     "detail": {
+      "tabOverview": "Overview",
+      "tabWorkflow": "Workflow",
+      "tabVersions": "Versions",
+      "docTagAgent": "agent.md",
+      "docTagSoul": "soul.md",
+      "docEmpty": "(no document provided)",
       "soulHeading": "Soul",
       "workflowHeading": "Workflow",
       "skillsHeading": "Skills used",
@@ -1453,9 +1459,9 @@
       "namespaceLabel": "Namespace",
       "namespacePlaceholder": "Select a namespace",
       "visibilityLabel": "Visibility",
-      "visibilityPublic": "Public — visible to everyone after review",
-      "visibilityNamespace": "Namespace — visible to namespace members after review",
-      "visibilityPrivate": "Private — auto-published, only owner and admins can see",
+      "visibilityPublic": "Public",
+      "visibilityNamespace": "Namespace Only",
+      "visibilityPrivate": "Private",
       "submit": "Publish",
       "submitting": "Publishing…",
       "successAutoPublished": "Agent published successfully.",
@@ -1487,7 +1493,19 @@
       "unarchiveSuccessTitle": "Agent restored",
       "unarchiveSuccessDescription": "{{agent}} is visible again.",
       "archiveErrorTitle": "Failed to archive agent",
-      "unarchiveErrorTitle": "Failed to unarchive agent"
+      "unarchiveErrorTitle": "Failed to unarchive agent",
+      "delete": "Delete agent",
+      "deleteContinue": "Continue",
+      "deleteFinal": "Delete permanently",
+      "deleteConfirmTitle": "Delete this agent permanently?",
+      "deleteConfirmDescription": "This will permanently remove {{agent}} and all of its versions, stars, and ratings. This cannot be undone.",
+      "deleteInputTitle": "Type the slug to confirm",
+      "deleteInputDescription": "Type {{slug}} to confirm the permanent deletion.",
+      "deleteInputPlaceholder": "Enter the agent slug",
+      "deleteWarning": "All versions, stars, ratings, and stored package files will be removed. The slug becomes available for re-publishing.",
+      "deleteSuccessTitle": "Agent deleted",
+      "deleteSuccessDescription": "{{agent}} has been permanently deleted.",
+      "deleteErrorTitle": "Failed to delete agent"
     }
   },
   "agentReviews": {

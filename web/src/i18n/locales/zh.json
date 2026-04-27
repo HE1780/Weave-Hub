@@ -1431,6 +1431,12 @@
       "noResults": "没有匹配的智能体。"
     },
     "detail": {
+      "tabOverview": "概览",
+      "tabWorkflow": "工作流",
+      "tabVersions": "版本",
+      "docTagAgent": "agent.md",
+      "docTagSoul": "soul.md",
+      "docEmpty": "（未提供文档）",
       "soulHeading": "灵魂",
       "workflowHeading": "工作流",
       "skillsHeading": "依赖的技能",
@@ -1452,9 +1458,9 @@
       "namespaceLabel": "命名空间",
       "namespacePlaceholder": "选择命名空间",
       "visibilityLabel": "可见性",
-      "visibilityPublic": "公开 —— 审核通过后所有人可见",
-      "visibilityNamespace": "命名空间 —— 审核通过后命名空间成员可见",
-      "visibilityPrivate": "私有 —— 自动发布，仅创建者和管理员可见",
+      "visibilityPublic": "公开",
+      "visibilityNamespace": "仅命名空间",
+      "visibilityPrivate": "私有",
       "submit": "发布",
       "submitting": "正在发布…",
       "successAutoPublished": "智能体发布成功。",
@@ -1486,7 +1492,19 @@
       "unarchiveSuccessTitle": "智能体已恢复",
       "unarchiveSuccessDescription": "{{agent}} 已重新可见。",
       "archiveErrorTitle": "归档智能体失败",
-      "unarchiveErrorTitle": "取消归档智能体失败"
+      "unarchiveErrorTitle": "取消归档智能体失败",
+      "delete": "删除智能体",
+      "deleteContinue": "继续",
+      "deleteFinal": "永久删除",
+      "deleteConfirmTitle": "确认永久删除此智能体？",
+      "deleteConfirmDescription": "将永久删除 {{agent}} 及其所有版本、收藏与评分，且不可恢复。",
+      "deleteInputTitle": "输入 slug 以确认",
+      "deleteInputDescription": "请输入 {{slug}} 以确认永久删除。",
+      "deleteInputPlaceholder": "输入智能体 slug",
+      "deleteWarning": "所有版本、收藏、评分以及存储中的包文件都会被一并删除，slug 释放后可重新发布。",
+      "deleteSuccessTitle": "智能体已删除",
+      "deleteSuccessDescription": "{{agent}} 已永久删除。",
+      "deleteErrorTitle": "删除智能体失败"
     }
   },
   "agentReviews": {
