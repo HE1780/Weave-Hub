@@ -37,10 +37,15 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/v1")
 public class ClawHubCompatController {
 
-    private final ClawHubCompatAppService clawHubCompatAppService;
+    private static final String TYPE_AGENT = "agent";
 
-    public ClawHubCompatController(ClawHubCompatAppService clawHubCompatAppService) {
+    private final ClawHubCompatAppService clawHubCompatAppService;
+    private final ClawHubAgentCompatAppService clawHubAgentCompatAppService;
+
+    public ClawHubCompatController(ClawHubCompatAppService clawHubCompatAppService,
+                                   ClawHubAgentCompatAppService clawHubAgentCompatAppService) {
         this.clawHubCompatAppService = clawHubCompatAppService;
+        this.clawHubAgentCompatAppService = clawHubAgentCompatAppService;
     }
 
     @RateLimit(category = "search", authenticated = 60, anonymous = 20)
@@ -58,8 +63,12 @@ public class ClawHubCompatController {
     public ClawHubResolveResponse resolveByQuery(@RequestParam String slug,
                                                  @RequestParam(required = false) String version,
                                                  @RequestParam(required = false) String hash,
+                                                 @RequestParam(value = "type", required = false) String type,
                                                  @RequestAttribute(value = "userId", required = false) String userId,
                                                  @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+        if (TYPE_AGENT.equalsIgnoreCase(type)) {
+            return clawHubAgentCompatAppService.resolve(slug, version, userId, userNsRoles);
+        }
         return clawHubCompatAppService.resolveByQuery(slug, version, hash, userId, userNsRoles);
     }
 
@@ -67,15 +76,23 @@ public class ClawHubCompatController {
     @GetMapping("/resolve/{canonicalSlug}")
     public ClawHubResolveResponse resolve(@PathVariable String canonicalSlug,
                                           @RequestParam(defaultValue = "latest") String version,
+                                          @RequestParam(value = "type", required = false) String type,
                                           @RequestAttribute(value = "userId", required = false) String userId,
                                           @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+        if (TYPE_AGENT.equalsIgnoreCase(type)) {
+            return clawHubAgentCompatAppService.resolve(canonicalSlug, version, userId, userNsRoles);
+        }
         return clawHubCompatAppService.resolve(canonicalSlug, version, userId, userNsRoles);
     }
 
     @RateLimit(category = "download", authenticated = 60, anonymous = 20)
     @GetMapping("/download/{canonicalSlug}")
     public ResponseEntity<Void> downloadByPath(@PathVariable String canonicalSlug,
-                                               @RequestParam(defaultValue = "latest") String version) {
+                                               @RequestParam(defaultValue = "latest") String version,
+                                               @RequestParam(value = "type", required = false) String type) {
+        if (TYPE_AGENT.equalsIgnoreCase(type)) {
+            return redirect(clawHubAgentCompatAppService.downloadLocationByPath(canonicalSlug, version));
+        }
         return redirect(clawHubCompatAppService.downloadLocationByPath(canonicalSlug, version));
     }
 
@@ -83,8 +100,12 @@ public class ClawHubCompatController {
     @GetMapping("/download")
     public ResponseEntity<Void> downloadByQuery(@RequestParam String slug,
                                                 @RequestParam(defaultValue = "latest") String version,
+                                                @RequestParam(value = "type", required = false) String type,
                                                 @RequestAttribute(value = "userId", required = false) String userId,
                                                 @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+        if (TYPE_AGENT.equalsIgnoreCase(type)) {
+            return redirect(clawHubAgentCompatAppService.downloadLocationByQuery(slug, version));
+        }
         return redirect(clawHubCompatAppService.downloadLocationByQuery(slug, version, userId, userNsRoles));
     }
 
