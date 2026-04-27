@@ -38,9 +38,10 @@ export function AgentPublishPage() {
 
   const { data: namespaces, isLoading: isLoadingNamespaces } = useMyNamespaces()
   const publish = usePublishAgent()
-
-  const canSubmit =
-    !!selectedFile && !!namespace && !publish.isPending
+  const selectedNamespace = namespaces?.find((ns) => ns.slug === namespace)
+  const namespaceOnlyLabel = selectedNamespace?.type === 'GLOBAL'
+    ? t('publish.visibilityOptions.loggedInUsersOnly')
+    : t('publish.visibilityOptions.namespaceOnly')
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file)
@@ -128,16 +129,16 @@ export function AgentPublishPage() {
 
         <div className="space-y-3">
           <Label htmlFor="agent-visibility" className="text-sm font-semibold font-heading">
-            {t('agents.publish.visibilityLabel')}
+            {t('publish.visibility')}
           </Label>
           <Select value={visibility} onValueChange={(value) => setVisibility(value as AgentDtoVisibility)}>
             <SelectTrigger id="agent-visibility">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="PUBLIC">{t('agents.publish.visibilityPublic')}</SelectItem>
-              <SelectItem value="NAMESPACE_ONLY">{t('agents.publish.visibilityNamespace')}</SelectItem>
-              <SelectItem value="PRIVATE">{t('agents.publish.visibilityPrivate')}</SelectItem>
+              <SelectItem value="PUBLIC">{t('publish.visibilityOptions.public')}</SelectItem>
+              <SelectItem value="NAMESPACE_ONLY">{namespaceOnlyLabel}</SelectItem>
+              <SelectItem value="PRIVATE">{t('publish.visibilityOptions.private')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -181,7 +182,7 @@ export function AgentPublishPage() {
           className="w-full text-primary-foreground disabled:text-primary-foreground"
           size="lg"
           onClick={handleSubmit}
-          disabled={!canSubmit}
+          disabled={publish.isPending}
         >
             {publish.isPending ? t('agents.publish.submitting') : t('agents.publish.submit')}
         </Button>

@@ -12,11 +12,6 @@ vi.mock('@/features/auth/use-auth', () => ({
   useAuth: () => useAuthMock(),
 }))
 
-const useMyNamespacesMock = vi.fn()
-vi.mock('@/shared/hooks/use-namespace-queries', () => ({
-  useMyNamespaces: () => useMyNamespacesMock(),
-}))
-
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     to,
@@ -48,10 +43,8 @@ import { AgentsPage } from './agents'
 beforeEach(() => {
   useAgentsMock.mockReset()
   useAuthMock.mockReset()
-  useMyNamespacesMock.mockReset()
   useAgentsMock.mockReturnValue({ data: [], isLoading: false, isError: false })
   useAuthMock.mockReturnValue({ user: null })
-  useMyNamespacesMock.mockReturnValue({ data: [] })
 })
 
 afterEach(() => cleanup())
@@ -77,16 +70,19 @@ describe('AgentsPage', () => {
     }
   })
 
-  it('hides the visibility selector when the user is not authenticated', () => {
+  it('does not render admin filter controls', () => {
     useAuthMock.mockReturnValue({ user: null })
     render(<AgentsPage />)
+    expect(screen.queryByText('agents.search.allNamespaces')).toBeNull()
     expect(screen.queryByText('agents.search.allVisibility')).toBeNull()
   })
 
-  it('shows the visibility selector when authenticated', () => {
+  it('keeps publish button for authenticated users without showing filter controls', () => {
     useAuthMock.mockReturnValue({ user: { id: 'u-1' } })
     render(<AgentsPage />)
-    expect(screen.getByText('agents.search.allVisibility')).toBeTruthy()
+    expect(screen.getByText('agents.publish.title')).toBeTruthy()
+    expect(screen.queryByText('agents.search.allNamespaces')).toBeNull()
+    expect(screen.queryByText('agents.search.allVisibility')).toBeNull()
   })
 
   it('shows search-noResults empty state when filter is active and result list is empty', async () => {

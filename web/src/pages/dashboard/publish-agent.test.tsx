@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const cardClasses: string[] = []
-const buttonRecords: Array<{ label: string; className?: string }> = []
+const buttonRecords: Array<{ label: string; className?: string; disabled?: boolean }> = []
 const uploadZoneCalls: Array<{ disabled?: boolean }> = []
 
 vi.mock('@tanstack/react-router', () => ({
@@ -39,13 +39,15 @@ vi.mock('@/shared/ui/button', () => ({
   Button: ({
     children,
     className,
+    disabled,
   }: {
     children?: ReactNode
     className?: string
+    disabled?: boolean
   }) => {
     const label = Array.isArray(children) ? children.join('') : String(children ?? '')
-    buttonRecords.push({ label, className })
-    return createElement('button', { className }, children)
+    buttonRecords.push({ label, className, disabled })
+    return createElement('button', { className, disabled }, children)
   },
 }))
 
@@ -98,9 +100,21 @@ describe('AgentPublishPage', () => {
     expect(cardClasses).toContain('p-8 space-y-8')
     expect(uploadZoneCalls.length).toBe(1)
     expect(html).not.toContain('type="radio"')
+    expect(html).toContain('publish.visibilityOptions.public')
+    expect(html).toContain('publish.visibilityOptions.namespaceOnly')
+    expect(html).toContain('publish.visibilityOptions.private')
+    expect(html).not.toContain('agents.publish.visibilityPublic')
+    expect(html).not.toContain('agents.publish.visibilityNamespace')
+    expect(html).not.toContain('agents.publish.visibilityPrivate')
 
     const submitButton = buttonRecords.find((record) => record.label === 'agents.publish.submit')
     expect(submitButton?.className).toContain('w-full')
     expect(submitButton?.className).toContain('text-primary-foreground')
+  })
+
+  it('keeps submit button enabled when not pending so validation can run on click', () => {
+    renderToStaticMarkup(createElement(AgentPublishPage))
+    const submitButton = buttonRecords.find((record) => record.label === 'agents.publish.submit')
+    expect(submitButton?.disabled).toBe(false)
   })
 })
