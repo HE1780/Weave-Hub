@@ -11,7 +11,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('motion/react', () => ({
   motion: {
-    div: ({ children, className, ...rest }: React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode }) => (
+    div: ({ children, className }: { children?: React.ReactNode; className?: string }) => (
       <div className={className}>{children}</div>
     ),
   },
