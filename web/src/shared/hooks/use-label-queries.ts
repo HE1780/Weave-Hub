@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { LabelItem, LabelDefinition } from '@/api/types'
 import { labelApi } from '@/api/client'
-import { getVisibleLabelsQueryKey, getSkillLabelsQueryKey, getAdminLabelDefinitionsQueryKey } from './query-keys'
+import {
+  getVisibleLabelsQueryKey,
+  getSkillLabelsQueryKey,
+  getAgentLabelsQueryKey,
+  getAdminLabelDefinitionsQueryKey,
+} from './query-keys'
 
 async function getVisibleLabels(): Promise<LabelItem[]> {
   return labelApi.listVisible()
@@ -71,6 +76,52 @@ export function useDetachSkillLabel() {
     mutationFn: detachSkillLabel,
     onSuccess: (_data, variables) => {
       invalidateSkillLabelQueries(queryClient, variables.namespace, variables.slug)
+    },
+  })
+}
+
+async function getAgentLabels(namespace: string, slug: string): Promise<LabelItem[]> {
+  return labelApi.listAgentLabels(namespace, slug)
+}
+
+async function attachAgentLabel(params: { namespace: string; slug: string; labelSlug: string }): Promise<LabelItem> {
+  return labelApi.attachAgentLabel(params.namespace, params.slug, params.labelSlug)
+}
+
+async function detachAgentLabel(params: { namespace: string; slug: string; labelSlug: string }): Promise<void> {
+  return labelApi.detachAgentLabel(params.namespace, params.slug, params.labelSlug)
+}
+
+export function useAgentLabels(namespace: string, slug: string, enabled = true) {
+  return useQuery({
+    queryKey: getAgentLabelsQueryKey(namespace, slug),
+    queryFn: () => getAgentLabels(namespace, slug),
+    enabled: enabled && !!namespace && !!slug,
+  })
+}
+
+function invalidateAgentLabelQueries(queryClient: ReturnType<typeof useQueryClient>, namespace: string, slug: string) {
+  queryClient.invalidateQueries({ queryKey: ['agents', namespace, slug] })
+  queryClient.invalidateQueries({ queryKey: ['labels', 'agent', namespace, slug] })
+  queryClient.invalidateQueries({ queryKey: ['agents'] })
+}
+
+export function useAttachAgentLabel() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: attachAgentLabel,
+    onSuccess: (_data, variables) => {
+      invalidateAgentLabelQueries(queryClient, variables.namespace, variables.slug)
+    },
+  })
+}
+
+export function useDetachAgentLabel() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: detachAgentLabel,
+    onSuccess: (_data, variables) => {
+      invalidateAgentLabelQueries(queryClient, variables.namespace, variables.slug)
     },
   })
 }

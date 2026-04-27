@@ -12,6 +12,7 @@ import {
   getSkillDetailQueryKey,
   getVisibleLabelsQueryKey,
   getSkillLabelsQueryKey,
+  getAgentLabelsQueryKey,
   getAdminLabelDefinitionsQueryKey,
 } from './query-keys'
 
@@ -38,6 +39,13 @@ describe('getSkillLabelsQueryKey', () => {
   it('returns a tuple with labels, skill, namespace, slug, and language', () => {
     const key = getSkillLabelsQueryKey('team-ai', 'my-skill')
     expect(key).toEqual(['labels', 'skill', 'team-ai', 'my-skill', 'en'])
+  })
+})
+
+describe('getAgentLabelsQueryKey', () => {
+  it('returns a tuple with labels, agent, namespace, slug, and language', () => {
+    const key = getAgentLabelsQueryKey('team-ai', 'planner')
+    expect(key).toEqual(['labels', 'agent', 'team-ai', 'planner', 'en'])
   })
 })
 

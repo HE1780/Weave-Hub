@@ -560,6 +560,27 @@ export const labelApi = {
     })
   },
 
+  async listAgentLabels(namespace: string, slug: string): Promise<LabelItem[]> {
+    const cleanNamespace = normalizeNamespaceSlug(namespace)
+    return fetchJson<LabelItem[]>(`${WEB_API_PREFIX}/agents/${cleanNamespace}/${encodeURIComponent(slug)}/labels`)
+  },
+
+  async attachAgentLabel(namespace: string, slug: string, labelSlug: string): Promise<LabelItem> {
+    const cleanNamespace = normalizeNamespaceSlug(namespace)
+    return fetchJson<LabelItem>(`${WEB_API_PREFIX}/agents/${cleanNamespace}/${encodeURIComponent(slug)}/labels/${encodeURIComponent(labelSlug)}`, {
+      method: 'PUT',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async detachAgentLabel(namespace: string, slug: string, labelSlug: string): Promise<void> {
+    const cleanNamespace = normalizeNamespaceSlug(namespace)
+    await fetchJson<void>(`${WEB_API_PREFIX}/agents/${cleanNamespace}/${encodeURIComponent(slug)}/labels/${encodeURIComponent(labelSlug)}`, {
+      method: 'DELETE',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
   async listAdminDefinitions(): Promise<LabelDefinition[]> {
     return fetchJson<LabelDefinition[]>('/api/v1/admin/labels')
   },

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Clock, Globe, Lock, Star, Users } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Clock, Download, Folder, Globe, Lock, Star, Terminal, Users } from 'lucide-react'
 import { useAgentDetail } from '@/features/agent/use-agent-detail'
 import { useArchiveAgent } from '@/features/agent/use-archive-agent'
 import { useUnarchiveAgent } from '@/features/agent/use-unarchive-agent'
@@ -13,13 +13,16 @@ import { useDeleteAgentVersion } from '@/features/agent/use-delete-agent-version
 import { AgentStarButton } from '@/features/agent/social/agent-star-button'
 import { AgentRatingInput } from '@/features/agent/social/agent-rating-input'
 import { AgentVersionCommentsSection } from '@/features/agent/comments'
+import { AgentLabelPanel } from '@/features/agent/agent-label-panel'
 import { useAuth } from '@/features/auth/use-auth'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
+import { InstallCommand, getBaseUrl } from '@/features/skill/install-command'
 import { FileTree } from '@/features/skill/file-tree'
 import { FilePreviewDialog } from '@/features/skill/file-preview-dialog'
 import type { FileTreeNode } from '@/features/skill/file-tree-builder'
 import type { SkillFile } from '@/api/types'
+import { buildApiUrl, WEB_API_PREFIX } from '@/api/client'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
@@ -34,6 +37,7 @@ import {
 import { Input } from '@/shared/ui/input'
 import { Textarea } from '@/shared/ui/textarea'
 import { ConfirmDialog } from '@/shared/components/confirm-dialog'
+import { useCopyToClipboard } from '@/shared/lib/clipboard'
 import { toast } from '@/shared/lib/toast'
 import { NamespaceBadge } from '@/shared/components/namespace-badge'
 import { formatLocalDateTime } from '@/shared/lib/date-time'
@@ -95,12 +99,23 @@ function triggerBrowserDownload(fileName: string, content: string, contentType: 
 }
 
 /**
+ * Triggers browser download for a backend URL endpoint.
+ */
+function triggerBrowserUrlDownload(url: string) {
+  const anchor = document.createElement('a')
+  anchor.href = url
+  document.body.appendChild(anchor)
+  anchor.click()
+  document.body.removeChild(anchor)
+}
+
+/**
  * Detail page for a single agent. Renders metadata + soul + workflow.
  */
 export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, hasRole } = useAuth()
   const viewerUserId = user?.userId ?? null
   const { data: agent, isLoading, isError, error } = useAgentDetail(namespace ?? '', slug ?? '')
   const archiveMutation = useArchiveAgent()
@@ -126,6 +141,8 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const [activeDoc, setActiveDoc] = useState<'agent' | 'soul'>('agent')
   const [selectedFileNode, setSelectedFileNode] = useState<FileTreeNode | null>(null)
   const [filePreviewOpen, setFilePreviewOpen] = useState(false)
+  const [fileBrowserOpen, setFileBrowserOpen] = useState(true)
+  const [shareCopied, copyShareText] = useCopyToClipboard()
   const inlineFiles = useMemo(
     () =>
       buildInlineAgentFiles({
@@ -385,6 +402,36 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
     )
   }
 
+  /**
+   * Downloads the selected agent package via backend endpoint.
+   */
+  const handleDownloadPackage = () => {
+    if (!targetNamespace || !targetSlug || !agent.version) return
+    const cleanNamespace = targetNamespace.startsWith('@') ? targetNamespace.slice(1) : targetNamespace
+    const url = buildApiUrl(
+      `${WEB_API_PREFIX}/agents/${cleanNamespace}/${encodeURIComponent(targetSlug)}/versions/${encodeURIComponent(agent.version)}/download`,
+    )
+    triggerBrowserUrlDownload(url)
+  }
+
+  /**
+   * Copies agent share text and detail URL to clipboard.
+   */
+  const handleShareAgent = async () => {
+    if (!targetNamespace || !targetSlug) return
+    try {
+      const baseUrl = getBaseUrl()
+      const shareUrl = `${baseUrl}/agents/${targetNamespace}/${encodeURIComponent(targetSlug)}`
+      const displayName = targetNamespace === 'global'
+        ? targetSlug
+        : `${targetNamespace}/${targetSlug}`
+      const shareText = `${displayName}\n${agent.description ?? ''}\n${shareUrl}`
+      await copyShareText(shareText)
+    } catch (err) {
+      toast.error(t('skillDetail.share.failed'), err instanceof Error ? err.message : '')
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 animate-fade-up">
       <div className="flex-1 min-w-0 space-y-8">
@@ -577,6 +624,38 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
       </div>
 
       <aside className="w-full lg:w-80 flex-shrink-0 space-y-5">
+        {inlineFiles.length > 0 && (
+          <Card className="p-5 space-y-3">
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 text-left"
+              aria-expanded={fileBrowserOpen}
+              onClick={() => setFileBrowserOpen((value) => !value)}
+            >
+              <Folder className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-semibold font-heading text-foreground">
+                {t('fileTree.title')}
+              </span>
+              <span className="text-xs text-muted-foreground ml-auto mr-2">
+                {inlineFiles.length}
+              </span>
+              <span
+                className={cn(
+                  'text-muted-foreground transition-transform duration-200',
+                  fileBrowserOpen && 'rotate-180',
+                )}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </button>
+            {fileBrowserOpen && (
+              <div className="max-h-[400px] overflow-y-auto -mx-5 px-5">
+                <FileTree files={inlineFiles} onFileClick={handleInlineFileClick} bare />
+              </div>
+            )}
+          </Card>
+        )}
+
         <Card className="p-5 space-y-5">
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">{t('skillDetail.version')}</div>
@@ -623,6 +702,11 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
               slug={targetSlug}
               onRequireLogin={handleRequireLogin}
             />
+          </Card>
+        )}
+
+        {targetNamespace && targetSlug && (
+          <Card className="p-5">
             <Button
               variant="outline"
               className="w-full"
@@ -633,6 +717,37 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
             </Button>
           </Card>
         )}
+
+        {targetNamespace && targetSlug && agent.version && (
+          <Card className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-semibold font-heading text-foreground">{t('skillDetail.install')}</span>
+            </div>
+            <InstallCommand namespace={targetNamespace} slug={targetSlug} version={agent.version} />
+          </Card>
+        )}
+
+        <Button
+          className="w-full"
+          variant="outline"
+          size="lg"
+          onClick={handleDownloadPackage}
+          disabled={!targetNamespace || !targetSlug || !agent.version}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          {t('skillDetail.download')}
+        </Button>
+
+        <Button
+          className="w-full"
+          variant="outline"
+          size="lg"
+          onClick={handleShareAgent}
+          disabled={!targetNamespace || !targetSlug}
+        >
+          {shareCopied ? t('skillDetail.share.copied') : t('skillDetail.share.button')}
+        </Button>
 
         {canManageLifecycle && (
           <Card className="p-5 space-y-3">
@@ -678,6 +793,14 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
             </div>
           </Card>
         )}
+
+        <AgentLabelPanel
+          namespace={targetNamespace}
+          slug={targetSlug}
+          initialLabels={[]}
+          canManage={Boolean(user && (canManageLifecycle || hasRole('SUPER_ADMIN')))}
+          isSuperAdmin={hasRole('SUPER_ADMIN')}
+        />
       </aside>
 
       <ConfirmDialog

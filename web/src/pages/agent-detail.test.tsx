@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { I18nextProvider } from 'react-i18next'
 import i18n from 'i18next'
@@ -26,14 +26,19 @@ vi.mock('@/features/agent/use-unarchive-agent', () => ({
 }))
 
 vi.mock('@/features/agent/social/agent-star-button', () => ({
-  AgentStarButton: () => null,
+  AgentStarButton: () => <div data-testid="agent-star-widget">star-widget</div>,
 }))
 vi.mock('@/features/agent/social/agent-rating-input', () => ({
-  AgentRatingInput: () => null,
+  AgentRatingInput: () => <div data-testid="agent-rating-widget">rating-widget</div>,
 }))
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
+}))
+
+const formatLocalDateTimeMock = vi.fn((value: string | null | undefined, locale: string) => `FMT(${value ?? 'null'}|${locale})`)
+vi.mock('@/shared/lib/date-time', () => ({
+  formatLocalDateTime: (...args: [string | null | undefined, string]) => formatLocalDateTimeMock(...args),
 }))
 
 i18n.use(initReactI18next).init({
@@ -44,7 +49,15 @@ i18n.use(initReactI18next).init({
         agents: {
           loading: 'Loading agents…',
           loadError: 'Failed to load agents.',
+          noPublishedVersion: 'This agent has no published version yet.',
           detail: {
+            tabOverview: 'Overview',
+            tabWorkflow: 'Workflow',
+            tabFiles: 'Files',
+            tabVersions: 'Versions',
+            docTagAgent: 'agent.md',
+            docTagSoul: 'soul.md',
+            docEmpty: '(no document provided)',
             soulHeading: 'Soul',
             workflowHeading: 'Workflow',
             skillsHeading: 'Skills used',
@@ -71,6 +84,15 @@ i18n.use(initReactI18next).init({
             unarchiveConfirmDescription: 'Restore {{agent}}?',
           },
         },
+        skillDetail: {
+          install: 'Install',
+          download: 'Download',
+          share: {
+            button: 'Share',
+            copied: 'Copied',
+            failed: 'Share failed',
+          },
+        },
       },
     },
   },
@@ -90,6 +112,7 @@ afterEach(() => {
   cleanup()
   useAgentDetailMock.mockReset()
   useAuthMock.mockReset()
+  formatLocalDateTimeMock.mockClear()
 })
 
 describe('AgentDetailPage', () => {
@@ -97,22 +120,37 @@ describe('AgentDetailPage', () => {
     useAgentDetailMock.mockReturnValue({
       data: {
         name: 'customer-support-agent',
+        version: '1.0.0',
         description: 'Triages tickets',
+        body: '# Agent Doc\n\nSupports triage.',
         soul: 'You are helpful.',
         workflow: { steps: [{ id: 'greet', type: 'llm', prompt: 'hi' }] },
       },
       isLoading: false,
       isError: false,
     })
-    useAuthMock.mockReturnValue({ user: null })
+    useAuthMock.mockReturnValue({ user: null, hasRole: () => false })
 
     render(<AgentDetailPage namespace="global" slug="customer-support-agent" />, { wrapper })
 
     await waitFor(() =>
       expect(screen.getByText('customer-support-agent')).toBeInTheDocument(),
     )
-    expect(screen.getByText('Soul')).toBeInTheDocument()
-    expect(screen.getByText('Workflow')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Overview' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Workflow' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Files' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Versions' })).toBeInTheDocument()
+    expect(screen.getByText('Install')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Download' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'agent.md' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'soul.md' })).toBeInTheDocument()
+    expect(screen.getByText('Agent Doc')).toBeInTheDocument()
+    expect(screen.queryByText('You are helpful.')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'soul.md' }))
+    expect(screen.getByText('You are helpful.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Workflow' }))
+    expect(screen.getByText('Step 1')).toBeInTheDocument()
   })
 
   it('renders the load-error message when the agent is unknown', async () => {
@@ -121,7 +159,7 @@ describe('AgentDetailPage', () => {
       isLoading: false,
       isError: true,
     })
-    useAuthMock.mockReturnValue({ user: null })
+    useAuthMock.mockReturnValue({ user: null, hasRole: () => false })
 
     render(<AgentDetailPage namespace="global" slug="does-not-exist" />, { wrapper })
 
@@ -144,7 +182,7 @@ describe('AgentDetailPage', () => {
       isLoading: false,
       isError: false,
     })
-    useAuthMock.mockReturnValue({ user: { userId: 'u-1' } })
+    useAuthMock.mockReturnValue({ user: { userId: 'u-1' }, hasRole: () => false })
 
     render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
 
@@ -168,7 +206,7 @@ describe('AgentDetailPage', () => {
       isLoading: false,
       isError: false,
     })
-    useAuthMock.mockReturnValue({ user: { userId: 'u-2' } })
+    useAuthMock.mockReturnValue({ user: { userId: 'u-2' }, hasRole: () => false })
 
     render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
 
@@ -193,7 +231,7 @@ describe('AgentDetailPage', () => {
       isLoading: false,
       isError: false,
     })
-    useAuthMock.mockReturnValue({ user: { userId: 'u-1' } })
+    useAuthMock.mockReturnValue({ user: { userId: 'u-1' }, hasRole: () => false })
 
     render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
 
@@ -218,11 +256,94 @@ describe('AgentDetailPage', () => {
       isLoading: false,
       isError: false,
     })
-    useAuthMock.mockReturnValue({ user: { userId: 'ns-admin-99' } })
+    useAuthMock.mockReturnValue({ user: { userId: 'ns-admin-99' }, hasRole: () => false })
 
     render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
 
     await waitFor(() => expect(screen.getByText('Manage agent')).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Archive' })).toBeInTheDocument()
+  })
+
+  it('formats version timestamp with locale instead of rendering raw server time', async () => {
+    useAgentDetailMock.mockReturnValue({
+      data: {
+        name: 'planner',
+        description: 'plans things',
+        versions: [
+          {
+            id: 11,
+            version: '1.0.0',
+            status: 'PUBLISHED',
+            submittedAt: '2026-04-27T10:20:30',
+            publishedAt: '2026-04-27T12:34:56',
+            packageSizeBytes: 2048,
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+    })
+    useAuthMock.mockReturnValue({ user: null, hasRole: () => false })
+
+    render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Versions' }))
+    expect(screen.getByText('FMT(2026-04-27T12:34:56|en)')).toBeInTheDocument()
+    expect(screen.queryByText('2026-04-27T12:34:56')).toBeNull()
+  })
+
+  it('renders inline package files and opens preview from files tab', async () => {
+    useAgentDetailMock.mockReturnValue({
+      data: {
+        name: 'planner',
+        description: 'plans things',
+        body: '# Agent Doc',
+        soul: 'Soul text',
+        workflowYaml: 'steps:\n  - id: greet',
+      },
+      isLoading: false,
+      isError: false,
+    })
+    useAuthMock.mockReturnValue({ user: null, hasRole: () => false })
+
+    render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Files' }))
+    expect(screen.getAllByText('agent.md').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('soul.md').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('workflow.yaml').length).toBeGreaterThan(0)
+
+    fireEvent.click(screen.getAllByText('agent.md')[0]!)
+    expect(screen.getByText('Agent Doc')).toBeInTheDocument()
+  })
+
+  it('shows sidebar file browser card and keeps report action outside social card', async () => {
+    useAgentDetailMock.mockReturnValue({
+      data: {
+        name: 'planner',
+        description: 'plans things',
+        namespace: 'global',
+        slug: 'planner',
+        agentId: 1,
+        body: '# Agent Doc',
+        soul: 'Soul text',
+      },
+      isLoading: false,
+      isError: false,
+    })
+    useAuthMock.mockReturnValue({ user: { userId: 'u-1' }, hasRole: () => false })
+
+    render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
+
+    await waitFor(() => expect(screen.getByText('planner')).toBeInTheDocument())
+    expect(screen.getByText('fileTree.title')).toBeInTheDocument()
+    expect(screen.getByTestId('agent-star-widget')).toBeInTheDocument()
+    expect(screen.getByTestId('agent-rating-widget')).toBeInTheDocument()
+
+    const reportButton = screen.getByRole('button', { name: 'agents.detail.reportButton' })
+    const reportCard = reportButton.closest('.p-5')
+    expect(reportCard).not.toBeNull()
+    expect(reportCard?.querySelector('[data-testid="agent-star-widget"]')).toBeNull()
+    expect(reportCard?.querySelector('[data-testid="agent-rating-widget"]')).toBeNull()
   })
 })
