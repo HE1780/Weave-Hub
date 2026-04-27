@@ -498,3 +498,105 @@ If anything looks broken, the cause is almost certainly in commits `24b0c2de` (p
 
 After visual confirmation, invoke `superpowers:writing-plans` against spec §4.2 to expand P0-1b into
 an executable plan.
+
+---
+
+## 2026-04-27 — P3-2a + P2-2 + P2-4 backend triple-tap
+
+**Backlog:** [docs/plans/2026-04-27-fork-backlog.md](../docs/plans/2026-04-27-fork-backlog.md)
+**Branch:** `main`
+**Range:** `5d62a75b` (P3-2a) → `67a64cb8` (P2-4)
+**Method:** sequential (subagent-free, all backend-only, no frontend dependencies)
+
+### What shipped
+
+- **P3-2a** (`5d62a75b`) — Wired `BasicPrePublishValidator` into `AgentPublishService`. New
+  `PrePublishValidator.validateEntries(entries, publisherId, namespaceId)` default-method overload lets
+  the agent flow reuse the same scanner without an artificial `SkillMetadata` requirement. Failures and
+  warnings throw `DomainBadRequestException` before any persistence.
+- **P2-2** (`3d4d0e0d`, see snafu below) — Added Agent governance endpoints:
+  `POST /api/{v1,web}/agents/{namespace}/{slug}/archive` + `/unarchive`. New `AgentLifecycleService`
+  in domain (owner OR namespace ADMIN/OWNER required), new `AgentLifecycleController` in app, new
+  `AgentLifecycleMutationResponse` DTO, four new entries in `RouteSecurityPolicyRegistry`, plus
+  `Agent.unarchive()` to mirror the existing `archive()` method. Audit-log records under `ARCHIVE_AGENT`
+  / `UNARCHIVE_AGENT` action / `AGENT` target type.
+- **P2-4** (`67a64cb8`) — Added `spring-boot-starter-validation` to `skillhub-app/pom.xml`. The ~44
+  pre-existing `@Valid`/`@NotBlank`/`@Email`/`@Size` annotations are now actually enforced. The
+  pre-existing `GlobalExceptionHandler.handleValidation` was already wired to map
+  `MethodArgumentNotValidException` to 400, so external contract is unchanged.
+
+### Test counts
+
+- Backend: 460 → **468/468** in skillhub-app (full reactor 1098 across 7 modules, 0 failures, 0 errors)
+- New tests: AgentPublishServiceTest 6 → 8 (validator-warning + validator-failure cases),
+  AgentLifecycleServiceTest 8 (owner/admin/ns-owner/stranger/null-roles/404/unarchive variants),
+  AgentLifecycleControllerTest 7 (happy + at-prefix + 404×2 + 403 + 401 + unarchive),
+  GlobalExceptionHandlerTest 2 → 3 (handleValidation case)
+- Test fallout from validation activation: 4 cases in `LocalAuthControllerTest` previously asserted
+  `verify(service).register/...(badEmail)`; updated to `verify(service, never()).<method>(any(), ...)`
+  reflecting the new short-circuit at the validation layer. 400 contract assertions unchanged.
+
+### Spec divergences worth noting
+
+1. **P3-2a — entries-only overload, not full context refactor.** The plan said "inject validator into
+   `AgentPublishService`" but `PrePublishValidator.SkillPackageContext` requires a `SkillMetadata`,
+   which the agent flow doesn't have (it has `AgentMetadata`). Considered three options: (a) pass null
+   metadata, (b) refactor context to be polymorphic, (c) add a new entry-only method. Picked (c) —
+   minimal diff, keeps existing skill-side callers untouched, both existing impls (`Basic`, `NoOp`)
+   work because neither reads the metadata field. The default method delegates to the existing
+   `validate(SkillPackageContext)` with null metadata.
+
+2. **P2-2 — `Agent.unarchive()` was missing; added it.** The backlog said "domain ready, app missing"
+   but only `archive()` existed. `AgentStatus.ARCHIVED` and `ACTIVE` enum values exist; just needed
+   the inverse method. No version-level archive (matches v1 scope per backlog).
+
+3. **P2-4 — bigger blast radius than expected: validation activation broke 4 LocalAuthControllerTest
+   cases.** The tests were written assuming bean validation didn't fire, so they stubbed the service
+   to throw on bad email and asserted the service was called. With validation enabled, the service
+   is *never* called for bad emails — the validation layer 400s first. Updated assertions to match
+   reality. This is exactly the kind of latent issue the backlog called out as "潜伏炸弹".
+
+### Snafu — P2-2 commit message is wrong (worth knowing)
+
+Commit `3d4d0e0d` is captioned `feat(web): register /my-weave route (auth-gated)` but its actual
+content is the seven P2-2 backend files (AgentLifecycleController/Service/Test, dto, security policy,
+Agent.java, AgentLifecycleServiceTest) PLUS one tiny `web/src/app/router.tsx` line from the parallel
+P0-1b session. A concurrent claude instance running P0-1b's `/my-weave` work executed `git add` over
+the whole tree at the moment my P2-2 files were staged, then committed everything under their own
+message before I could commit mine. The code is correct in main, just the commit-log archeology is
+misleading. Did not amend (history is shared and this is non-destructive enough to leave). If anyone
+later searches for "AgentLifecycle" in `git log` and finds nothing, look at `3d4d0e0d`.
+
+Lesson recorded in `memo/lessons.md` 2026-04-27 parallel-claude entry.
+
+### Known gaps (not bugs)
+
+1. **No frontend wiring for archive/unarchive yet.** Backend endpoints are live and security-gated.
+   Plan says "前端:My Agents 页 + agent-detail 加 archive/unarchive 按钮(权限可见)" — that's a
+   separate frontend task. Listed as next backlog candidate.
+2. **No real integration test for the lifecycle flow.** Carried over from skill comments / agent
+   review pattern — codebase has no `@SpringBootTest` precedent that drives real repos through the
+   controller for these mutations. Mocked controller tests + domain-service tests cover the
+   contract.
+3. **P3-2b (extending validator chain) is still pending.** Independent brainstorm per backlog.
+
+### How to resume
+
+```bash
+cd /Users/lydoc/projectscoding/skillhub
+git status   # branch: main, my 3 commits live (P3-2a / P2-2 conflated / P2-4)
+cd server && ./mvnw test          # 1098 / 0F / 0E across 7 modules
+```
+
+Backlog updates after this session — these can be marked ✅:
+
+- P3-2a: ✅ done (commit `5d62a75b`)
+- P2-2: ✅ done (commit `3d4d0e0d` — see snafu note above)
+- P2-4: ✅ done (commit `67a64cb8`)
+
+Natural next stops per ADR 0003:
+
+- P0-2 (Agent list search backend + frontend) — backlog says ~1 day full-stack.
+- P2-1 (Agent star + rating, mirrors skill_star/skill_rating) — backlog says ~1 day full-stack.
+- Wire archive/unarchive UI buttons into My Agents + agent-detail pages.
+- P3-2b (extend validator rule chain — needs brainstorm per backlog).

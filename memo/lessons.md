@@ -73,3 +73,16 @@
 - 看到 "No qualifying bean of type X" 错误时，**先看异常里的 jar 路径**：如果是 `~/.m2/repository/...` 而不是 `target/classes/...`，几乎一定是 stale cache，不是配置问题。
 - 这种问题不留在源码里，git diff 看不到，只能跑测试触发；所以接手 plan 中间 phase 的 baseline 验证仍然要跑 `./mvnw test` 而不是 `./mvnw -pl X test`。
 
+---
+
+## 2026-04-27 — 并行 claude 实例之间会抢 git index
+
+**症状**: 在 P3-2a → P2-2 → P2-4 三连任务里，P2-2 用 `git add <files...>` 暂存了七个后端文件后，紧接着 `git commit -m '...'` 命令报 "no changes added to commit"。`git log` 显示我刚暂存的七个 P2-2 文件出现在了**另一个 commit** 里（`3d4d0e0d feat(web): register /my-weave route (auth-gated)`），跟一个完全无关的 `web/src/app/router.tsx` 改动放一起。该 commit message 描述的是 P0-1b 工作，但内容大头是我的 P2-2。
+
+**原因**: 用户在另一个会话/agent 里同时跑 P0-1b plan（我也在做 P2-x）。git index（暂存区）在仓库内是**单一全局状态**，不是 per-process 的。`git add` 暂存的文件被另一个并行进程的 commit 吞掉了——它执行 `git add web/src/app/router.tsx` 时，我已经 stage 的所有文件作为 "changes to be committed" 一并被它的 `git commit` 收入。
+
+**规则**:
+- 用户明确说"两条线在并行"时，**stage → commit 之间不能有任何能让出 cwd 的操作**。一行命令完成：`git add <files> && git commit -m "..."`，不要分两个 Bash 调用。
+- 即便分两个调用，**commit 命令的 message 写好后立即提交**，中间不要穿插任何其他工具调用——index 在那期间是并行 agent 也能写的。
+- 如果还是被抢了：**不要 rebase 别人的 commit**（他们也在改写历史的话会更乱）。最稳妥是接受现状，在 memo 里写清楚 "X 文件其实在 commit Y 里，虽然 message 说的是 Z"，方便未来搜索。
+- 对于"我自己的多个独立 commit"场景，**先全部 stage + commit 完才开下一个任务**；不要中途让 cwd 暴露给并行 agent。
