@@ -90,10 +90,10 @@ ALTER TABLE agent
 
 | Controller | 路径 | 方法 |
 |---|---|---|
-| `AgentStarController` | `/api/{v1,web}/agents/{agentId}/star` | `PUT` (star) / `DELETE` (unstar) / `GET` (查询是否 starred，未登录返 false) |
-| `AgentRatingController` | `/api/{v1,web}/agents/{agentId}/rating` | `PUT` `{score}` / `GET` 返 `{score, rated}`（未登录返 0/false） |
+| `AgentStarController` | `/api/{v1,web}/agents/{namespace}/{slug}/star` | `PUT` (star) / `DELETE` (unstar) / `GET` (查询是否 starred，未登录返 false) |
+| `AgentRatingController` | `/api/{v1,web}/agents/{namespace}/{slug}/rating` | `PUT` `{score}` / `GET` 返 `{score, rated}`（未登录返 0/false） |
 
-**路径决定**：用 `{agentId}` 数字 ID，**严格 mirror skill** (`/skills/{skillId}/star`)。和 archive 端点 (`{namespace}/{slug}`) 不一致是不可避免的——因为这条规则就是"对齐 skill"。
+**路径决定 — 不可避免地偏离 skill**：skill 用 `{skillId}` 单段 ID 因为 skill 详情用 `{ns}/{slug}` (2 段)——单段 `{skillId}` 不冲突。但 **agent 详情已经是 `{ns}/{slug}` (2 段)**，如果 agent star 用 `{agentId}/star` (2 段)，会被 Spring pattern matcher 当成 `{ns}/{slug}` 解释——`/agents/123/star` 会匹配 `/api/v1/agents/*/*` 的 GET-detail 路由。所以 agent 必须用 3 段 `{ns}/{slug}/star`，跟 archive 端点一致。Service 层签名仍是 `(agentId, userId)`，controller 做 ns/slug → agentId 解析。
 
 DTO（mirror skill 一一对应）：
 - `AgentRatingRequest(Short score)` — 用 `@NotNull @Min(1) @Max(5)`
