@@ -33,6 +33,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -222,6 +223,33 @@ class AgentLifecycleControllerTest {
                         .with(user("usr_1"))
                         .with(csrf()))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteVersion_returns_unified_envelope() throws Exception {
+        Namespace ns = namespace(1L, "global");
+        Agent active = agent(7L, 1L, "agent-a", AgentStatus.ACTIVE);
+        AgentVersion deleted = version(20L, 7L, "1.0.0", AgentVersionStatus.DRAFT);
+
+        given(namespaceRepository.findBySlug("global")).willReturn(Optional.of(ns));
+        given(agentRepository.findByNamespaceIdAndSlug(1L, "agent-a")).willReturn(Optional.of(active));
+        given(agentLifecycleService.deleteVersion(eq(7L), eq("1.0.0"), eq("usr_1"), anyMap()))
+                .willReturn(deleted);
+
+        mockMvc.perform(delete("/api/web/agents/global/agent-a/versions/1.0.0")
+                        .requestAttr("userId", "usr_1")
+                        .with(user("usr_1"))
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.versionId").value(20))
+                .andExpect(jsonPath("$.data.action").value("DELETE_VERSION"));
+    }
+
+    @Test
+    void deleteVersion_rejects_anonymous_with_401() throws Exception {
+        mockMvc.perform(delete("/api/web/agents/global/agent-a/versions/1.0.0").with(csrf()))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

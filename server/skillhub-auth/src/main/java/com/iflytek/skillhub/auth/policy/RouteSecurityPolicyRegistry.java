@@ -39,6 +39,8 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/skills/*/rating"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/skill-versions/*/comments"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/skill-versions/*/comments"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/agent-versions/*/comments"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/agent-versions/*/comments"),
             // Agent review endpoints — must come BEFORE the wildcard agent
             // read entries below, otherwise '/agents/reviews/{id}' matches
             // '/agents/*/*' first and bypasses authentication.
@@ -68,6 +70,8 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/agents/*/*/versions/*/withdraw-review"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/v1/agents/*/*/versions/*/rerelease"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/agents/*/*/versions/*/rerelease"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.DELETE, "/api/v1/agents/*/*/versions/*"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.DELETE, "/api/web/agents/*/*/versions/*"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/agents"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/agents"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/agents/*/*"),
@@ -82,6 +86,14 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.authenticated(HttpMethod.DELETE, "/api/web/comments/*"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/v1/comments/*/pin"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/comments/*/pin"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/v1/agent-versions/*/comments"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/agent-versions/*/comments"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.PATCH, "/api/v1/agent-comments/*"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.PATCH, "/api/web/agent-comments/*"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.DELETE, "/api/v1/agent-comments/*"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.DELETE, "/api/web/agent-comments/*"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/v1/agent-comments/*/pin"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.POST, "/api/web/agent-comments/*/pin"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/skills"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/skills/*/*"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/skills/*/*/versions"),

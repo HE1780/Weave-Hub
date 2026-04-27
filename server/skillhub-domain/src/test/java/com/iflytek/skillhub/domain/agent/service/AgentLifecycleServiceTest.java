@@ -9,6 +9,7 @@ import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
+import com.iflytek.skillhub.storage.ObjectStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,7 @@ class AgentLifecycleServiceTest {
     @Mock private AgentService agentService;
     @Mock private AgentVersionRepository agentVersionRepository;
     @Mock private AgentReviewTaskRepository agentReviewTaskRepository;
+    @Mock private ObjectStorageService objectStorageService;
     @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private AgentLifecycleService service;
@@ -247,5 +249,75 @@ class AgentLifecycleServiceTest {
 
         assertThrows(com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException.class, () ->
                 service.rereleaseVersion(7L, "1.0.0", "1.1.0", "owner-1", Map.of()));
+    }
+
+    @Test
+    void deleteVersion_DRAFT_status_succeeds_and_removes_storage() throws Exception {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion v =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.0.0", "owner-1", "manifest", "soul", "wf",
+                        "packages/7/20/bundle.zip", 100L);
+        // status defaults to DRAFT
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(v));
+
+        com.iflytek.skillhub.domain.agent.AgentVersion result =
+                service.deleteVersion(7L, "1.0.0", "owner-1", Map.of());
+
+        assertEquals("1.0.0", result.getVersion());
+        verify(agentVersionRepository).delete(v);
+        // No active transaction in unit test → fires immediately with the captured key
+        verify(objectStorageService).deleteObjects(any());
+    }
+
+    @Test
+    void deleteVersion_PUBLISHED_status_throws_BadRequest() throws Exception {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion v =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.0.0", "owner-1", "manifest", "soul", "wf", null, 100L);
+        java.lang.reflect.Field statusField =
+                com.iflytek.skillhub.domain.agent.AgentVersion.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(v, com.iflytek.skillhub.domain.agent.AgentVersionStatus.PUBLISHED);
+
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(v));
+
+        assertThrows(com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException.class, () ->
+                service.deleteVersion(7L, "1.0.0", "owner-1", Map.of()));
+        verify(agentVersionRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteVersion_PENDING_REVIEW_status_throws_BadRequest_with_withdraw_hint() throws Exception {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+
+        com.iflytek.skillhub.domain.agent.AgentVersion v =
+                new com.iflytek.skillhub.domain.agent.AgentVersion(
+                        7L, "1.0.0", "owner-1", "manifest", "soul", "wf", null, 100L);
+        java.lang.reflect.Field statusField =
+                com.iflytek.skillhub.domain.agent.AgentVersion.class.getDeclaredField("status");
+        statusField.setAccessible(true);
+        statusField.set(v, com.iflytek.skillhub.domain.agent.AgentVersionStatus.PENDING_REVIEW);
+
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(v));
+
+        assertThrows(com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException.class, () ->
+                service.deleteVersion(7L, "1.0.0", "owner-1", Map.of()));
+    }
+
+    @Test
+    void deleteVersion_unknown_version_throws_NotFound() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+        when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
+        when(agentVersionRepository.findByAgentIdAndVersion(7L, "9.9.9")).thenReturn(Optional.empty());
+
+        assertThrows(DomainNotFoundException.class, () ->
+                service.deleteVersion(7L, "9.9.9", "owner-1", Map.of()));
     }
 }

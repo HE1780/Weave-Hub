@@ -18,6 +18,7 @@ import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.service.AuditRequestContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -159,6 +160,36 @@ public class AgentLifecycleController extends BaseApiController {
                         fresh.getVersion(),
                         "RERELEASE",
                         fresh.getStatus().name()));
+    }
+
+    @DeleteMapping("/{namespace}/{slug}/versions/{version}")
+    public ApiResponse<AgentVersionMutationResponse> deleteVersion(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @PathVariable String version,
+            @RequestAttribute("userId") String userId,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles,
+            HttpServletRequest httpRequest) {
+
+        Agent agent = resolve(namespace, slug);
+        AgentVersion deleted = agentLifecycleService.deleteVersion(
+                agent.getId(), version, userId, rolesOrEmpty(userNsRoles));
+        auditLogService.record(
+                userId,
+                "DELETE_AGENT_VERSION",
+                "AGENT_VERSION",
+                deleted.getId(),
+                null,
+                AuditRequestContext.from(httpRequest).clientIp(),
+                AuditRequestContext.from(httpRequest).userAgent(),
+                null);
+        return ok("response.success.deleted",
+                new AgentVersionMutationResponse(
+                        agent.getId(),
+                        deleted.getId(),
+                        deleted.getVersion(),
+                        "DELETE_VERSION",
+                        deleted.getStatus().name()));
     }
 
     private Agent resolve(String namespaceSlug, String slug) {

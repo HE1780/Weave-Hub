@@ -13,10 +13,16 @@ import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
+import com.iflytek.skillhub.storage.ObjectStorageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,21 +38,26 @@ import java.util.Map;
 @Service
 public class AgentLifecycleService {
 
+    private static final Logger log = LoggerFactory.getLogger(AgentLifecycleService.class);
+
     private final AgentRepository agentRepository;
     private final AgentService agentService;
     private final AgentVersionRepository agentVersionRepository;
     private final AgentReviewTaskRepository agentReviewTaskRepository;
+    private final ObjectStorageService objectStorageService;
     private final ApplicationEventPublisher eventPublisher;
 
     public AgentLifecycleService(AgentRepository agentRepository,
                                  AgentService agentService,
                                  AgentVersionRepository agentVersionRepository,
                                  AgentReviewTaskRepository agentReviewTaskRepository,
+                                 ObjectStorageService objectStorageService,
                                  ApplicationEventPublisher eventPublisher) {
         this.agentRepository = agentRepository;
         this.agentService = agentService;
         this.agentVersionRepository = agentVersionRepository;
         this.agentReviewTaskRepository = agentReviewTaskRepository;
+        this.objectStorageService = objectStorageService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -155,6 +166,64 @@ public class AgentLifecycleService {
         }
 
         return fresh;
+    }
+
+    /**
+     * Deletes a single non-PUBLISHED agent version. Mirrors skill version
+     * delete: PUBLISHED versions cannot be deleted (they're the public
+     * artifact). Allowed sources: DRAFT, REJECTED, ARCHIVED. PENDING_REVIEW
+     * must be withdrawn first.
+     *
+     * <p>Cascades the underlying review task (FK CASCADE on agent_version)
+     * and best-effort deletes the package zip from object storage after
+     * commit.
+     *
+     * <p>Unlike skill, agent has no {@code latestVersionId} pointer to
+     * patch up — readers fetch the most recent PUBLISHED version on demand.
+     */
+    @Transactional
+    public AgentVersion deleteVersion(Long agentId,
+                                      String version,
+                                      String actorUserId,
+                                      Map<Long, NamespaceRole> userNamespaceRoles) {
+        Agent agent = loadAndAuthorize(agentId, actorUserId, userNamespaceRoles);
+        AgentVersion target = agentVersionRepository
+                .findByAgentIdAndVersion(agent.getId(), version)
+                .orElseThrow(() -> new DomainNotFoundException("error.agent.version.notFound", version));
+        if (target.getStatus() == AgentVersionStatus.PUBLISHED) {
+            throw new DomainBadRequestException("error.agent.version.publishedNotDeletable");
+        }
+        if (target.getStatus() == AgentVersionStatus.PENDING_REVIEW) {
+            throw new DomainBadRequestException("error.agent.version.withdrawFirst");
+        }
+
+        String objectKey = target.getPackageObjectKey();
+        agentVersionRepository.delete(target);
+        if (objectKey != null && !objectKey.isBlank()) {
+            deleteStorageAfterCommit(List.of(objectKey));
+        }
+        return target;
+    }
+
+    private void deleteStorageAfterCommit(List<String> keys) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            tryDeleteStorage(keys);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                tryDeleteStorage(keys);
+            }
+        });
+    }
+
+    private void tryDeleteStorage(List<String> keys) {
+        try {
+            objectStorageService.deleteObjects(keys);
+        } catch (RuntimeException ex) {
+            log.error("Failed to delete agent version storage objects [keys={}]", keys, ex);
+        }
     }
 
     /**
