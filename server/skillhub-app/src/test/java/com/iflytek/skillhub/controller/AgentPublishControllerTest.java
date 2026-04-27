@@ -120,7 +120,7 @@ class AgentPublishControllerTest {
                 .thenReturn(Optional.of(mock(NamespaceMember.class)));
         when(archiveExtractor.extract(any())).thenReturn(fakeEntries());
         when(agentPackageValidator.validate(any())).thenReturn(okValidation());
-        when(agentPublishService.publish(any(), any(), any(), any(), any(), any(), any(), anyLong(), any()))
+        when(agentPublishService.publish(any(), any(), any(), any(), any(), any(), any(), any(), anyLong(), any()))
                 .thenReturn(fakePublishedVersion());
 
         mockMvc.perform(multipart("/api/web/agents/global/publish")

@@ -12,6 +12,9 @@ import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
 import com.iflytek.skillhub.domain.event.AgentPublishedEvent;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
+import com.iflytek.skillhub.domain.skill.validation.PackageEntry;
+import com.iflytek.skillhub.domain.skill.validation.PrePublishValidator;
+import com.iflytek.skillhub.domain.skill.validation.ValidationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +39,7 @@ class AgentPublishServiceTest {
     @Mock private AgentRepository agentRepository;
     @Mock private AgentVersionRepository agentVersionRepository;
     @Mock private AgentReviewTaskRepository agentReviewTaskRepository;
+    @Mock private PrePublishValidator prePublishValidator;
     @Mock private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks private AgentPublishService service;
@@ -73,6 +77,8 @@ class AgentPublishServiceTest {
             try { setId(v, 70L); } catch (Exception ignored) {}
             return v;
         });
+        lenient().when(prePublishValidator.validateEntries(anyList(), anyString(), anyLong()))
+                .thenReturn(ValidationResult.pass());
     }
 
     @Test
@@ -84,6 +90,7 @@ class AgentPublishServiceTest {
         AgentVersion result = service.publish(
                 1L, metadata("agent-a", "1.0.0"),
                 AgentVisibility.PRIVATE,
+                List.of(),
                 "manifest", "soul", "workflow",
                 "ns-1/agents/agent-a/1.0.0/bundle.zip", 1024L,
                 "owner-1");
@@ -108,6 +115,7 @@ class AgentPublishServiceTest {
         AgentVersion result = service.publish(
                 1L, metadata("agent-b", "1.0.0"),
                 AgentVisibility.PUBLIC,
+                List.of(),
                 "m", "s", "w", "key", 1L, "owner-1");
 
         assertEquals(AgentVersionStatus.PENDING_REVIEW, result.getStatus());
@@ -129,6 +137,7 @@ class AgentPublishServiceTest {
         assertThrows(DomainForbiddenException.class, () -> service.publish(
                 1L, metadata("agent-a", "1.0.0"),
                 AgentVisibility.PUBLIC,
+                List.of(),
                 "m", "s", "w", "key", 1L, "intruder"));
     }
 
@@ -143,6 +152,7 @@ class AgentPublishServiceTest {
         assertThrows(DomainBadRequestException.class, () -> service.publish(
                 1L, metadata("agent-a", "1.0.0"),
                 AgentVisibility.PUBLIC,
+                List.of(),
                 "m", "s", "w", "key", 1L, "owner-1"));
     }
 
@@ -151,6 +161,7 @@ class AgentPublishServiceTest {
         assertThrows(DomainForbiddenException.class, () -> service.publish(
                 1L, metadata("agent-a", "1.0.0"),
                 AgentVisibility.PRIVATE,
+                List.of(),
                 "m", "s", "w", "key", 1L, ""));
     }
 
@@ -161,6 +172,41 @@ class AgentPublishServiceTest {
         assertThrows(DomainBadRequestException.class, () -> service.publish(
                 1L, metadata("agent-a", null),
                 AgentVisibility.PRIVATE,
+                List.of(),
                 "m", "s", "w", "key", 1L, "owner-1"));
+    }
+
+    @Test
+    void prepublish_validator_warning_aborts_publish() {
+        when(prePublishValidator.validateEntries(anyList(), anyString(), anyLong()))
+                .thenReturn(ValidationResult.warn(List.of(
+                        "soul.md line 4 contains a value that looks like an API key.")));
+
+        DomainBadRequestException ex = assertThrows(DomainBadRequestException.class, () ->
+                service.publish(
+                        1L, metadata("agent-a", "1.0.0"),
+                        AgentVisibility.PRIVATE,
+                        List.of(new PackageEntry("soul.md", "x".getBytes(), 1, "text/markdown")),
+                        "m", "s", "w", "key", 1L, "owner-1"));
+        assertTrue(ex.getMessage().contains("API key"));
+
+        verify(agentRepository, never()).save(any());
+        verify(agentVersionRepository, never()).save(any());
+    }
+
+    @Test
+    void prepublish_validator_failure_aborts_publish() {
+        when(prePublishValidator.validateEntries(anyList(), anyString(), anyLong()))
+                .thenReturn(ValidationResult.fail("schema invalid"));
+
+        DomainBadRequestException ex = assertThrows(DomainBadRequestException.class, () ->
+                service.publish(
+                        1L, metadata("agent-a", "1.0.0"),
+                        AgentVisibility.PRIVATE,
+                        List.of(),
+                        "m", "s", "w", "key", 1L, "owner-1"));
+        assertTrue(ex.getMessage().contains("schema invalid"));
+
+        verify(agentRepository, never()).save(any());
     }
 }

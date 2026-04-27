@@ -114,6 +114,7 @@ public class AgentPublishController extends BaseApiController {
                 ns.getId(),
                 validation.metadata(),
                 agentVisibility,
+                entries,
                 contents.manifestYaml(),
                 contents.soulMd(),
                 contents.workflowYaml(),

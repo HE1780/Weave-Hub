@@ -11,10 +11,14 @@ import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
 import com.iflytek.skillhub.domain.event.AgentPublishedEvent;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
+import com.iflytek.skillhub.domain.skill.validation.PackageEntry;
+import com.iflytek.skillhub.domain.skill.validation.PrePublishValidator;
+import com.iflytek.skillhub.domain.skill.validation.ValidationResult;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -31,15 +35,18 @@ public class AgentPublishService {
     private final AgentRepository agentRepository;
     private final AgentVersionRepository agentVersionRepository;
     private final AgentReviewTaskRepository agentReviewTaskRepository;
+    private final PrePublishValidator prePublishValidator;
     private final ApplicationEventPublisher eventPublisher;
 
     public AgentPublishService(AgentRepository agentRepository,
                                AgentVersionRepository agentVersionRepository,
                                AgentReviewTaskRepository agentReviewTaskRepository,
+                               PrePublishValidator prePublishValidator,
                                ApplicationEventPublisher eventPublisher) {
         this.agentRepository = agentRepository;
         this.agentVersionRepository = agentVersionRepository;
         this.agentReviewTaskRepository = agentReviewTaskRepository;
+        this.prePublishValidator = prePublishValidator;
         this.eventPublisher = eventPublisher;
     }
 
@@ -50,6 +57,7 @@ public class AgentPublishService {
      * @param namespaceId      target namespace; reviewer queue is keyed by this
      * @param metadata         parsed AGENT.md (provides slug via name + display fields)
      * @param visibility       requested visibility; ignored on subsequent publishes
+     * @param entries          unpacked package entries used for the secret/precheck scan
      * @param manifestYaml     raw AGENT.md content (stored verbatim for the review screen)
      * @param soulMd           raw soul.md content
      * @param workflowYaml     raw workflow.yaml content
@@ -61,6 +69,7 @@ public class AgentPublishService {
     public AgentVersion publish(Long namespaceId,
                                 AgentMetadata metadata,
                                 AgentVisibility visibility,
+                                List<PackageEntry> entries,
                                 String manifestYaml,
                                 String soulMd,
                                 String workflowYaml,
@@ -69,6 +78,19 @@ public class AgentPublishService {
                                 String publisherUserId) {
         if (publisherUserId == null || publisherUserId.isBlank()) {
             throw new DomainForbiddenException("Publisher must be authenticated");
+        }
+
+        ValidationResult prePublish = prePublishValidator.validateEntries(
+                entries == null ? List.of() : entries, publisherUserId, namespaceId);
+        if (!prePublish.passed()) {
+            throw new DomainBadRequestException(
+                    "Agent package failed pre-publish validation: "
+                            + String.join(", ", prePublish.errors()));
+        }
+        if (prePublish.hasWarnings()) {
+            throw new DomainBadRequestException(
+                    "Agent package contains likely secrets: "
+                            + String.join(", ", prePublish.warnings()));
         }
 
         String slug = metadata.name();
