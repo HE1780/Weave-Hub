@@ -34,6 +34,12 @@ class JpaGovernanceQueryRepositoryTest {
     private SkillVersionRepository skillVersionRepository;
 
     @Mock
+    private com.iflytek.skillhub.domain.agent.AgentRepository agentRepository;
+
+    @Mock
+    private com.iflytek.skillhub.domain.agent.AgentVersionRepository agentVersionRepository;
+
+    @Mock
     private NamespaceRepository namespaceRepository;
 
     @Mock
@@ -46,6 +52,8 @@ class JpaGovernanceQueryRepositoryTest {
         repository = new JpaGovernanceQueryRepository(
                 skillRepository,
                 skillVersionRepository,
+                agentRepository,
+                agentVersionRepository,
                 namespaceRepository,
                 userAccountRepository
         );

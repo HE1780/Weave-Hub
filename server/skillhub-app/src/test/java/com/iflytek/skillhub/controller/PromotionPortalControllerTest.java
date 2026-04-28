@@ -139,12 +139,17 @@ class PromotionPortalControllerTest {
     private void stubPromotionResponse(PromotionRequest request) {
         given(governanceQueryRepository.getPromotionResponse(request)).willReturn(new PromotionResponseDto(
                 request.getId(),
+                com.iflytek.skillhub.domain.review.SourceType.SKILL,
                 request.getSourceSkillId(),
                 "team-a",
                 "skill-a",
                 "1.0.0",
+                null,
+                null,
+                null,
                 "global",
                 request.getTargetSkillId(),
+                null,
                 request.getStatus().name(),
                 request.getSubmittedBy(),
                 "Submitter",
