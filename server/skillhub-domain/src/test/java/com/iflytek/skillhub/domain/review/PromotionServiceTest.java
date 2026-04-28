@@ -40,6 +40,8 @@ class PromotionServiceTest {
     @Mock private PromotionRequestRepository promotionRequestRepository;
     @Mock private SkillRepository skillRepository;
     @Mock private SkillVersionRepository skillVersionRepository;
+    @Mock private com.iflytek.skillhub.domain.agent.AgentRepository agentRepository;
+    @Mock private com.iflytek.skillhub.domain.agent.AgentVersionRepository agentVersionRepository;
     @Mock private NamespaceRepository namespaceRepository;
     @Mock private ReviewPermissionChecker permissionChecker;
     @Mock private ApplicationEventPublisher eventPublisher;
@@ -66,6 +68,7 @@ class PromotionServiceTest {
         org.mockito.Mockito.lenient().when(skillMaterializer.supportedSourceType()).thenReturn(SourceType.SKILL);
         promotionService = new PromotionService(
                 promotionRequestRepository, skillRepository, skillVersionRepository,
+                agentRepository, agentVersionRepository,
                 namespaceRepository, permissionChecker, eventPublisher,
                 governanceNotificationService, entityManager, CLOCK,
                 List.of(skillMaterializer));

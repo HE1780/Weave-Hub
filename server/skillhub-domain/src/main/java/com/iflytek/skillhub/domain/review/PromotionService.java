@@ -1,5 +1,10 @@
 package com.iflytek.skillhub.domain.review;
 
+import com.iflytek.skillhub.domain.agent.Agent;
+import com.iflytek.skillhub.domain.agent.AgentRepository;
+import com.iflytek.skillhub.domain.agent.AgentVersion;
+import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
+import com.iflytek.skillhub.domain.agent.AgentVersionStatus;
 import com.iflytek.skillhub.domain.event.PromotionApprovedEvent;
 import com.iflytek.skillhub.domain.event.PromotionRejectedEvent;
 import com.iflytek.skillhub.domain.event.PromotionSubmittedEvent;
@@ -41,6 +46,8 @@ public class PromotionService {
     private final PromotionRequestRepository promotionRequestRepository;
     private final SkillRepository skillRepository;
     private final SkillVersionRepository skillVersionRepository;
+    private final AgentRepository agentRepository;
+    private final AgentVersionRepository agentVersionRepository;
     private final NamespaceRepository namespaceRepository;
     private final ReviewPermissionChecker permissionChecker;
     private final ApplicationEventPublisher eventPublisher;
@@ -52,6 +59,8 @@ public class PromotionService {
     public PromotionService(PromotionRequestRepository promotionRequestRepository,
                             SkillRepository skillRepository,
                             SkillVersionRepository skillVersionRepository,
+                            AgentRepository agentRepository,
+                            AgentVersionRepository agentVersionRepository,
                             NamespaceRepository namespaceRepository,
                             ReviewPermissionChecker permissionChecker,
                             ApplicationEventPublisher eventPublisher,
@@ -62,6 +71,8 @@ public class PromotionService {
         this.promotionRequestRepository = promotionRequestRepository;
         this.skillRepository = skillRepository;
         this.skillVersionRepository = skillVersionRepository;
+        this.agentRepository = agentRepository;
+        this.agentVersionRepository = agentVersionRepository;
         this.namespaceRepository = namespaceRepository;
         this.permissionChecker = permissionChecker;
         this.eventPublisher = eventPublisher;
@@ -176,6 +187,62 @@ public class PromotionService {
         PromotionRequest saved = promotionRequestRepository.save(request);
         eventPublisher.publishEvent(new PromotionSubmittedEvent(
                 saved.getId(), saved.getSourceSkillId(), saved.getSourceVersionId(),
+                saved.getSubmittedBy()));
+        return saved;
+    }
+
+    /**
+     * Submits an agent promotion request. Mirrors {@link #submitPromotion} for the
+     * agent source path. PromotionSubmittedEvent's existing slots are reused —
+     * field 2 (skillId) carries the agent id, field 3 (versionId) the agent
+     * version id. The listener (NotificationEventListener) only reads the
+     * promotionId, so the field names are documentary.
+     */
+    @Transactional
+    public PromotionRequest submitAgentPromotion(Long sourceAgentId, Long sourceAgentVersionId,
+                                                 Long targetNamespaceId, String userId,
+                                                 Map<Long, NamespaceRole> userNamespaceRoles,
+                                                 Set<String> platformRoles) {
+        Agent sourceAgent = agentRepository.findById(sourceAgentId)
+                .orElseThrow(() -> new DomainNotFoundException("agent.not_found", sourceAgentId));
+
+        AgentVersion sourceVersion = agentVersionRepository.findById(sourceAgentVersionId)
+                .orElseThrow(() -> new DomainNotFoundException("agent_version.not_found", sourceAgentVersionId));
+
+        if (!sourceVersion.getAgentId().equals(sourceAgentId)) {
+            throw new DomainBadRequestException("promotion.version_agent_mismatch",
+                    sourceAgentVersionId, sourceAgentId);
+        }
+
+        if (sourceVersion.getStatus() != AgentVersionStatus.PUBLISHED) {
+            throw new DomainBadRequestException("promotion.version_not_published", sourceAgentVersionId);
+        }
+
+        Namespace sourceNamespace = namespaceRepository.findById(sourceAgent.getNamespaceId())
+                .orElseThrow(() -> new DomainNotFoundException("namespace.not_found", sourceAgent.getNamespaceId()));
+        assertNamespaceActive(sourceNamespace);
+
+        if (!permissionChecker.canSubmitPromotion(sourceAgent, userId, userNamespaceRoles, platformRoles)) {
+            throw new DomainForbiddenException("promotion.submit.no_permission");
+        }
+
+        Namespace targetNamespace = namespaceRepository.findById(targetNamespaceId)
+                .orElseThrow(() -> new DomainNotFoundException("namespace.not_found", targetNamespaceId));
+
+        if (targetNamespace.getType() != NamespaceType.GLOBAL) {
+            throw new DomainBadRequestException("promotion.target_not_global", targetNamespaceId);
+        }
+
+        promotionRequestRepository.findBySourceAgentIdAndStatus(sourceAgentId, ReviewTaskStatus.PENDING)
+                .ifPresent(existing -> {
+                    throw new DomainBadRequestException("promotion.duplicate_pending", sourceAgentVersionId);
+                });
+
+        PromotionRequest request = PromotionRequest.forAgent(
+                sourceAgentId, sourceAgentVersionId, targetNamespaceId, userId);
+        PromotionRequest saved = promotionRequestRepository.save(request);
+        eventPublisher.publishEvent(new PromotionSubmittedEvent(
+                saved.getId(), saved.getSourceAgentId(), saved.getSourceAgentVersionId(),
                 saved.getSubmittedBy()));
         return saved;
     }
