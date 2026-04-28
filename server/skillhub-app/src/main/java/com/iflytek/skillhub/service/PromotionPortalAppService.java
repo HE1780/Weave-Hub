@@ -65,6 +65,30 @@ public class PromotionPortalAppService {
         return governanceQueryRepository.getPromotionResponse(promotion);
     }
 
+    public PromotionResponseDto submitAgentPromotion(Long sourceAgentId,
+                                                     Long sourceAgentVersionId,
+                                                     Long targetNamespaceId,
+                                                     String userId,
+                                                     Map<Long, NamespaceRole> userNsRoles,
+                                                     AuditRequestContext auditContext) {
+        PromotionRequest promotion = promotionService.submitAgentPromotion(
+                sourceAgentId,
+                sourceAgentVersionId,
+                targetNamespaceId,
+                userId,
+                normalizeRoles(userNsRoles),
+                platformRoles(userId)
+        );
+        recordAudit(
+                "PROMOTION_SUBMIT",
+                userId,
+                promotion.getId(),
+                auditContext,
+                "{\"sourceAgentId\":" + sourceAgentId + ",\"sourceAgentVersionId\":" + sourceAgentVersionId + "}"
+        );
+        return governanceQueryRepository.getPromotionResponse(promotion);
+    }
+
     public PromotionResponseDto approvePromotion(Long promotionId,
                                                  String comment,
                                                  String userId,
@@ -97,9 +121,19 @@ public class PromotionPortalAppService {
                                                              int page,
                                                              int size,
                                                              String userId) {
+        return listPromotions(status, null, page, size, userId);
+    }
+
+    public PageResponse<PromotionResponseDto> listPromotions(String status,
+                                                             com.iflytek.skillhub.domain.review.SourceType sourceType,
+                                                             int page,
+                                                             int size,
+                                                             String userId) {
         requirePromotionAdmin(userId);
         ReviewTaskStatus reviewStatus = ReviewTaskStatus.valueOf(status.toUpperCase());
-        Page<PromotionRequest> requests = promotionRequestRepository.findByStatus(reviewStatus, PageRequest.of(page, size));
+        Page<PromotionRequest> requests = sourceType != null
+                ? promotionRequestRepository.findByStatusAndSourceType(reviewStatus, sourceType, PageRequest.of(page, size))
+                : promotionRequestRepository.findByStatus(reviewStatus, PageRequest.of(page, size));
         return PageResponse.from(new PageImpl<>(
                 governanceQueryRepository.getPromotionResponses(requests.getContent()),
                 requests.getPageable(),

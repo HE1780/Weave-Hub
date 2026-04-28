@@ -151,6 +151,22 @@ public class GovernanceWorkflowAppService {
         );
     }
 
+    public PromotionResponseDto submitAgentPromotion(Long sourceAgentId,
+                                                     Long sourceAgentVersionId,
+                                                     Long targetNamespaceId,
+                                                     String userId,
+                                                     Map<Long, NamespaceRole> userNsRoles,
+                                                     AuditRequestContext auditContext) {
+        return promotionPortalAppService.submitAgentPromotion(
+                sourceAgentId,
+                sourceAgentVersionId,
+                targetNamespaceId,
+                userId,
+                userNsRoles,
+                auditContext
+        );
+    }
+
     public PromotionResponseDto approvePromotion(Long promotionId,
                                                  String comment,
                                                  String userId,
@@ -167,6 +183,12 @@ public class GovernanceWorkflowAppService {
 
     public PageResponse<PromotionResponseDto> listPromotions(String status, int page, int size, String userId) {
         return promotionPortalAppService.listPromotions(status, page, size, userId);
+    }
+
+    public PageResponse<PromotionResponseDto> listPromotions(String status,
+                                                             com.iflytek.skillhub.domain.review.SourceType sourceType,
+                                                             int page, int size, String userId) {
+        return promotionPortalAppService.listPromotions(status, sourceType, page, size, userId);
     }
 
     public PageResponse<PromotionResponseDto> listPendingPromotions(int page, int size, String userId) {
