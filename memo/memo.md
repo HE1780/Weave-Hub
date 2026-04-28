@@ -4,6 +4,54 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-28 — 开放注册：Team Namespace 创建权限下放（plan 落地，1 行核心改动）
+
+**Plan:** [docs/plans/2026-04-28-open-registration-and-team-creation.md](../docs/plans/2026-04-28-open-registration-and-team-creation.md)
+**Commit:** `cc4073f5` (single commit, pushed to origin/main)
+**ADR 0003 §1.1**（fork 自有路线：团队治理产品策略）
+
+### What shipped
+
+`NamespacePortalCommandAppService.createNamespace` 从"平台 SKILL_ADMIN/SUPER_ADMIN 才能创建" 改为"任何已登录用户都可创建 TEAM namespace"。删 9 行（`canCreateNamespace` 私有方法 + 调用点 + 不再用的 `ForbiddenException` import），加 21 行测试断言新行为。
+
+| 文件 | 改动 |
+|---|---|
+| `NamespacePortalCommandAppService.java` | 删 `canCreateNamespace()` 方法 + 删调用点 + 删 unused import |
+| `NamespacePortalCommandAppServiceTest.java` | `createNamespace_requiresPlatformAdminRole` → `createNamespace_allowsAnyAuthenticatedUser` + 新增 `createNamespace_rejectsAnonymous` |
+| `NamespacePortalControllerTest.java` | `createNamespace_requiresPlatformAdminRole`(403) → `createNamespace_allowsAuthenticatedUser`(200)，保留 `createNamespace_allowsSkillAdmin` |
+
+测试结果：`NamespacePortalCommandAppServiceTest` 7/7、`NamespacePortalControllerTest` 11/11、整套 backend 560/561。
+
+### 关于唯一未通过的测试
+
+`NamespaceBatchMemberControllerTest.batchAddMembers_emptyArray_returnsError` 期望 500 实际 400 —— **预存在 regression**，与本次改动无关。已用 `git stash` 在 baseline 上验证：同一测试在 baseline 上甚至更糟（`Failed to load ApplicationContext`），是 upstream 同步 `084d4b5b` 引入的 batch-import 端点的副作用。本次按 lessons.md 2026-04-27 "baseline 已坏不在范围内时分流"原则处理：(a) 我的代码改动正常做、(b) 不在那个坏掉的 controller test 里加新断言、(c) 在此处高优先级标注。
+
+### 不变量验证（方案 §4.2 列的 4 条）
+
+均已由现存代码 + 测试覆盖，无需重复加测：
+
+1. **GLOBAL 不被滥用**：`NamespaceType.GLOBAL` 是系统内置，不通过 `createNamespace` 创建（`NamespaceService.createNamespace` 只创建 TEAM 类型）
+2. **GLOBAL 发布审批不动**：`ReviewPermissionChecker.canReviewNamespace`（domain 层）守住 SKILL_ADMIN/SUPER_ADMIN 才能审批 GLOBAL，已被 `ReviewPermissionCheckerTest` 多 case 覆盖
+3. **Promotion 审批不动**：`ReviewPermissionChecker.canReviewPromotion` 同上
+4. **平台角色赋权链路不动**：`/api/v1/admin/users/{userId}/role` 端点未触及
+
+### Known follow-ups（plan §6 列的 6 项后续迭代，刻意延后）
+
+1. 邮件邀请 / 分享链接加入团队
+2. 申请加入 Team（需审批）
+3. 批量导入成员（已有端点，但本次未测试）
+4. 创建 Namespace 时同时添加成员
+5. Namespace 创建速率限制
+6. Namespace 数量上限（per-user quota）
+
+🔥 **优先 follow-up**：`NamespaceBatchMemberControllerTest.batchAddMembers_emptyArray_returnsError` 修复 —— upstream 同步引入的 regression，影响 batch member import 端点的空数组返回码，独立 plan 处理。
+
+### How to resume
+
+下一波最快回报：从 fork-backlog A2 (Agent Star) 或 A3 (Agent Rating) 起，模式现成、半天到一天可完成。
+
+---
+
 ## 2026-04-28 — A9 Agent Promotion 落地（19 任务 plan 全部完成）
 
 **Spec:** [docs/superpowers/specs/2026-04-28-agent-promotion-design.md](../docs/superpowers/specs/2026-04-28-agent-promotion-design.md)
