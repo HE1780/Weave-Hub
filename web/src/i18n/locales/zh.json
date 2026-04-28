@@ -937,8 +937,8 @@
     }
   },
   "reports": {
-    "title": "举报管理",
-    "subtitle": "处理用户提交的技能与 Agent 举报",
+    "title": "技能举报",
+    "subtitle": "处理用户提交的技能举报",
     "tabSkillReports": "技能举报",
     "tabAgentReports": "Agent 举报",
     "tabPending": "待处理",

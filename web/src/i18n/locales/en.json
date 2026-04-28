@@ -937,8 +937,8 @@
     }
   },
   "reports": {
-    "title": "Reports",
-    "subtitle": "Handle user-submitted skill and agent reports",
+    "title": "Skill Reports",
+    "subtitle": "Handle user-submitted skill reports",
     "tabSkillReports": "Skill reports",
     "tabAgentReports": "Agent reports",
     "tabPending": "Pending",

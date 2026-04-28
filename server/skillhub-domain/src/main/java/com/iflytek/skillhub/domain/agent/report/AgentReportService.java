@@ -162,7 +162,7 @@ public class AgentReportService {
         AgentReport report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new DomainNotFoundException("error.agent.report.notFound", reportId));
         if (report.getStatus() != AgentReportStatus.PENDING) {
-            throw new DomainBadRequestException("error.agent.report.alreadyHandled");
+            throw new DomainBadRequestException("error.agent.report.notPending");
         }
         return report;
     }

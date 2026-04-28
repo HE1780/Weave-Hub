@@ -17,6 +17,7 @@ import com.iflytek.skillhub.domain.agent.report.AgentReportDisposition;
 import com.iflytek.skillhub.domain.agent.report.AgentReportService;
 import com.iflytek.skillhub.domain.agent.report.AgentReportStatus;
 import com.iflytek.skillhub.domain.namespace.NamespaceMemberRepository;
+import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.dto.AdminAgentReportSummaryResponse;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.service.AdminAgentReportAppService;
@@ -149,6 +150,68 @@ class AdminAgentReportControllerTest {
         mockMvc.perform(get("/api/v1/admin/agent-reports")
                         .param("status", "PENDING")
                         .with(authentication(auth)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+    }
+
+    @Test
+    void listReports_unauthorizedAnonymous() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/agent-reports")
+                        .param("status", "PENDING"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void resolveReport_notFoundReturns400() throws Exception {
+        when(agentReportService.resolveReport(
+                org.mockito.ArgumentMatchers.eq(404L),
+                org.mockito.ArgumentMatchers.eq("admin"),
+                org.mockito.ArgumentMatchers.eq(AgentReportDisposition.RESOLVE_AND_ARCHIVE),
+                org.mockito.ArgumentMatchers.eq("handled"),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()))
+                .thenThrow(new DomainNotFoundException("error.agent.report.notFound", 404L));
+
+        mockMvc.perform(post("/api/v1/admin/agent-reports/404/resolve")
+                        .with(authentication(adminAuth()))
+                        .with(csrf())
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"comment\":\"handled\",\"disposition\":\"RESOLVE_AND_ARCHIVE\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void resolveReport_forbiddenForNonAdmin() throws Exception {
+        PlatformPrincipal principal = new PlatformPrincipal(
+                "user-1", "User", "user@example.com", "", "github", Set.of("USER")
+        );
+        var auth = new UsernamePasswordAuthenticationToken(
+                principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        mockMvc.perform(post("/api/v1/admin/agent-reports/1/resolve")
+                        .with(authentication(auth))
+                        .with(csrf())
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"comment\":\"handled\",\"disposition\":\"RESOLVE_AND_ARCHIVE\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+    }
+
+    @Test
+    void dismissReport_forbiddenForNonAdmin() throws Exception {
+        PlatformPrincipal principal = new PlatformPrincipal(
+                "user-1", "User", "user@example.com", "", "github", Set.of("USER")
+        );
+        var auth = new UsernamePasswordAuthenticationToken(
+                principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        mockMvc.perform(post("/api/v1/admin/agent-reports/1/dismiss")
+                        .with(authentication(auth))
+                        .with(csrf())
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"comment\":\"nope\"}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(403));
     }

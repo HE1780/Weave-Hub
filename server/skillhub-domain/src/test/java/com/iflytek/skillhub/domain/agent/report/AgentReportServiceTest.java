@@ -17,10 +17,15 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -227,6 +232,17 @@ class AgentReportServiceTest {
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().reportId()).isEqualTo(99L);
         assertThat(captor.getValue().agentId()).isEqualTo(10L);
+    }
+
+    @Test
+    void listByStatus_returnsRepositoryPage() {
+        Page<AgentReport> mockPage = new PageImpl<>(List.of());
+        when(reportRepository.findByStatus(eq(AgentReportStatus.PENDING), any(Pageable.class)))
+                .thenReturn(mockPage);
+
+        Page<AgentReport> result = service.listByStatus(AgentReportStatus.PENDING, PageRequest.of(0, 20));
+
+        assertThat(result).isSameAs(mockPage);
     }
 
     @Test
