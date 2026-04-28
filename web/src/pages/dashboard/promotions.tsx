@@ -9,20 +9,18 @@ import { Input } from '@/shared/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 import { DashboardPageHeader } from '@/shared/components/dashboard-page-header'
 
-/**
- * Small chip rendered before each promotion row's title to differentiate
- * skill-source vs agent-source promotions in the unified inbox. Uses inline
- * Tailwind classes (Skills-blue / Agents-purple); design-token extraction is
- * a follow-up.
- */
+// Skills-blue / Agents-purple chip styling, kept in one place so the colour
+// pair stays in sync if the theme migrates to design tokens later.
+const sourceTypeBadgeStyles: Record<PromotionTask['sourceType'], string> = {
+  SKILL: 'bg-blue-100 text-blue-800',
+  AGENT: 'bg-purple-100 text-purple-800',
+}
+
 function SourceTypeBadge({ type }: { type: PromotionTask['sourceType'] }) {
   const { t } = useTranslation()
   const label = type === 'AGENT' ? t('promotions.sourceType.agent') : t('promotions.sourceType.skill')
-  const cls = type === 'AGENT'
-    ? 'bg-purple-100 text-purple-800'
-    : 'bg-blue-100 text-blue-800'
   return (
-    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${cls}`}>
+    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${sourceTypeBadgeStyles[type]}`}>
       {label}
     </span>
   )

@@ -136,6 +136,106 @@ class PromotionPortalControllerTest {
                 .andExpect(jsonPath("$.code").value(403));
     }
 
+    @Test
+    void submitPromotion_dispatchesAgentBranch() throws Exception {
+        PromotionRequest request = createAgentPromotionRequest(2L, "user-1");
+        stubNamespaceRoles("user-1", List.of(new NamespaceMember(5L, "user-1", NamespaceRole.ADMIN)));
+        given(rbacService.getUserRoleCodes("user-1")).willReturn(Set.of());
+        given(promotionService.submitAgentPromotion(101L, 202L, 30L, "user-1",
+                Map.of(5L, NamespaceRole.ADMIN), Set.of()))
+                .willReturn(request);
+        stubAgentPromotionResponse(request);
+
+        mockMvc.perform(post("/api/v1/promotions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"sourceType\":\"AGENT\",\"sourceAgentId\":101,\"sourceAgentVersionId\":202,\"targetNamespaceId\":30}")
+                        .with(csrf())
+                        .with(auth("user-1")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value(2L))
+                .andExpect(jsonPath("$.data.sourceType").value("AGENT"))
+                .andExpect(jsonPath("$.data.sourceAgentId").value(101));
+        verify(promotionService, never()).submitPromotion(
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyMap(),
+                org.mockito.ArgumentMatchers.anySet());
+    }
+
+    @Test
+    void submitPromotion_agentBranch_missingSourceAgentVersionId_returns400() throws Exception {
+        stubNamespaceRoles("user-1", List.of());
+        given(rbacService.getUserRoleCodes("user-1")).willReturn(Set.of());
+
+        mockMvc.perform(post("/api/v1/promotions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"sourceType\":\"AGENT\",\"sourceAgentId\":101,\"targetNamespaceId\":30}")
+                        .with(csrf())
+                        .with(auth("user-1")))
+                .andExpect(status().isBadRequest());
+        verify(promotionService, never()).submitAgentPromotion(
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyMap(),
+                org.mockito.ArgumentMatchers.anySet());
+    }
+
+    @Test
+    void listPromotions_filtersBySourceType() throws Exception {
+        PromotionRequest agentReq = createAgentPromotionRequest(2L, "user-1");
+        stubNamespaceRoles("admin-1", List.of());
+        given(rbacService.getUserRoleCodes("admin-1")).willReturn(Set.of("SKILL_ADMIN"));
+        given(promotionRequestRepository.findByStatusAndSourceType(
+                org.mockito.ArgumentMatchers.eq(ReviewTaskStatus.PENDING),
+                org.mockito.ArgumentMatchers.eq(com.iflytek.skillhub.domain.review.SourceType.AGENT),
+                org.mockito.ArgumentMatchers.any()))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of(agentReq)));
+        given(governanceQueryRepository.getPromotionResponses(List.of(agentReq)))
+                .willReturn(List.of(buildAgentResponseDto(agentReq)));
+
+        mockMvc.perform(get("/api/v1/promotions?status=PENDING&sourceType=AGENT").with(auth("admin-1")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.items[0].sourceType").value("AGENT"))
+                .andExpect(jsonPath("$.data.items[0].sourceAgentId").value(101));
+        verify(promotionRequestRepository, never()).findByStatus(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    private void stubAgentPromotionResponse(PromotionRequest request) {
+        given(governanceQueryRepository.getPromotionResponse(request)).willReturn(buildAgentResponseDto(request));
+    }
+
+    private PromotionResponseDto buildAgentResponseDto(PromotionRequest request) {
+        return new PromotionResponseDto(
+                request.getId(),
+                com.iflytek.skillhub.domain.review.SourceType.AGENT,
+                null,
+                "team-a",
+                null,
+                null,
+                request.getSourceAgentId(),
+                "agent-a",
+                "1.0.0",
+                "global",
+                null,
+                request.getTargetAgentId(),
+                request.getStatus().name(),
+                request.getSubmittedBy(),
+                "Submitter",
+                request.getReviewedBy(),
+                null,
+                request.getReviewComment(),
+                request.getSubmittedAt(),
+                request.getReviewedAt()
+        );
+    }
+
     private void stubPromotionResponse(PromotionRequest request) {
         given(governanceQueryRepository.getPromotionResponse(request)).willReturn(new PromotionResponseDto(
                 request.getId(),
@@ -184,6 +284,13 @@ class PromotionPortalControllerTest {
 
     private PromotionRequest createPromotionRequest(Long id, String submittedBy) {
         PromotionRequest request = new PromotionRequest(10L, 20L, 30L, submittedBy);
+        setField(request, "id", id);
+        setField(request, "status", ReviewTaskStatus.PENDING);
+        return request;
+    }
+
+    private PromotionRequest createAgentPromotionRequest(Long id, String submittedBy) {
+        PromotionRequest request = PromotionRequest.forAgent(101L, 202L, 30L, submittedBy);
         setField(request, "id", id);
         setField(request, "status", ReviewTaskStatus.PENDING);
         return request;
