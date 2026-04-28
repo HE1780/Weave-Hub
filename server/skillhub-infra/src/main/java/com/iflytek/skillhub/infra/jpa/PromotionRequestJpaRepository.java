@@ -3,6 +3,7 @@ package com.iflytek.skillhub.infra.jpa;
 import com.iflytek.skillhub.domain.review.PromotionRequest;
 import com.iflytek.skillhub.domain.review.PromotionRequestRepository;
 import com.iflytek.skillhub.domain.review.ReviewTaskStatus;
+import com.iflytek.skillhub.domain.review.SourceType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,6 +23,10 @@ public interface PromotionRequestJpaRepository extends JpaRepository<PromotionRe
     Optional<PromotionRequest> findBySourceVersionIdAndStatus(Long sourceVersionId, ReviewTaskStatus status);
 
     Optional<PromotionRequest> findBySourceSkillIdAndStatus(Long sourceSkillId, ReviewTaskStatus status);
+
+    Optional<PromotionRequest> findBySourceAgentIdAndStatus(Long sourceAgentId, ReviewTaskStatus status);
+
+    Page<PromotionRequest> findByStatusAndSourceType(ReviewTaskStatus status, SourceType sourceType, Pageable pageable);
 
     Page<PromotionRequest> findByStatus(ReviewTaskStatus status, Pageable pageable);
 
