@@ -38,5 +38,8 @@ function toSummary(dto: AgentDto): AgentSummary {
     namespace: dto.namespace,
     starCount: dto.starCount ?? 0,
     downloadCount: dto.downloadCount ?? 0,
+    ratingAvg:
+      dto.ratingAvg !== undefined && dto.ratingAvg !== null ? Number(dto.ratingAvg) : undefined,
+    ratingCount: dto.ratingCount ?? 0,
   }
 }

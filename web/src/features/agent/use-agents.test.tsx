@@ -46,6 +46,40 @@ describe('useAgents', () => {
       namespace: 'global',
       starCount: 0,
       downloadCount: 0,
+      ratingAvg: undefined,
+      ratingCount: 0,
+    })
+  })
+
+  it('passes through ratingAvg and ratingCount when present', async () => {
+    listMock.mockResolvedValueOnce({
+      items: [
+        {
+          id: 9,
+          namespace: 'global',
+          slug: 'agent-rated',
+          displayName: 'Rated',
+          description: 'has ratings',
+          visibility: 'PUBLIC',
+          ownerId: 'owner-1',
+          status: 'ACTIVE',
+          ratingAvg: '4.25',
+          ratingCount: 8,
+          createdAt: '2026-04-26T00:00:00Z',
+          updatedAt: '2026-04-26T00:00:00Z',
+        },
+      ],
+      total: 1,
+      page: 0,
+      size: 50,
+    })
+
+    const { result } = renderHook(() => useAgents(), { wrapper: createWrapper() })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.data?.[0]).toMatchObject({
+      ratingAvg: 4.25,
+      ratingCount: 8,
     })
   })
 

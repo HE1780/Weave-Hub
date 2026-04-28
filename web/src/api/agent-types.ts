@@ -14,6 +14,8 @@ export interface AgentSummary {
   namespace?: string
   starCount?: number
   downloadCount?: number
+  ratingAvg?: number
+  ratingCount?: number
 }
 
 export interface AgentDetail extends AgentSummary {

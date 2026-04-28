@@ -78,4 +78,14 @@ describe('AgentCard', () => {
     const card = title.closest('div[class*="glass-card"]')
     expect(card?.className).toContain('min-h-[220px]')
   })
+
+  it('renders rating chip when ratingCount > 0', () => {
+    render(<AgentCard agent={{ ...agent, ratingAvg: 4.3, ratingCount: 12 }} />)
+    expect(screen.getByText('4.3')).toBeInTheDocument()
+  })
+
+  it('hides rating chip when ratingCount === 0', () => {
+    render(<AgentCard agent={{ ...agent, ratingAvg: 0, ratingCount: 0 }} />)
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument()
+  })
 })
