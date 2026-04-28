@@ -746,37 +746,20 @@ git commit -m "feat(domain): extract SkillPromotionMaterializer (behavior-preser
 
 ---
 
-## Task 8: Investigate AgentLabel structure (read-only step, no commit)
+## Task 8: SKIPPED — investigation complete, see facts below
 
-Before writing AgentPromotionMaterializer, confirm the `AgentLabel`, `AgentTag`, `AgentVersionStats`, and `LabelDefinition` shapes that the agent materializer must touch.
+**Plan correction (2026-04-28):** Pre-execution audit confirmed the following entity shapes; bake these directly into Task 9. No separate investigation step needed.
 
-- [ ] **Step 1: Read each entity to capture exact constructor / field names**
+**Confirmed facts (verified at the indicated file paths):**
 
-```bash
-cat server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/agent/AgentVersionStats.java
-cat server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/agent/AgentTagRepository.java
-cat server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/label/AgentLabelRepository.java
-find server/skillhub-domain -name "AgentTag.java" -o -name "AgentLabel.java" -o -name "LabelDefinition.java" -exec cat {} \;
-```
+- `AgentVersionStats(Long agentVersionId, Long agentId)` — single 2-arg constructor; `downloadCount` defaults to 0 internally. (`server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/agent/AgentVersionStats.java`)
+- `AgentTagRepository.findByAgentId(Long agentId)` returns `List<AgentTag>`. `AgentTag` constructor `(Long agentId, String tagName, Long versionId, String createdBy)`. (Confirmed via `AgentTagRepository.java`.)
+- `AgentLabelRepository.findByAgentId(Long agentId)` returns `List<AgentLabel>`. `AgentLabel` constructor `(Long agentId, Long labelId, String createdBy)` — note the second parameter is **`labelId`** (not `labelDefinitionId`). (Confirmed via `AgentLabel.java:30`.)
+- `LabelDefinition` **has no namespace concept** — fields are `id`, `slug`, `type`, `visibleInFilter`, `sortOrder`, `createdBy`, timestamps. There is no `namespaceId`, no `isPlatform()`, no scope discriminator. All labels are platform-scope today. (Confirmed via `LabelDefinition.java`.)
 
-Capture in a scratch note:
-- `AgentVersionStats` constructor signature + how to set downloadCount=0
-- `AgentTagRepository` methods for `findByAgentIdLatest()` or similar listing, and `save()`
-- `AgentLabelRepository` methods for listing labels-attached-to-agent (with their `LabelDefinition` for namespace-scope filter)
-- `LabelDefinition` field for namespace ownership (e.g., `namespaceId`, plus an optional `scope` / `isPlatform` indicator)
+**Implication for the materializer:** The spec §6.4 step 6 originally said "filter labels by namespace scope". Since LabelDefinition has no namespace concept, the filter is a no-op — copy ALL source agent labels to the new agent. If namespace-scoped labels become a thing later, that's a separate spec.
 
-- [ ] **Step 2: Update Task 9's stub code below if any signature differs**
-
-The Task 9 code uses these names:
-- `AgentVersionStats(Long agentVersionId, Long agentId)` constructor
-- `AgentTagRepository.findByAgentId(Long agentId)` returning `List<AgentTag>`
-- `AgentLabelRepository.findByAgentId(Long agentId)` returning `List<AgentLabel>`
-- `LabelDefinition.getNamespaceId()` for the platform/namespace scope filter
-- `LabelDefinition.isPlatform()` (boolean) — if absent, use `namespaceId == null` as the platform indicator
-
-If any name differs, adjust Task 9 inline before running it.
-
-(No commit — exploration only.)
+Spec §6.4 has been updated to reflect this; spec §3 lists "label namespace scoping" as an explicit non-goal.
 
 ---
 
@@ -795,7 +778,6 @@ import com.iflytek.skillhub.domain.agent.*;
 import com.iflytek.skillhub.domain.event.AgentPublishedEvent;
 import com.iflytek.skillhub.domain.label.AgentLabel;
 import com.iflytek.skillhub.domain.label.AgentLabelRepository;
-import com.iflytek.skillhub.domain.label.LabelDefinition;
 import com.iflytek.skillhub.domain.review.PromotionRequest;
 import com.iflytek.skillhub.domain.review.SourceType;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
@@ -891,22 +873,14 @@ class AgentPromotionMaterializerTest {
     }
 
     @Test
-    void labelCopyFiltersOutSourceNamespacePrivateLabels() {
+    void copiesAllAgentLabelsToNewAgent() {
         Agent source = new Agent(1L, "review-bot", "Review Bot", "owner-1", AgentVisibility.PRIVATE);
         AgentVersion sourceVersion = new AgentVersion(10L, "1.0.0", "owner-1",
                 "manifest", "soul", "workflow", "objects/abc", 1024L);
         sourceVersion.autoPublish();
 
-        // Label A — platform-scope (namespaceId == null) → should be copied
-        // Label B — owned by source namespace 1 → should NOT be copied
-        // Label C — owned by target namespace 99 → should be copied
-        LabelDefinition platformLabel = mockLabelDefinition(100L, null);
-        LabelDefinition srcNsLabel = mockLabelDefinition(101L, 1L);
-        LabelDefinition tgtNsLabel = mockLabelDefinition(102L, 99L);
-
-        AgentLabel a = mockAgentLabel(source.getId(), platformLabel);
-        AgentLabel b = mockAgentLabel(source.getId(), srcNsLabel);
-        AgentLabel c = mockAgentLabel(source.getId(), tgtNsLabel);
+        AgentLabel a = new AgentLabel(source.getId(), 100L, "owner-1");
+        AgentLabel b = new AgentLabel(source.getId(), 101L, "owner-1");
 
         when(agentRepository.findById(10L)).thenReturn(Optional.of(source));
         when(agentVersionRepository.findById(20L)).thenReturn(Optional.of(sourceVersion));
@@ -917,28 +891,14 @@ class AgentPromotionMaterializerTest {
                 .thenReturn(new AgentVersion(saved.getId(), "1.0.0", "owner-1",
                         "manifest", "soul", "workflow", "objects/abc", 1024L));
         when(agentTagRepository.findByAgentId(10L)).thenReturn(List.of());
-        when(agentLabelRepository.findByAgentId(10L)).thenReturn(List.of(a, b, c));
+        when(agentLabelRepository.findByAgentId(10L)).thenReturn(List.of(a, b));
 
         PromotionRequest req = PromotionRequest.forAgent(10L, 20L, 99L, "user-1");
         materializer.materialize(req);
 
-        // Verify exactly 2 labels saved (platform + target namespace; source-private skipped)
+        // All source labels copied to the new agent (LabelDefinition has no namespace concept;
+        // there is no scope filter to apply).
         verify(agentLabelRepository, times(2)).save(any(AgentLabel.class));
-    }
-
-    // Helper mocks — adjust to actual constructor signatures discovered in Task 8
-    private LabelDefinition mockLabelDefinition(Long id, Long namespaceId) {
-        LabelDefinition def = mock(LabelDefinition.class);
-        when(def.getId()).thenReturn(id);
-        when(def.getNamespaceId()).thenReturn(namespaceId);
-        return def;
-    }
-
-    private AgentLabel mockAgentLabel(Long agentId, LabelDefinition def) {
-        AgentLabel link = mock(AgentLabel.class);
-        when(link.getAgentId()).thenReturn(agentId);
-        when(link.getLabelDefinition()).thenReturn(def);
-        return link;
     }
 }
 ```
@@ -966,7 +926,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.util.List;
-import java.util.Objects;
 
 @Component
 public class AgentPromotionMaterializer implements PromotionMaterializer {
@@ -1033,19 +992,14 @@ public class AgentPromotionMaterializer implements PromotionMaterializer {
         // Reset stats for the materialized agent — never inherit source download counts
         agentVersionStatsRepository.save(new AgentVersionStats(newVersion.getId(), newAgent.getId()));
 
-        // Copy labels — but only those whose LabelDefinition is platform-scope (namespaceId is null)
-        // OR owned by the target namespace. Source-namespace-private labels stay behind.
-        Long targetNs = request.getTargetNamespaceId();
+        // Copy labels — LabelDefinition has no namespace concept (all labels are platform-scope
+        // today). Copy all source labels to the new agent verbatim. If LabelDefinition gains a
+        // namespace scope later, this is the natural place to filter.
         List<AgentLabel> sourceLabels = agentLabelRepository.findByAgentId(source.getId());
         Long newAgentId = newAgent.getId();
         for (AgentLabel link : sourceLabels) {
-            Long labelNs = link.getLabelDefinition().getNamespaceId();
-            boolean isPlatform = labelNs == null;
-            boolean isTargetOwned = Objects.equals(labelNs, targetNs);
-            if (isPlatform || isTargetOwned) {
-                agentLabelRepository.save(new AgentLabel(newAgentId, link.getLabelDefinition().getId(),
-                        request.getSubmittedBy()));
-            }
+            agentLabelRepository.save(new AgentLabel(newAgentId, link.getLabelId(),
+                    request.getSubmittedBy()));
         }
 
         // Copy tags — they are owned by the agent itself, all follow.
@@ -1074,7 +1028,7 @@ public class AgentPromotionMaterializer implements PromotionMaterializer {
 Run: `mvn -pl server/skillhub-domain test -Dtest=AgentPromotionMaterializerTest`
 Expected: PASS (4 tests).
 
-If the test for label filtering fails because `AgentLabel.getLabelDefinition()` doesn't exist (the association may be by id only, not by entity reference), simplify the materializer to fetch `LabelDefinition` via a `LabelDefinitionRepository` injected in the constructor and update the test accordingly. Document the adjustment in the commit message.
+(No fallback path needed — `AgentLabel.getLabelId()` is the verified accessor.)
 
 - [ ] **Step 5: Commit**
 
@@ -1408,9 +1362,40 @@ public PromotionRequest submitAgentPromotion(Long sourceAgentId, Long sourceAgen
 }
 ```
 
-**Note**: `permissionChecker.canSubmitPromotion(Agent, ...)` may not have an Agent overload yet. Check `ReviewPermissionChecker.java` — if it only takes `Skill`, add an `Agent` overload that does the same platform-role check (since the platform-role-only path is type-agnostic). Same applies to `canReviewPromotion`. If permissionChecker uses a generic `Object` parameter, no overload needed.
+**Pre-flight (verified 2026-04-28)**:
+- `ReviewPermissionChecker.canSubmitPromotion` exists only for `Skill` (`canSubmitPromotion(Skill, String, Map, Set)` and `canSubmitPromotion(Skill, String, Map)` — see `ReviewPermissionChecker.java:93-104`). It internally delegates to `canSubmitForReview(skill, ...)` which only reads `skill.getOwnerId()` and `skill.getNamespaceId()` — both `Agent` has identical getters. **Add an `Agent` overload as Step 3 BEFORE the new `submitAgentPromotion` body.**
 
-`PromotionSubmittedEvent` may also need a constructor / record-field rethink for agent ids. If its current shape is `(promotionId, sourceSkillId, sourceVersionId, submittedBy)`, you may need to either widen the record or add a parallel `AgentPromotionSubmittedEvent`. For minimum change, **widen** the existing record by renaming `sourceSkillId` → `sourceEntityId` and `sourceVersionId` → `sourceVersionEntityId`. This is a small breaking change — grep for callers and update.
+  Add to `ReviewPermissionChecker.java`:
+
+  ```java
+  public boolean canSubmitPromotion(Agent sourceAgent,
+                                    String userId,
+                                    Map<Long, NamespaceRole> userNamespaceRoles,
+                                    Set<String> platformRoles) {
+      if (sourceAgent.getOwnerId().equals(userId)) {
+          return true;
+      }
+      if (hasPlatformReviewRole(platformRoles)) {
+          return true;
+      }
+      NamespaceRole role = userNamespaceRoles.get(sourceAgent.getNamespaceId());
+      return role == NamespaceRole.ADMIN || role == NamespaceRole.OWNER;
+  }
+  ```
+
+  (Add `import com.iflytek.skillhub.domain.agent.Agent;` at the top.) `canReviewPromotion` is already source-agnostic (operates on `PromotionRequest`); no change needed.
+
+- `PromotionSubmittedEvent` is the existing record `(Long promotionId, Long skillId, Long versionId, String submitterId)` with 2 production callers (NotificationEventListener + 2 test invocations). **Do NOT rename the fields.** Reuse the existing slots verbatim — for agent submissions, `skillId` carries the agent id and `versionId` carries the agent version id. The listener (`NotificationEventListener.onPromotionSubmitted`) only reads `promotionId` to dereference the request, so the field names are documentary only. This is the minimum-disruption path.
+
+  The agent-side publish call in `submitAgentPromotion` becomes:
+
+  ```java
+  eventPublisher.publishEvent(new PromotionSubmittedEvent(
+          saved.getId(), saved.getSourceAgentId(), saved.getSourceAgentVersionId(),
+          saved.getSubmittedBy()));
+  ```
+
+  (This is exactly what's already in the code block above — just confirming the design choice.)
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -2291,7 +2276,7 @@ Expected: ~19 commits forming the A9 series, starting with `SourceType` enum and
 - [ ] Both partial unique indexes exist (`promotion_request_pending_skill_version_uq`, `promotion_request_pending_agent_version_uq`)
 - [ ] PromotionService is no longer importing `SkillFileRepository`
 - [ ] PromotionService constructor takes `List<PromotionMaterializer>` as last arg
-- [ ] AgentPromotionMaterializer label-copy filter excludes source-namespace-private labels
+- [ ] AgentPromotionMaterializer copies all source AgentLabels verbatim (no filter — LabelDefinition has no namespace scope yet)
 - [ ] AgentVersionStats row created with `downloadCount=0` (not copied)
 - [ ] PromoteAgentButton hidden in 4 cases (non-admin, non-PUBLISHED, already-global, has-pending)
 - [ ] promotions.tsx renders correct link for both SKILL and AGENT rows

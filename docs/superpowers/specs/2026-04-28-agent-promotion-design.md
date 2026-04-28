@@ -25,6 +25,7 @@ The existing `PromotionService` (356 LOC) is hardcoded to skills. The brainstorm
 - Adding source-link traceability (`sourceAgentId`) to the promoted Agent entity.
 - Filter tabs on the review queue (YAGNI; can be added later).
 - Per-source-type metrics or observability beyond what existing events already provide.
+- Filtering copied labels by namespace scope. The current `LabelDefinition` has no `namespaceId` field; all labels are platform-scope today. The materializer copies all source labels verbatim. If `LabelDefinition` gains a namespace scope later, the filter will be added then.
 
 ## 4. Architecture
 
@@ -205,7 +206,7 @@ Materialization sequence:
 3. Create new `Agent` row in target namespace: copy `slug`, `displayName`, `summary`, `ownerId`; set `visibility=PUBLIC`, `status=ACTIVE`.
 4. Create new `AgentVersion` row: copy `version`, `soulMd`, `workflowYaml`, `manifestYaml`, `packageObjectKey` (object-storage shared, no copy), `packageSizeBytes`; set `status=PUBLISHED`, `publishedAt=now`.
 5. Create new `AgentVersionStats` row with `downloadCount=0` (do **not** copy source stats).
-6. Copy `AgentLabel` association rows. Each source association references a `label_definition` row, which itself is scoped to a namespace. Filter the copy to **only platform-scope labels and labels owned by the target namespace** — namespace-private labels from the source namespace do not follow the agent into global. (Same semantic as how skill labels would behave on promotion if labels were already wired through skill promotion; documenting it here because A4 added agent labels but agent promotion is the first time this filter has to be applied.)
+6. Copy `AgentLabel` association rows verbatim. `LabelDefinition` currently has no namespace concept (all labels are platform-scope), so there is no scope filter to apply — every source label follows the agent. If `LabelDefinition` later grows a namespace scope, this is the natural place to add the filter; called out as a non-goal in §3.
 7. Copy `AgentTag` rows from source, repointing `agent_id` and `version_id` to the new entities. All tags follow — they are owned by the agent itself, not by a namespace.
 8. Publish `AgentPublishedEvent(newAgent.getId(), newVersion.getId(), targetNamespaceId, request.getSubmittedBy(), newVersion.getPublishedAt())` — the existing 5-arg event.
 9. Return `MaterializationResult(newAgent.getId())`.
