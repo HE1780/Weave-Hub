@@ -16,6 +16,10 @@ export interface AgentSummary {
   downloadCount?: number
   ratingAvg?: number
   ratingCount?: number
+  /** Backend agent.id, present on payloads sourced from real DB rows. */
+  id?: number
+  /** Backend agent.slug; equals {@link name} when sourced from packages. */
+  slug?: string
 }
 
 export interface AgentDetail extends AgentSummary {

@@ -44,6 +44,7 @@ import type {
   LabelItem,
   BatchMemberResponse,
 } from './types'
+import type { AgentSummary } from './agent-types'
 import { ApiError } from '@/shared/lib/api-error'
 import i18n from '@/i18n/config'
 
@@ -1096,6 +1097,24 @@ export const meApi = {
     searchParams.set('page', String(params?.page ?? 0))
     searchParams.set('size', String(params?.size ?? 12))
     return fetchJson<{ items: SkillSummary[]; total: number; page: number; size: number }>(`${WEB_API_PREFIX}/me/stars?${searchParams.toString()}`)
+  },
+
+  async getAgentStarsPage(params?: { page?: number; size?: number }): Promise<{ items: AgentSummary[]; total: number; page: number; size: number }> {
+    const searchParams = new URLSearchParams()
+    searchParams.set('page', String(params?.page ?? 0))
+    searchParams.set('size', String(params?.size ?? 12))
+    // Backend payload exposes `slug`; AgentCard / AgentSummary use `name` as the URL key,
+    // so fold slug → name (preserving slug too) before returning.
+    const raw = await fetchJson<{ items: Array<AgentSummary & { slug?: string }>; total: number; page: number; size: number }>(
+      `${WEB_API_PREFIX}/me/agent-stars?${searchParams.toString()}`
+    )
+    return {
+      ...raw,
+      items: raw.items.map((item) => ({
+        ...item,
+        name: item.name ?? item.slug ?? '',
+      })),
+    }
   },
 
   async getStars(): Promise<SkillSummary[]> {

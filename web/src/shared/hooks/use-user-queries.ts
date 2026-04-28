@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { SkillSummary, PagedResponse } from '@/api/types'
+import type { AgentSummary } from '@/api/agent-types'
 import { meApi, promotionApi, namespaceApi } from '@/api/client'
 
 async function getMySkills(params: { page?: number; size?: number; filter?: string } = {}): Promise<PagedResponse<SkillSummary>> {
@@ -12,6 +13,10 @@ async function getMyStars(): Promise<SkillSummary[]> {
 
 async function getMyStarsPage(params: { page?: number; size?: number } = {}): Promise<PagedResponse<SkillSummary>> {
   return meApi.getStarsPage(params)
+}
+
+async function getMyAgentStarsPage(params: { page?: number; size?: number } = {}): Promise<PagedResponse<AgentSummary>> {
+  return meApi.getAgentStarsPage(params)
 }
 
 async function submitPromotion(params: { sourceSkillId: number; sourceVersionId: number }): Promise<void> {
@@ -46,6 +51,14 @@ export function useMyStarsPage(params: { page?: number; size?: number } = {}, en
   return useQuery({
     queryKey: ['skills', 'stars', 'page', params],
     queryFn: () => getMyStarsPage(params),
+    enabled,
+  })
+}
+
+export function useMyAgentStarsPage(params: { page?: number; size?: number } = {}, enabled = true) {
+  return useQuery({
+    queryKey: ['agents', 'stars', 'page', params],
+    queryFn: () => getMyAgentStarsPage(params),
     enabled,
   })
 }

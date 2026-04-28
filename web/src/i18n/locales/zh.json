@@ -494,7 +494,10 @@
   "stars": {
     "title": "我的收藏",
     "subtitle": "查看你标记过的技能",
-    "empty": "还没有收藏任何技能"
+    "empty": "还没有收藏任何技能",
+    "tabSkills": "收藏的技能",
+    "tabAgents": "收藏的智能体",
+    "emptyAgents": "你还没有收藏任何智能体。"
   },
   "promotions": {
     "title": "提升审核",

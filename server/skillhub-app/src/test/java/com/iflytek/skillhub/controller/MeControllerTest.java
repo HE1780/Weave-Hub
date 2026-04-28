@@ -7,6 +7,7 @@ import com.iflytek.skillhub.domain.namespace.NamespaceMemberRepository;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.SkillLifecycleVersionResponse;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
+import com.iflytek.skillhub.service.MyAgentAppService;
 import com.iflytek.skillhub.service.MySkillAppService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ class MeControllerTest {
 
     @MockBean
     private MySkillAppService mySkillAppService;
+
+    @MockBean
+    private MyAgentAppService myAgentAppService;
 
     @Test
     void listMySkills_returns_paginated_items() throws Exception {
@@ -132,5 +136,32 @@ class MeControllerTest {
                 .andExpect(jsonPath("$.data.total").value(0))
                 .andExpect(jsonPath("$.data.page").value(0))
                 .andExpect(jsonPath("$.data.size").value(12));
+    }
+
+    @Test
+    void listMyAgentStars_returns_paginated_items() throws Exception {
+        PlatformPrincipal principal = new PlatformPrincipal(
+                "user-42", "tester", "tester@example.com", "", "github", Set.of("USER")
+        );
+        var auth = new UsernamePasswordAuthenticationToken(
+                principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+
+        given(myAgentAppService.listMyAgentStars("user-42", 0, 12))
+                .willReturn(new PageResponse<>(List.of(), 0, 0, 12));
+
+        mockMvc.perform(get("/api/v1/me/agent-stars").with(authentication(auth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.items").isArray())
+                .andExpect(jsonPath("$.data.total").value(0))
+                .andExpect(jsonPath("$.data.page").value(0))
+                .andExpect(jsonPath("$.data.size").value(12));
+    }
+
+    @Test
+    void listMyAgentStars_returns_unauthorized_when_no_principal() throws Exception {
+        mockMvc.perform(get("/api/v1/me/agent-stars"))
+                .andExpect(status().isUnauthorized());
     }
 }

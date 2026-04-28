@@ -494,7 +494,10 @@
   "stars": {
     "title": "My Stars",
     "subtitle": "View your starred skills",
-    "empty": "No starred skills yet"
+    "empty": "No starred skills yet",
+    "tabSkills": "Starred skills",
+    "tabAgents": "Starred agents",
+    "emptyAgents": "You haven't starred any agents yet."
   },
   "promotions": {
     "title": "Promotion Review",
