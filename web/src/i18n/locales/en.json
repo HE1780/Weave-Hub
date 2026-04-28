@@ -1430,6 +1430,14 @@
       "visibilityPrivate": "Private",
       "noResults": "No agents match your search."
     },
+    "promote": {
+      "sectionTitle": "Promote to global",
+      "sectionDescription": "Submit this version for promotion to the global namespace. A reviewer will approve or reject the request.",
+      "label": "Promote to global",
+      "submitting": "Submitting…",
+      "confirmTitle": "Promote agent",
+      "confirmBody": "This will submit the current published version for promotion to the global namespace."
+    },
     "detail": {
       "tabOverview": "Overview",
       "tabWorkflow": "Workflow",

@@ -1430,6 +1430,14 @@
       "visibilityPrivate": "私有",
       "noResults": "没有匹配的智能体。"
     },
+    "promote": {
+      "sectionTitle": "提升到全局",
+      "sectionDescription": "提交此版本以申请提升到全局命名空间，需要审核员通过后方可生效。",
+      "label": "提升到全局",
+      "submitting": "提交中…",
+      "confirmTitle": "提升智能体",
+      "confirmBody": "此操作会将当前已发布版本提交到全局命名空间。"
+    },
     "detail": {
       "tabOverview": "概览",
       "tabWorkflow": "工作流",
