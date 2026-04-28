@@ -21,8 +21,9 @@ import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.dto.MemberResponse;
 import com.iflytek.skillhub.dto.NamespaceLifecycleRequest;
 import com.iflytek.skillhub.dto.NamespaceRequest;
+import com.iflytek.skillhub.dto.NamespaceResponse;
 import com.iflytek.skillhub.dto.UpdateMemberRoleRequest;
-import com.iflytek.skillhub.exception.ForbiddenException;
+import com.iflytek.skillhub.exception.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -45,13 +46,27 @@ class NamespacePortalCommandAppServiceTest {
     );
 
     @Test
-    void createNamespace_requiresPlatformAdminRole() {
+    void createNamespace_allowsAnyAuthenticatedUser() {
         NamespaceRequest request = new NamespaceRequest("team-alpha", "Team Alpha", null);
         PlatformPrincipal principal = new PlatformPrincipal(
                 "user-1", "user-1", "user-1@example.com", "", "github", Set.of("USER")
         );
+        Namespace created = namespace(42L, "team-alpha");
+        when(namespaceService.createNamespace("team-alpha", "Team Alpha", null, "user-1"))
+                .thenReturn(created);
 
-        assertThrows(ForbiddenException.class, () -> service.createNamespace(request, principal));
+        NamespaceResponse response = service.createNamespace(request, principal);
+
+        assertThat(response.id()).isEqualTo(42L);
+        assertThat(response.slug()).isEqualTo("team-alpha");
+        verify(namespaceService).createNamespace("team-alpha", "Team Alpha", null, "user-1");
+    }
+
+    @Test
+    void createNamespace_rejectsAnonymous() {
+        NamespaceRequest request = new NamespaceRequest("team-alpha", "Team Alpha", null);
+
+        assertThrows(UnauthorizedException.class, () -> service.createNamespace(request, null));
     }
 
     @Test

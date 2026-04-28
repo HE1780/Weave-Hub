@@ -19,7 +19,6 @@ import com.iflytek.skillhub.dto.NamespaceRequest;
 import com.iflytek.skillhub.dto.NamespaceResponse;
 import com.iflytek.skillhub.dto.MemberRequest;
 import com.iflytek.skillhub.dto.UpdateMemberRoleRequest;
-import com.iflytek.skillhub.exception.ForbiddenException;
 import com.iflytek.skillhub.exception.UnauthorizedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,9 +54,6 @@ public class NamespacePortalCommandAppService {
     public NamespaceResponse createNamespace(NamespaceRequest request, PlatformPrincipal principal) {
         if (principal == null) {
             throw new UnauthorizedException("error.auth.required");
-        }
-        if (!canCreateNamespace(principal)) {
-            throw new ForbiddenException("error.namespace.create.platformAdminRequired");
         }
 
         Namespace namespace = namespaceService.createNamespace(
@@ -206,10 +202,5 @@ public class NamespacePortalCommandAppService {
                 operatorUserId
         );
         return MemberResponse.from(member, userAccountRepository.findById(userId).orElse(null));
-    }
-
-    private boolean canCreateNamespace(PlatformPrincipal principal) {
-        return principal.platformRoles().contains("SKILL_ADMIN")
-                || principal.platformRoles().contains("SUPER_ADMIN");
     }
 }

@@ -249,7 +249,11 @@ class NamespacePortalControllerTest {
     }
 
     @Test
-    void createNamespace_requiresPlatformAdminRole() throws Exception {
+    void createNamespace_allowsAuthenticatedUser() throws Exception {
+        Namespace namespace = namespace(3L, "team-alpha", NamespaceStatus.ACTIVE, NamespaceType.TEAM);
+        given(namespaceService.createNamespace("team-alpha", "Team Alpha", null, "user-1"))
+                .willReturn(namespace);
+
         mockMvc.perform(post("/api/v1/namespaces")
                         .with(csrf())
                         .with(auth("user-1"))
@@ -257,8 +261,9 @@ class NamespacePortalControllerTest {
                         .content("""
                                 {"slug":"team-alpha","displayName":"Team Alpha"}
                                 """))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value(403));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.slug").value("team-alpha"));
     }
 
     @Test
