@@ -13,7 +13,6 @@ import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.service.GovernanceWorkflowAppService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Promotion workflow endpoints that expose submission, review, and query
@@ -49,7 +47,7 @@ public class PromotionController extends BaseApiController {
         // the V49 CHECK constraint) so callers see a 400 instead of a DataIntegrityViolation.
         if (request.sourceType() == SourceType.AGENT) {
             if (request.sourceAgentId() == null || request.sourceAgentVersionId() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                throw new IllegalArgumentException(
                         "AGENT promotion requires sourceAgentId and sourceAgentVersionId");
             }
             return ok(
@@ -64,7 +62,7 @@ public class PromotionController extends BaseApiController {
             );
         }
         if (request.sourceSkillId() == null || request.sourceVersionId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new IllegalArgumentException(
                     "SKILL promotion requires sourceSkillId and sourceVersionId");
         }
         return ok(
