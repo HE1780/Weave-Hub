@@ -8,6 +8,7 @@ import com.iflytek.skillhub.domain.agent.report.event.AgentReportDismissedEvent;
 import com.iflytek.skillhub.domain.agent.report.event.AgentReportResolvedEvent;
 import com.iflytek.skillhub.domain.agent.service.AgentLifecycleService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
+import com.iflytek.skillhub.domain.governance.GovernanceNotificationService;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -45,6 +47,7 @@ class AgentReportServiceTest {
     @Mock private AgentReportRepository reportRepository;
     @Mock private AuditLogService auditLogService;
     @Mock private AgentLifecycleService agentLifecycleService;
+    @Mock private GovernanceNotificationService governanceNotificationService;
     @Mock private ApplicationEventPublisher eventPublisher;
 
     private AgentReportService service;
@@ -53,7 +56,7 @@ class AgentReportServiceTest {
     @BeforeEach
     void setUp() {
         service = new AgentReportService(agentRepository, reportRepository, auditLogService,
-                agentLifecycleService, eventPublisher, clock);
+                agentLifecycleService, governanceNotificationService, eventPublisher, clock);
     }
 
     private Agent active(long namespaceId, long agentId, String slug, String ownerId) {
@@ -175,6 +178,9 @@ class AgentReportServiceTest {
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().reportId()).isEqualTo(99L);
         assertThat(captor.getValue().dispositionLabel()).isEqualTo("resolve_only");
+
+        verify(governanceNotificationService).notifyUser(
+                eq("user-1"), eq("REPORT"), eq("AGENT_REPORT"), eq(99L), any(), contains("RESOLVED"));
     }
 
     @Test
@@ -232,6 +238,9 @@ class AgentReportServiceTest {
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().reportId()).isEqualTo(99L);
         assertThat(captor.getValue().agentId()).isEqualTo(10L);
+
+        verify(governanceNotificationService).notifyUser(
+                eq("user-1"), eq("REPORT"), eq("AGENT_REPORT"), eq(99L), any(), contains("DISMISSED"));
     }
 
     @Test

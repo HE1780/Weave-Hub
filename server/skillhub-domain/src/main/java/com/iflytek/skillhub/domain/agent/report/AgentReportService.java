@@ -7,6 +7,7 @@ import com.iflytek.skillhub.domain.agent.report.event.AgentReportDismissedEvent;
 import com.iflytek.skillhub.domain.agent.report.event.AgentReportResolvedEvent;
 import com.iflytek.skillhub.domain.agent.service.AgentLifecycleService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
+import com.iflytek.skillhub.domain.governance.GovernanceNotificationService;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import org.springframework.context.ApplicationEventPublisher;
@@ -49,6 +50,7 @@ public class AgentReportService {
     private final AgentReportRepository reportRepository;
     private final AuditLogService auditLogService;
     private final AgentLifecycleService agentLifecycleService;
+    private final GovernanceNotificationService governanceNotificationService;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
@@ -56,12 +58,14 @@ public class AgentReportService {
                               AgentReportRepository reportRepository,
                               AuditLogService auditLogService,
                               AgentLifecycleService agentLifecycleService,
+                              GovernanceNotificationService governanceNotificationService,
                               ApplicationEventPublisher eventPublisher,
                               Clock clock) {
         this.agentRepository = agentRepository;
         this.reportRepository = reportRepository;
         this.auditLogService = auditLogService;
         this.agentLifecycleService = agentLifecycleService;
+        this.governanceNotificationService = governanceNotificationService;
         this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
@@ -137,6 +141,14 @@ public class AgentReportService {
         eventPublisher.publishEvent(new AgentReportResolvedEvent(
                 saved.getId(), saved.getAgentId(), actorUserId, saved.getReporterId(),
                 disposition.name().toLowerCase()));
+        governanceNotificationService.notifyUser(
+                report.getReporterId(),
+                "REPORT",
+                "AGENT_REPORT",
+                reportId,
+                "Report handled",
+                "{\"status\":\"RESOLVED\"}"
+        );
         return saved;
     }
 
@@ -155,6 +167,14 @@ public class AgentReportService {
         auditLogService.record(actorUserId, "DISMISS_AGENT_REPORT", "AGENT_REPORT", reportId, null, clientIp, userAgent, null);
         eventPublisher.publishEvent(new AgentReportDismissedEvent(
                 saved.getId(), saved.getAgentId(), actorUserId, saved.getReporterId()));
+        governanceNotificationService.notifyUser(
+                report.getReporterId(),
+                "REPORT",
+                "AGENT_REPORT",
+                reportId,
+                "Report dismissed",
+                "{\"status\":\"DISMISSED\"}"
+        );
         return saved;
     }
 

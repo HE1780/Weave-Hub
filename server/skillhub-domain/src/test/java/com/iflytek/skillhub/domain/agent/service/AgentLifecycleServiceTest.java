@@ -322,4 +322,62 @@ class AgentLifecycleServiceTest {
         assertThrows(DomainNotFoundException.class, () ->
                 service.deleteVersion(7L, "9.9.9", "owner-1", Map.of()));
     }
+
+    @Test
+    void archiveAsAdmin_persists_agent_and_records_audit_with_reason() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        Agent result = service.archiveAsAdmin(7L, "admin-1", "127.0.0.1", "JUnit", "abuse content");
+
+        assertEquals(AgentStatus.ARCHIVED, result.getStatus());
+        verify(agentRepository).save(agent);
+        verify(auditLogService).record(
+                eq("admin-1"), eq("ARCHIVE_AGENT"), eq("AGENT"), eq(7L),
+                eq(null), eq("127.0.0.1"), eq("JUnit"),
+                eq("{\"reason\":\"abuse content\"}"));
+    }
+
+    @Test
+    void archiveAsAdmin_records_null_payload_when_reason_blank() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        service.archiveAsAdmin(7L, "admin-1", "127.0.0.1", "JUnit", "   ");
+
+        verify(auditLogService).record(
+                eq("admin-1"), eq("ARCHIVE_AGENT"), eq("AGENT"), eq(7L),
+                eq(null), eq("127.0.0.1"), eq("JUnit"), eq(null));
+    }
+
+    @Test
+    void archiveAsAdmin_records_null_payload_when_reason_null() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        service.archiveAsAdmin(7L, "admin-1", "127.0.0.1", "JUnit", null);
+
+        verify(auditLogService).record(
+                eq("admin-1"), eq("ARCHIVE_AGENT"), eq("AGENT"), eq(7L),
+                eq(null), eq("127.0.0.1"), eq("JUnit"), eq(null));
+    }
+
+    @Test
+    void archiveAsAdmin_escapes_quotes_in_reason() {
+        when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
+
+        service.archiveAsAdmin(7L, "admin-1", "127.0.0.1", "JUnit", "she said \"x\"");
+
+        verify(auditLogService).record(
+                eq("admin-1"), eq("ARCHIVE_AGENT"), eq("AGENT"), eq(7L),
+                eq(null), eq("127.0.0.1"), eq("JUnit"),
+                eq("{\"reason\":\"she said \\\"x\\\"\"}"));
+    }
+
+    @Test
+    void archiveAsAdmin_throws_NotFound_when_agent_missing() {
+        when(agentRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(DomainNotFoundException.class, () ->
+                service.archiveAsAdmin(99L, "admin-1", "127.0.0.1", "JUnit", "reason"));
+        verify(agentRepository, never()).save(any());
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any(), any(), any(), any());
+    }
 }
