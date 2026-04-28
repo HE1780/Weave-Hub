@@ -14,7 +14,9 @@ import { AgentStarButton } from '@/features/agent/social/agent-star-button'
 import { AgentRatingInput } from '@/features/agent/social/agent-rating-input'
 import { AgentVersionCommentsSection } from '@/features/agent/comments'
 import { AgentLabelPanel } from '@/features/agent/agent-label-panel'
+import { PromoteAgentButton } from '@/features/agent/promotion/promote-agent-button'
 import { useAuth } from '@/features/auth/use-auth'
+import { useMyNamespaces } from '@/shared/hooks/use-namespace-queries'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
 import { InstallCommand, getBaseUrl } from '@/features/skill/install-command'
@@ -116,6 +118,12 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { user, hasRole } = useAuth()
+  // Resolve the GLOBAL namespace id from the viewer's namespace memberships.
+  // PromoteAgentButton hides itself when null, so the limitation here is benign:
+  // an admin who isn't a member of global won't see the button. Promoting via the
+  // dashboard inbox covers that case. See A9 follow-ups for a public global-ns endpoint.
+  const { data: myNamespaces } = useMyNamespaces()
+  const globalNamespaceId = myNamespaces?.find((ns) => ns.type === 'GLOBAL')?.id ?? null
   const viewerUserId = user?.userId ?? null
   const { data: agent, isLoading, isError, error } = useAgentDetail(namespace ?? '', slug ?? '')
   const archiveMutation = useArchiveAgent()
@@ -703,6 +711,16 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
               onRequireLogin={handleRequireLogin}
             />
           </Card>
+        )}
+
+        {agent.agentId && agent.latestPublishedVersionId && (
+          <PromoteAgentButton
+            agentId={agent.agentId}
+            versionId={agent.latestPublishedVersionId}
+            versionStatus="PUBLISHED"
+            isInGlobalNamespace={targetNamespace === 'global'}
+            globalNamespaceId={globalNamespaceId}
+          />
         )}
 
         {targetNamespace && targetSlug && (
