@@ -363,6 +363,95 @@ class PromotionServiceTest {
     }
 
     @Nested
+    class SubmitAgentPromotion {
+
+        private static final Long SOURCE_AGENT_ID = 410L;
+        private static final Long SOURCE_AGENT_VERSION_ID = 420L;
+
+        private com.iflytek.skillhub.domain.agent.Agent createSourceAgent() {
+            com.iflytek.skillhub.domain.agent.Agent a = new com.iflytek.skillhub.domain.agent.Agent(
+                    5L, "review-bot", "Review Bot", USER_ID,
+                    com.iflytek.skillhub.domain.agent.AgentVisibility.PRIVATE);
+            setField(a, "id", SOURCE_AGENT_ID);
+            return a;
+        }
+
+        private com.iflytek.skillhub.domain.agent.AgentVersion createPublishedAgentVersion() {
+            com.iflytek.skillhub.domain.agent.AgentVersion v = new com.iflytek.skillhub.domain.agent.AgentVersion(
+                    SOURCE_AGENT_ID, "1.0.0", USER_ID, "manifest", "soul", "workflow", "objects/abc", 1024L);
+            setField(v, "id", SOURCE_AGENT_VERSION_ID);
+            v.autoPublish();
+            return v;
+        }
+
+        @Test
+        void shouldCreatePendingAgentPromotion() {
+            com.iflytek.skillhub.domain.agent.Agent agent = createSourceAgent();
+            com.iflytek.skillhub.domain.agent.AgentVersion ver = createPublishedAgentVersion();
+            Namespace targetNs = createGlobalNamespace();
+            Namespace sourceNs = createSourceNamespace();
+
+            when(agentRepository.findById(SOURCE_AGENT_ID)).thenReturn(Optional.of(agent));
+            when(agentVersionRepository.findById(SOURCE_AGENT_VERSION_ID)).thenReturn(Optional.of(ver));
+            when(namespaceRepository.findById(agent.getNamespaceId())).thenReturn(Optional.of(sourceNs));
+            when(namespaceRepository.findById(TARGET_NAMESPACE_ID)).thenReturn(Optional.of(targetNs));
+            when(permissionChecker.canSubmitPromotion(any(com.iflytek.skillhub.domain.agent.Agent.class),
+                    eq(USER_ID), any(), any())).thenReturn(true);
+            when(promotionRequestRepository.findBySourceAgentIdAndStatus(SOURCE_AGENT_ID, ReviewTaskStatus.PENDING))
+                    .thenReturn(Optional.empty());
+            when(promotionRequestRepository.save(any(PromotionRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            PromotionRequest result = promotionService.submitAgentPromotion(
+                    SOURCE_AGENT_ID, SOURCE_AGENT_VERSION_ID, TARGET_NAMESPACE_ID,
+                    USER_ID, Map.of(), Set.of("SKILL_ADMIN"));
+
+            assertEquals(SourceType.AGENT, result.getSourceType());
+            assertEquals(SOURCE_AGENT_ID, result.getSourceAgentId());
+            assertEquals(SOURCE_AGENT_VERSION_ID, result.getSourceAgentVersionId());
+            verify(promotionRequestRepository).save(any(PromotionRequest.class));
+        }
+
+        @Test
+        void shouldRejectNonPublishedAgentVersion() {
+            com.iflytek.skillhub.domain.agent.Agent agent = createSourceAgent();
+            com.iflytek.skillhub.domain.agent.AgentVersion draft = new com.iflytek.skillhub.domain.agent.AgentVersion(
+                    SOURCE_AGENT_ID, "1.0.0", USER_ID, "manifest", "soul", "workflow", "objects/abc", 1024L);
+            setField(draft, "id", SOURCE_AGENT_VERSION_ID);
+            // status remains DRAFT
+
+            when(agentRepository.findById(SOURCE_AGENT_ID)).thenReturn(Optional.of(agent));
+            when(agentVersionRepository.findById(SOURCE_AGENT_VERSION_ID)).thenReturn(Optional.of(draft));
+
+            assertThrows(DomainBadRequestException.class, () ->
+                    promotionService.submitAgentPromotion(SOURCE_AGENT_ID, SOURCE_AGENT_VERSION_ID,
+                            TARGET_NAMESPACE_ID, USER_ID, Map.of(), Set.of("SKILL_ADMIN")));
+        }
+
+        @Test
+        void shouldRejectDuplicatePending() {
+            com.iflytek.skillhub.domain.agent.Agent agent = createSourceAgent();
+            com.iflytek.skillhub.domain.agent.AgentVersion ver = createPublishedAgentVersion();
+            Namespace targetNs = createGlobalNamespace();
+            Namespace sourceNs = createSourceNamespace();
+            PromotionRequest existing = PromotionRequest.forAgent(SOURCE_AGENT_ID, SOURCE_AGENT_VERSION_ID,
+                    TARGET_NAMESPACE_ID, "other-user");
+
+            when(agentRepository.findById(SOURCE_AGENT_ID)).thenReturn(Optional.of(agent));
+            when(agentVersionRepository.findById(SOURCE_AGENT_VERSION_ID)).thenReturn(Optional.of(ver));
+            when(namespaceRepository.findById(agent.getNamespaceId())).thenReturn(Optional.of(sourceNs));
+            when(namespaceRepository.findById(TARGET_NAMESPACE_ID)).thenReturn(Optional.of(targetNs));
+            when(permissionChecker.canSubmitPromotion(any(com.iflytek.skillhub.domain.agent.Agent.class),
+                    any(), any(), any())).thenReturn(true);
+            when(promotionRequestRepository.findBySourceAgentIdAndStatus(SOURCE_AGENT_ID, ReviewTaskStatus.PENDING))
+                    .thenReturn(Optional.of(existing));
+
+            assertThrows(DomainBadRequestException.class, () ->
+                    promotionService.submitAgentPromotion(SOURCE_AGENT_ID, SOURCE_AGENT_VERSION_ID,
+                            TARGET_NAMESPACE_ID, USER_ID, Map.of(), Set.of("SKILL_ADMIN")));
+        }
+    }
+
+    @Nested
     class ReviewPromotion {
 
         @Test
