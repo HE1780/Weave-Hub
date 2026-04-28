@@ -32,4 +32,9 @@ describe('use-promotion-list module exports', () => {
     expect(mod.useRejectPromotion).toBeDefined()
     expect(typeof mod.useRejectPromotion).toBe('function')
   })
+
+  it('exports useSubmitAgentPromotion as a function', () => {
+    expect(mod.useSubmitAgentPromotion).toBeDefined()
+    expect(typeof mod.useSubmitAgentPromotion).toBe('function')
+  })
 })

@@ -56,4 +56,25 @@ export function useRejectPromotion() {
   })
 }
 
+export interface SubmitAgentPromotionArgs {
+  sourceAgentId: number
+  sourceAgentVersionId: number
+  targetNamespaceId: number
+}
+
+/**
+ * Submits a new agent promotion request. Mirrors useSubmitPromotion's invalidation
+ * surface so the inbox + landing widgets refresh once the request lands.
+ */
+export function useSubmitAgentPromotion() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (args: SubmitAgentPromotionArgs) => promotionApi.submitAgent(args),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['promotions'] })
+      queryClient.invalidateQueries({ queryKey: ['governance'] })
+    },
+  })
+}
+
 export type { PromotionTask }
