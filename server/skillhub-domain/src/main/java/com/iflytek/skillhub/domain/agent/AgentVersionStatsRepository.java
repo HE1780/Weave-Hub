@@ -10,4 +10,5 @@ public interface AgentVersionStatsRepository {
     Optional<AgentVersionStats> findByAgentVersionId(Long agentVersionId);
     void incrementDownloadCount(Long agentVersionId, Long agentId);
     void deleteByAgentId(Long agentId);
+    AgentVersionStats save(AgentVersionStats stats);
 }
