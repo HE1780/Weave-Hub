@@ -329,14 +329,24 @@ export interface ReviewSkillDetail {
   activeVersion: string
 }
 
+export type PromotionSourceType = 'SKILL' | 'AGENT'
+
 export interface PromotionTask {
   id: number
-  sourceSkillId: number
+  sourceType: PromotionSourceType
+  // skill source — populated when sourceType === 'SKILL'
+  sourceSkillId?: number | null
+  sourceSkillSlug?: string | null
+  sourceVersion?: string | null
+  // agent source — populated when sourceType === 'AGENT'
+  sourceAgentId?: number | null
+  sourceAgentSlug?: string | null
+  sourceAgentVersion?: string | null
+  // shared
   sourceNamespace: string
-  sourceSkillSlug: string
-  sourceVersion: string
   targetNamespace: string
-  targetSkillId?: number
+  targetSkillId?: number | null
+  targetAgentId?: number | null
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   submittedBy: string
   submittedByName?: string

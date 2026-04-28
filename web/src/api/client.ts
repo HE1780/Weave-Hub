@@ -868,13 +868,26 @@ export const promotionApi = {
       headers: getCsrfHeaders({
         'Content-Type': 'application/json',
       }),
-      body: JSON.stringify(request),
+      body: JSON.stringify({ ...request, sourceType: 'SKILL' }),
     })
   },
 
-  async list(params: { status?: string; page?: number; size?: number }) {
+  async submitAgent(request: { sourceAgentId: number; sourceAgentVersionId: number; targetNamespaceId: number }): Promise<void> {
+    await fetchJson<void>(`${WEB_API_PREFIX}/promotions`, {
+      method: 'POST',
+      headers: getCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ ...request, sourceType: 'AGENT' }),
+    })
+  },
+
+  async list(params: { status?: string; sourceType?: 'SKILL' | 'AGENT'; page?: number; size?: number }) {
     const searchParams = new URLSearchParams()
     searchParams.set('status', params.status ?? 'PENDING')
+    if (params.sourceType) {
+      searchParams.set('sourceType', params.sourceType)
+    }
     searchParams.set('page', String(params.page ?? 0))
     searchParams.set('size', String(params.size ?? 20))
     return fetchJson<{ items: PromotionTask[]; total: number; page: number; size: number }>(
