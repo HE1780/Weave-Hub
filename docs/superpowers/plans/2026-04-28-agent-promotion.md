@@ -71,34 +71,13 @@ git commit -m "feat(domain): add SourceType enum (SKILL | AGENT) for promotion d
 
 ---
 
-## Task 2: Add AgentPublishedEvent
+## Task 2: SKIPPED — AgentPublishedEvent already exists
 
-Mirrors `SkillPublishedEvent` (single-line record).
+**Plan correction (2026-04-28):** `AgentPublishedEvent` already exists in the codebase at `server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/event/AgentPublishedEvent.java` with shape `(Long agentId, Long agentVersionId, Long namespaceId, String publisherId, Instant publishedAt)` — published today by `AgentPublishService`, `AgentLifecycleService`, and `AgentReviewService`.
 
-**Files:**
-- Create: `server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/event/AgentPublishedEvent.java`
+**Action**: Skip this task. Reuse the existing event. Task 9 (AgentPromotionMaterializer) is updated to call the existing 5-arg constructor.
 
-- [ ] **Step 1: Create the event record**
-
-```java
-package com.iflytek.skillhub.domain.event;
-
-public record AgentPublishedEvent(Long agentId, Long versionId, String publisherId) {}
-```
-
-(No standalone test — single-line record. Use will be exercised by the materializer test in Task 11.)
-
-- [ ] **Step 2: Verify it compiles**
-
-Run: `mvn -pl server/skillhub-domain compile`
-Expected: BUILD SUCCESS
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/event/AgentPublishedEvent.java
-git commit -m "feat(domain): add AgentPublishedEvent record (mirrors SkillPublishedEvent)"
-```
+A revert commit (`git revert 2efd73c8`) restored the file after an early exploratory pass overwrote it with a narrower 3-field shape that broke compile in 3 callers.
 
 ---
 
@@ -1078,12 +1057,15 @@ public class AgentPromotionMaterializer implements PromotionMaterializer {
         }
 
         eventPublisher.publishEvent(new AgentPublishedEvent(
-                newAgent.getId(), newVersion.getId(), request.getSubmittedBy()));
+                newAgent.getId(), newVersion.getId(), request.getTargetNamespaceId(),
+                request.getSubmittedBy(), newVersion.getPublishedAt()));
 
         return new MaterializationResult(newAgent.getId());
     }
 }
 ```
+
+**Note**: `AgentPublishedEvent` is the existing 5-arg event already in the codebase — `(agentId, agentVersionId, namespaceId, publisherId, publishedAt)`. Do NOT redefine it.
 
 **Note**: The `AgentLabel` and `AgentTag` constructor signatures above are inferred from the schema migrations (V46 = agent_tag with `agent_id, tag_name, version_id, created_by`; V47 = agent_label with `agent_id, label_id, created_by`). If the actual constructors differ (verified in Task 8), adjust here. If the entities use full-arg static factories, use those instead.
 

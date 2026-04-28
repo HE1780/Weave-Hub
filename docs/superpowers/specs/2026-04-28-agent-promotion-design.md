@@ -147,7 +147,7 @@ CREATE UNIQUE INDEX promotion_request_pending_agent_version_uq
   }
   public record MaterializationResult(Long targetEntityId) {}
   ```
-- `AgentPublishedEvent(Long agentId, Long agentVersionId, String namespaceSlug)` — mirrors `SkillPublishedEvent`. No listener required for A9; published for parity and future hooks.
+- `AgentPublishedEvent` — **already exists** in the codebase at `server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/event/AgentPublishedEvent.java` with shape `(Long agentId, Long agentVersionId, Long namespaceId, String publisherId, Instant publishedAt)`. The materializer reuses this existing event; it is published today by `AgentPublishService`, `AgentLifecycleService`, and `AgentReviewService` whenever an AgentVersion enters PUBLISHED. No new event needed.
 
 ### 6.2 `PromotionRequest` entity changes
 
@@ -207,7 +207,7 @@ Materialization sequence:
 5. Create new `AgentVersionStats` row with `downloadCount=0` (do **not** copy source stats).
 6. Copy `AgentLabel` association rows. Each source association references a `label_definition` row, which itself is scoped to a namespace. Filter the copy to **only platform-scope labels and labels owned by the target namespace** — namespace-private labels from the source namespace do not follow the agent into global. (Same semantic as how skill labels would behave on promotion if labels were already wired through skill promotion; documenting it here because A4 added agent labels but agent promotion is the first time this filter has to be applied.)
 7. Copy `AgentTag` rows from source, repointing `agent_id` and `version_id` to the new entities. All tags follow — they are owned by the agent itself, not by a namespace.
-8. Publish `AgentPublishedEvent`.
+8. Publish `AgentPublishedEvent(newAgent.getId(), newVersion.getId(), targetNamespaceId, request.getSubmittedBy(), newVersion.getPublishedAt())` — the existing 5-arg event.
 9. Return `MaterializationResult(newAgent.getId())`.
 
 ### 6.5 `PromotionService` changes

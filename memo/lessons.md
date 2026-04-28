@@ -117,3 +117,15 @@
 - 如果一条延后了，**当场把延后的原因写进 backlog 那条目录**（不是只在 commit 里说），未来接手的人才能在打开 backlog 第一眼就看到 "这条还没做且原因是 X"。
 - 用 backlog 评估"这一会话能搞定几条"时，按 audit 后的真实估时算，不是 backlog 上写的。
 
+## 2026-04-28 — 写 plan 前必须 grep 既有 entity / event / class 是否同名
+
+**症状**：A9 plan Task 2 写"创建 AgentPublishedEvent record"，sub-agent 照写覆盖了文件。结果该文件**已存在**且被 6 处生产代码使用（AgentPublishService / AgentLifecycleService / AgentReviewService 等），narrowed record 把 5 个字段砍成 3 个，3 处 caller 编译失败。`mvn -q` 因为增量编译 stale，初次跑甚至没暴露 — `mvn clean compile` 才看到 BUILD FAILURE。需要 `git revert` + 改 plan + 改 spec。
+
+**原因**：写 plan 时没 `find server -name "AgentPublishedEvent.java"`，凭"应该不存在因为对应的 SkillPublishedEvent 才有"主观推断。spec / plan 的"create new X"陈述变成了破坏性 overwrite 指令。
+
+**规则**：
+- plan 里每一个 "Create file at <path>" 步骤之前，先 `find <project-root> -name "<basename>"` 确认目标路径**不存在**。如果存在，plan 应改为 "Modify" 或 "Skip — already exists"。
+- sub-agent 拿到"create"指令默认覆盖，不会自己 grep 重名。这是 controller 的责任。
+- **`mvn -q compile` 不可信** — 增量编译会用 stale `.class`，本地修改可能完全没编译。验证 plan 的修改是否破坏 build，必须用 `mvn clean compile`（或至少 `mvn -o test-compile` 后 `mvn test-compile -Dmaven.compiler.useIncrementalCompilation=false`）。
+- sub-agent 报"BUILD SUCCESS"前应被指示用 clean 编译；implementer-prompt 里加一条 "If you modify or replace an existing file in `server/`, run `mvn -pl <module> clean compile` not `mvn ... -q compile`."
+
