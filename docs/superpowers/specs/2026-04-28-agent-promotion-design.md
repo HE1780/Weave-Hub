@@ -250,12 +250,14 @@ request.setTargetEntityId(result.targetEntityId(), request.getSourceType());
 `PromotionRequestRepository` gains:
 
 ```java
-List<PromotionRequest> findBySourceAgentVersionIdAndStatus(
-    Long agentVersionId, ReviewTaskStatus status);
+Optional<PromotionRequest> findBySourceAgentIdAndStatus(
+    Long agentId, ReviewTaskStatus status);
 
 Page<PromotionRequest> findByTargetNamespaceIdAndStatusAndSourceType(
     Long namespaceId, ReviewTaskStatus status, SourceType sourceType, Pageable pageable);
 ```
+
+(`findBySourceAgentIdAndStatus` mirrors the existing `findBySourceSkillIdAndStatus` — the duplicate-pending check is keyed by the agent/skill id, not the version id, matching how the current skill flow already works.)
 
 Existing methods stay — no rename, no delete.
 
