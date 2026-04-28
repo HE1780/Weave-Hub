@@ -1,7 +1,8 @@
 package com.iflytek.skillhub.domain.review;
 
-import com.iflytek.skillhub.domain.event.SkillPublishedEvent;
 import com.iflytek.skillhub.domain.governance.GovernanceNotificationService;
+import com.iflytek.skillhub.domain.review.materialization.MaterializationResult;
+import com.iflytek.skillhub.domain.review.materialization.PromotionMaterializer;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceStatus;
@@ -39,12 +40,12 @@ class PromotionServiceTest {
     @Mock private PromotionRequestRepository promotionRequestRepository;
     @Mock private SkillRepository skillRepository;
     @Mock private SkillVersionRepository skillVersionRepository;
-    @Mock private SkillFileRepository skillFileRepository;
     @Mock private NamespaceRepository namespaceRepository;
     @Mock private ReviewPermissionChecker permissionChecker;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private GovernanceNotificationService governanceNotificationService;
     @Mock private EntityManager entityManager;
+    @Mock private PromotionMaterializer skillMaterializer;
 
     private PromotionService promotionService;
 
@@ -59,9 +60,15 @@ class PromotionServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Stub the materializer's supportedSourceType up-front so the registry built in
+        // PromotionService's constructor knows which slot the bean fills. lenient because
+        // not every test path exercises approve.
+        org.mockito.Mockito.lenient().when(skillMaterializer.supportedSourceType()).thenReturn(SourceType.SKILL);
         promotionService = new PromotionService(
                 promotionRequestRepository, skillRepository, skillVersionRepository,
-                skillFileRepository, namespaceRepository, permissionChecker, eventPublisher, governanceNotificationService, entityManager, CLOCK);
+                namespaceRepository, permissionChecker, eventPublisher,
+                governanceNotificationService, entityManager, CLOCK,
+                List.of(skillMaterializer));
     }
 
     private static void setField(Object target, String fieldName, Object value) {
@@ -359,12 +366,6 @@ class PromotionServiceTest {
         void shouldNotifySubmitterWhenPromotionApproved() {
             PromotionRequest request = createPendingPromotion();
             PromotionRequest approvedRequest = approvedPromotion(request, "ok");
-            Skill sourceSkill = createSourceSkill();
-            SkillVersion sourceVersion = createPublishedVersion();
-            Skill newSkill = new Skill(TARGET_NAMESPACE_ID, "my-skill", REVIEWER_ID, SkillVisibility.PUBLIC);
-            setField(newSkill, "id", NEW_SKILL_ID);
-            SkillVersion newVersion = new SkillVersion(NEW_SKILL_ID, sourceVersion.getVersion(), REVIEWER_ID);
-            setField(newVersion, "id", NEW_VERSION_ID);
 
             when(promotionRequestRepository.findById(PROMOTION_ID))
                     .thenReturn(Optional.of(request), Optional.of(approvedRequest));
@@ -372,11 +373,8 @@ class PromotionServiceTest {
             when(promotionRequestRepository.updateStatusWithVersion(
                     PROMOTION_ID, ReviewTaskStatus.APPROVED, REVIEWER_ID, "ok", null, request.getVersion()))
                     .thenReturn(1);
-            when(skillRepository.findById(SOURCE_SKILL_ID)).thenReturn(Optional.of(sourceSkill));
-            when(skillVersionRepository.findById(SOURCE_VERSION_ID)).thenReturn(Optional.of(sourceVersion));
-            when(skillRepository.save(any(Skill.class))).thenReturn(newSkill);
-            when(skillVersionRepository.save(any(SkillVersion.class))).thenReturn(newVersion);
-            when(skillFileRepository.findByVersionId(SOURCE_VERSION_ID)).thenReturn(List.of());
+            when(skillMaterializer.materialize(approvedRequest))
+                    .thenReturn(new MaterializationResult(NEW_SKILL_ID));
             when(promotionRequestRepository.save(approvedRequest)).thenReturn(approvedRequest);
 
             promotionService.approvePromotion(PROMOTION_ID, REVIEWER_ID, "ok", Set.of("SKILL_ADMIN"));
@@ -406,11 +404,11 @@ class PromotionServiceTest {
 
         @Test
         void shouldApprovePromotionSuccessfully() {
+            // Field-level materialization assertions live in SkillPromotionMaterializerTest now.
+            // PromotionService is responsible for: state machine transition + dispatch + writing
+            // targetEntityId back + publishing PromotionApprovedEvent + dispatching notification.
             PromotionRequest pr = createPendingPromotion();
             PromotionRequest approvedRequest = approvedPromotion(pr, "LGTM");
-            Skill sourceSkill = createSourceSkill();
-            SkillVersion sourceVersion = createPublishedVersion();
-            List<SkillFile> sourceFiles = createSourceFiles();
 
             when(promotionRequestRepository.findById(PROMOTION_ID))
                     .thenReturn(Optional.of(pr), Optional.of(approvedRequest));
@@ -418,20 +416,8 @@ class PromotionServiceTest {
             when(promotionRequestRepository.updateStatusWithVersion(
                     PROMOTION_ID, ReviewTaskStatus.APPROVED, REVIEWER_ID, "LGTM", null, pr.getVersion()))
                     .thenReturn(1);
-            when(skillRepository.findById(SOURCE_SKILL_ID)).thenReturn(Optional.of(sourceSkill));
-            when(skillVersionRepository.findById(SOURCE_VERSION_ID)).thenReturn(Optional.of(sourceVersion));
-            when(skillRepository.save(any(Skill.class))).thenAnswer(inv -> {
-                Skill s = inv.getArgument(0);
-                setField(s, "id", NEW_SKILL_ID);
-                return s;
-            });
-            when(skillVersionRepository.save(any(SkillVersion.class))).thenAnswer(inv -> {
-                SkillVersion v = inv.getArgument(0);
-                setField(v, "id", NEW_VERSION_ID);
-                return v;
-            });
-            when(skillFileRepository.findByVersionId(SOURCE_VERSION_ID)).thenReturn(sourceFiles);
-            when(skillFileRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+            when(skillMaterializer.materialize(approvedRequest))
+                    .thenReturn(new MaterializationResult(NEW_SKILL_ID));
             when(promotionRequestRepository.save(approvedRequest)).thenReturn(approvedRequest);
 
             PromotionRequest result = promotionService.approvePromotion(
@@ -443,46 +429,7 @@ class PromotionServiceTest {
             assertEquals("LGTM", result.getReviewComment());
             assertEquals(Instant.now(CLOCK), result.getReviewedAt());
 
-            // Verify new skill created in global namespace
-            ArgumentCaptor<Skill> skillCaptor = ArgumentCaptor.forClass(Skill.class);
-            verify(skillRepository, times(2)).save(skillCaptor.capture());
-            List<Skill> savedSkills = skillCaptor.getAllValues();
-            Skill newSkill = savedSkills.get(0);
-            assertEquals(TARGET_NAMESPACE_ID, newSkill.getNamespaceId());
-            assertEquals("my-skill", newSkill.getSlug());
-            assertEquals(USER_ID, newSkill.getOwnerId());
-            assertEquals(SkillVisibility.PUBLIC, newSkill.getVisibility());
-            assertEquals(SOURCE_SKILL_ID, newSkill.getSourceSkillId());
-
-            // Verify new version created
-            ArgumentCaptor<SkillVersion> versionCaptor = ArgumentCaptor.forClass(SkillVersion.class);
-            verify(skillVersionRepository).save(versionCaptor.capture());
-            SkillVersion newVersion = versionCaptor.getValue();
-            assertEquals("1.0.0", newVersion.getVersion());
-            assertEquals(SkillVersionStatus.PUBLISHED, newVersion.getStatus());
-            assertEquals("Initial release", newVersion.getChangelog());
-            assertEquals("{\"name\":\"test\"}", newVersion.getParsedMetadataJson());
-            assertEquals("{\"version\":\"1.0.0\"}", newVersion.getManifestJson());
-            assertEquals(3, newVersion.getFileCount());
-            assertEquals(1024L, newVersion.getTotalSize());
-            assertEquals(Instant.now(CLOCK), newVersion.getPublishedAt());
-
-            // Verify files copied
-            @SuppressWarnings("unchecked")
-            ArgumentCaptor<List<SkillFile>> filesCaptor = ArgumentCaptor.forClass(List.class);
-            verify(skillFileRepository).saveAll(filesCaptor.capture());
-            List<SkillFile> copiedFiles = filesCaptor.getValue();
-            assertEquals(2, copiedFiles.size());
-
-            // Verify event published
-            ArgumentCaptor<SkillPublishedEvent> eventCaptor = ArgumentCaptor.forClass(SkillPublishedEvent.class);
-            verify(eventPublisher).publishEvent(eventCaptor.capture());
-            SkillPublishedEvent event = eventCaptor.getValue();
-            assertEquals(NEW_SKILL_ID, event.skillId());
-            assertEquals(NEW_VERSION_ID, event.versionId());
-            assertEquals(REVIEWER_ID, event.publisherId());
-
-            // Verify targetSkillId updated on promotion request
+            verify(skillMaterializer).materialize(approvedRequest);
             verify(promotionRequestRepository).save(approvedRequest);
             assertEquals(NEW_SKILL_ID, approvedRequest.getTargetSkillId());
         }
@@ -528,11 +475,12 @@ class PromotionServiceTest {
         }
 
         @Test
-        void shouldTranslateDuplicateTargetSkillIntoBadRequest() {
+        void shouldPropagateMaterializerBadRequestException() {
+            // PromotionService delegates to SkillPromotionMaterializer, which is responsible
+            // for throwing DomainBadRequestException on slug-collision (its own test verifies
+            // that). Here we verify PromotionService propagates the exception unchanged.
             PromotionRequest pr = createPendingPromotion();
             PromotionRequest approvedRequest = approvedPromotion(pr, "ok");
-            Skill sourceSkill = createSourceSkill();
-            SkillVersion sourceVersion = createPublishedVersion();
 
             when(promotionRequestRepository.findById(PROMOTION_ID))
                     .thenReturn(Optional.of(pr), Optional.of(approvedRequest));
@@ -540,10 +488,8 @@ class PromotionServiceTest {
             when(promotionRequestRepository.updateStatusWithVersion(
                     PROMOTION_ID, ReviewTaskStatus.APPROVED, REVIEWER_ID, "ok", null, pr.getVersion()))
                     .thenReturn(1);
-            when(skillRepository.findById(SOURCE_SKILL_ID)).thenReturn(Optional.of(sourceSkill));
-            when(skillVersionRepository.findById(SOURCE_VERSION_ID)).thenReturn(Optional.of(sourceVersion));
-            when(skillRepository.save(any(Skill.class)))
-                    .thenThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint"));
+            when(skillMaterializer.materialize(approvedRequest))
+                    .thenThrow(new DomainBadRequestException("promotion.target_skill_conflict", "my-skill"));
 
             DomainBadRequestException ex = assertThrows(DomainBadRequestException.class,
                     () -> promotionService.approvePromotion(PROMOTION_ID, REVIEWER_ID, "ok", Set.of("SKILL_ADMIN")));
@@ -552,38 +498,23 @@ class PromotionServiceTest {
         }
 
         @Test
-        void shouldCopyDisplayNameAndSummaryToNewSkill() {
+        void shouldThrowWhenNoMaterializerForSourceType() {
+            // Defensive: if a promotion's sourceType has no registered materializer, the
+            // service should fail loudly rather than silently no-op.
             PromotionRequest pr = createPendingPromotion();
             PromotionRequest approvedRequest = approvedPromotion(pr, "ok");
-            Skill sourceSkill = createSourceSkill();
-            SkillVersion sourceVersion = createPublishedVersion();
+            // Force the approved request's sourceType to AGENT — but our test setup only
+            // registered a SKILL materializer.
+            setField(approvedRequest, "sourceType", SourceType.AGENT);
 
             when(promotionRequestRepository.findById(PROMOTION_ID))
                     .thenReturn(Optional.of(pr), Optional.of(approvedRequest));
             when(permissionChecker.canReviewPromotion(pr, REVIEWER_ID, Set.of("SKILL_ADMIN"))).thenReturn(true);
-            when(promotionRequestRepository.updateStatusWithVersion(any(), any(), any(), any(), any(), any())).thenReturn(1);
-            when(skillRepository.findById(SOURCE_SKILL_ID)).thenReturn(Optional.of(sourceSkill));
-            when(skillVersionRepository.findById(SOURCE_VERSION_ID)).thenReturn(Optional.of(sourceVersion));
-            when(skillRepository.save(any(Skill.class))).thenAnswer(inv -> {
-                Skill s = inv.getArgument(0);
-                setField(s, "id", NEW_SKILL_ID);
-                return s;
-            });
-            when(skillVersionRepository.save(any(SkillVersion.class))).thenAnswer(inv -> {
-                SkillVersion v = inv.getArgument(0);
-                setField(v, "id", NEW_VERSION_ID);
-                return v;
-            });
-            when(skillFileRepository.findByVersionId(SOURCE_VERSION_ID)).thenReturn(List.of());
-            when(skillFileRepository.saveAll(anyList())).thenReturn(List.of());
+            when(promotionRequestRepository.updateStatusWithVersion(
+                    any(), any(), any(), any(), any(), any())).thenReturn(1);
 
-            promotionService.approvePromotion(PROMOTION_ID, REVIEWER_ID, "ok", Set.of("SKILL_ADMIN"));
-
-            ArgumentCaptor<Skill> skillCaptor = ArgumentCaptor.forClass(Skill.class);
-            verify(skillRepository, times(2)).save(skillCaptor.capture());
-            Skill newSkill = skillCaptor.getAllValues().get(0);
-            assertEquals("My Skill", newSkill.getDisplayName());
-            assertEquals("A test skill", newSkill.getSummary());
+            assertThrows(IllegalStateException.class,
+                    () -> promotionService.approvePromotion(PROMOTION_ID, REVIEWER_ID, "ok", Set.of("SKILL_ADMIN")));
         }
 
     }

@@ -3,8 +3,9 @@ package com.iflytek.skillhub.domain.review;
 import com.iflytek.skillhub.domain.event.PromotionApprovedEvent;
 import com.iflytek.skillhub.domain.event.PromotionRejectedEvent;
 import com.iflytek.skillhub.domain.event.PromotionSubmittedEvent;
-import com.iflytek.skillhub.domain.event.SkillPublishedEvent;
 import com.iflytek.skillhub.domain.governance.GovernanceNotificationService;
+import com.iflytek.skillhub.domain.review.materialization.MaterializationResult;
+import com.iflytek.skillhub.domain.review.materialization.PromotionMaterializer;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
@@ -16,13 +17,13 @@ import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.domain.skill.*;
 import jakarta.persistence.EntityManager;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ConcurrentModificationException;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,34 +41,38 @@ public class PromotionService {
     private final PromotionRequestRepository promotionRequestRepository;
     private final SkillRepository skillRepository;
     private final SkillVersionRepository skillVersionRepository;
-    private final SkillFileRepository skillFileRepository;
     private final NamespaceRepository namespaceRepository;
     private final ReviewPermissionChecker permissionChecker;
     private final ApplicationEventPublisher eventPublisher;
     private final GovernanceNotificationService governanceNotificationService;
     private final EntityManager entityManager;
     private final Clock clock;
+    private final Map<SourceType, PromotionMaterializer> materializers;
 
     public PromotionService(PromotionRequestRepository promotionRequestRepository,
                             SkillRepository skillRepository,
                             SkillVersionRepository skillVersionRepository,
-                            SkillFileRepository skillFileRepository,
                             NamespaceRepository namespaceRepository,
                             ReviewPermissionChecker permissionChecker,
                             ApplicationEventPublisher eventPublisher,
                             GovernanceNotificationService governanceNotificationService,
                             EntityManager entityManager,
-                            Clock clock) {
+                            Clock clock,
+                            List<PromotionMaterializer> materializerBeans) {
         this.promotionRequestRepository = promotionRequestRepository;
         this.skillRepository = skillRepository;
         this.skillVersionRepository = skillVersionRepository;
-        this.skillFileRepository = skillFileRepository;
         this.namespaceRepository = namespaceRepository;
         this.permissionChecker = permissionChecker;
         this.eventPublisher = eventPublisher;
         this.governanceNotificationService = governanceNotificationService;
         this.entityManager = entityManager;
         this.clock = clock;
+        Map<SourceType, PromotionMaterializer> map = new EnumMap<>(SourceType.class);
+        for (PromotionMaterializer m : materializerBeans) {
+            map.put(m.supportedSourceType(), m);
+        }
+        this.materializers = java.util.Collections.unmodifiableMap(map);
     }
 
     /**
@@ -201,60 +206,18 @@ public class PromotionService {
         PromotionRequest approvedRequest = promotionRequestRepository.findById(promotionId)
                 .orElseThrow(() -> new DomainNotFoundException("promotion.not_found", promotionId));
 
-        Skill sourceSkill = skillRepository.findById(approvedRequest.getSourceSkillId())
-                .orElseThrow(() -> new DomainNotFoundException("skill.not_found", approvedRequest.getSourceSkillId()));
-
-        SkillVersion sourceVersion = skillVersionRepository.findById(approvedRequest.getSourceVersionId())
-                .orElseThrow(() -> new DomainNotFoundException("skill_version.not_found", approvedRequest.getSourceVersionId()));
-
-        assertTargetSkillNotExists(approvedRequest, sourceSkill);
-
-        // Create new skill in global namespace
-        Skill newSkill = new Skill(approvedRequest.getTargetNamespaceId(), sourceSkill.getSlug(),
-                sourceSkill.getOwnerId(), SkillVisibility.PUBLIC);
-        newSkill.setDisplayName(sourceSkill.getDisplayName());
-        newSkill.setSummary(sourceSkill.getSummary());
-        newSkill.setSourceSkillId(sourceSkill.getId());
-        newSkill.setCreatedBy(reviewerId);
-        newSkill.setUpdatedBy(reviewerId);
-        try {
-            newSkill = skillRepository.save(newSkill);
-        } catch (DataIntegrityViolationException ex) {
-            throw duplicateTargetSkillConflict(sourceSkill.getSlug(), ex);
+        // Delegate materialization to the strategy registered for this source type.
+        // SkillPromotionMaterializer handles SKILL; AgentPromotionMaterializer handles AGENT.
+        // Each owns its own repository dependencies + emits its own *PublishedEvent.
+        PromotionMaterializer materializer = materializers.get(approvedRequest.getSourceType());
+        if (materializer == null) {
+            throw new IllegalStateException(
+                    "No PromotionMaterializer registered for " + approvedRequest.getSourceType());
         }
-
-        // Create new version copying metadata from source
-        SkillVersion newVersion = new SkillVersion(newSkill.getId(), sourceVersion.getVersion(),
-                sourceVersion.getCreatedBy());
-        newVersion.setStatus(SkillVersionStatus.PUBLISHED);
-        newVersion.setPublishedAt(currentTime());
-        newVersion.setRequestedVisibility(SkillVisibility.PUBLIC);
-        newVersion.setChangelog(sourceVersion.getChangelog());
-        newVersion.setParsedMetadataJson(sourceVersion.getParsedMetadataJson());
-        newVersion.setManifestJson(sourceVersion.getManifestJson());
-        newVersion.setFileCount(sourceVersion.getFileCount());
-        newVersion.setTotalSize(sourceVersion.getTotalSize());
-        newVersion = skillVersionRepository.save(newVersion);
-
-        // Update skill's latest version
-        newSkill.setLatestVersionId(newVersion.getId());
-        skillRepository.save(newSkill);
-
-        // Copy file records (reuse storageKey)
-        List<SkillFile> sourceFiles = skillFileRepository.findByVersionId(approvedRequest.getSourceVersionId());
-        Long newVersionId = newVersion.getId();
-        List<SkillFile> copiedFiles = sourceFiles.stream()
-                .map(f -> new SkillFile(newVersionId, f.getFilePath(), f.getFileSize(),
-                        f.getContentType(), f.getSha256(), f.getStorageKey()))
-                .toList();
-        skillFileRepository.saveAll(copiedFiles);
-
-        // Update promotion request with target skill id
-        approvedRequest.setTargetSkillId(newSkill.getId());
+        MaterializationResult result = materializer.materialize(approvedRequest);
+        approvedRequest.setTargetEntityId(result.targetEntityId(), approvedRequest.getSourceType());
         PromotionRequest savedRequest = promotionRequestRepository.save(approvedRequest);
 
-        eventPublisher.publishEvent(new SkillPublishedEvent(
-                newSkill.getId(), newVersion.getId(), reviewerId));
         eventPublisher.publishEvent(new PromotionApprovedEvent(
                 approvedRequest.getId(), approvedRequest.getSourceSkillId(),
                 reviewerId, approvedRequest.getSubmittedBy()));
@@ -268,24 +231,6 @@ public class PromotionService {
         );
 
         return savedRequest;
-    }
-
-    private void assertTargetSkillNotExists(PromotionRequest approvedRequest, Skill sourceSkill) {
-        skillRepository.findByNamespaceIdAndSlugAndOwnerId(
-                approvedRequest.getTargetNamespaceId(),
-                sourceSkill.getSlug(),
-                sourceSkill.getOwnerId()
-        ).ifPresent(existing -> {
-            throw duplicateTargetSkillConflict(sourceSkill.getSlug(), null);
-        });
-    }
-
-    private DomainBadRequestException duplicateTargetSkillConflict(String slug, Exception cause) {
-        DomainBadRequestException ex = new DomainBadRequestException("promotion.target_skill_conflict", slug);
-        if (cause != null) {
-            ex.initCause(cause);
-        }
-        return ex;
     }
 
     /**
