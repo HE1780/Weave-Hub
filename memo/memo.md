@@ -4,6 +4,55 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-28 — P0 follow-ups + fork-backlog 状态校正
+
+**Spec:** [docs/superpowers/specs/2026-04-28-p0-followups-and-backlog-sync-design.md](../docs/superpowers/specs/2026-04-28-p0-followups-and-backlog-sync-design.md)
+**Plan:** [docs/superpowers/plans/2026-04-28-p0-followups-and-backlog-sync.md](../docs/superpowers/plans/2026-04-28-p0-followups-and-backlog-sync.md)
+**Branch:** `feat/p0-followups-and-backlog-sync` (合回 main)
+
+### What shipped
+
+| 项 | Commit | 内容 |
+|---|---|---|
+| Task 1 | `2266fd4e` | `NamespaceBatchMemberControllerTest.batchAddMembers_emptyArray_returnsError` 期望改为 400 + 注释纠错 |
+| Task 2 | `1f9e9488` | PromotionController agent dispatch 3 个 unit test + 修 ResponseStatusException → 500 的潜在 bug（改用 IllegalArgumentException） |
+| Task 3 | `e62badeb` | promotions.tsx SourceTypeBadge `bg-{blue,purple}` tokenize 成 `sourceTypeBadgeStyles` map |
+| Task 4 | `bb88ddfe` | fork-backlog A0/A2/A3/A5/A6 + P2-1/P2-2 + 启动建议段全部校正；新加 spec/plan 文件 |
+| Task 5 | `f0a209e6` | `memo/lessons.md` 加 2 条：测试断言先读再断、sub-agent audit 必须交叉校验 |
+| Task 6 | (本 commit) | memo 校正 + 本 entry |
+
+### Audit 校正一览（backlog 之前与实际不一致）
+
+| backlog 标 | 实际 | 备注 |
+|---|---|---|
+| A0 / P2-2 archive: domain ready, app missing, 前端缺 | ✅ 全栈完成 | AgentLifecycleController + AgentLifecycleService + use-archive-agent + agent-detail/my-agents 双入口 |
+| A2 Star: ❌ | ✅ 全栈完成 | V43 + AgentStarController + agent-star-button 已挂 |
+| A3 Rating: ❌ | ✅ 全栈完成 | V43 + AgentRatingController + agent-rating-input 已挂 |
+| A5 Tag (用户自定义 tag): ❌ | ✅ 已对齐 | "用户自定义 tag" 是误读，实际是 named version tag（admin/CLI），Skill 侧也无前端 UI |
+| A6 Report: ❌ | 🟡 提交端 ✅ / moderation dashboard ❌ | submit 端齐全；admin reports.tsx 仅接 skill，agent moderation 是独立 follow-up |
+| A1 评论 (P1-2): "前置 brainstorm" | ✅ 全栈完成 | AgentVersionCommentController + agent-version-comments-section 已挂 |
+
+### 测试结果
+
+- backend: `mvn -pl skillhub-app test -Dtest=NamespaceBatchMemberControllerTest` 6/6 ✅，`-Dtest=PromotionPortalControllerTest` 7/7 ✅
+- web: dashboard 整 dir `npx vitest run src/pages/dashboard` 59/59 ✅
+- 全套回归在 Task 7 跑
+
+### Known follow-ups（真实剩余）
+
+1. **A6 admin moderation dashboard** 接 agent reports —— reports.tsx 加 type 过滤 + 列表 + 处置按钮（端点齐）
+2. **Public `/namespaces/global` 端点** —— A9 后续，让 PromoteAgentButton 不依赖 useMyNamespaces
+3. **Agent 列表卡片平均评分** —— 扩 AgentSummary 字段
+4. **My Stars 页 Agent 段** —— dashboard 重设计
+5. **P2-4 bean validation 接通** —— 后端潜伏炸弹
+6. **P3-2 安全扫描接 Agent 发布** —— BasicPrePublishValidator 接入 AgentPublishService
+
+### How to resume
+
+backlog 已经反映现状，下一会话直接挑 #1（A6 moderation） 或 #2（global namespace 端点）开始即可。再做之前先扫一眼 backlog 启动建议段。
+
+---
+
 ## 2026-04-28 — 开放注册：Team Namespace 创建权限下放（plan 落地，1 行核心改动）
 
 **Plan:** [docs/plans/2026-04-28-open-registration-and-team-creation.md](../docs/plans/2026-04-28-open-registration-and-team-creation.md)
@@ -25,6 +74,11 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 ### 关于唯一未通过的测试
 
 `NamespaceBatchMemberControllerTest.batchAddMembers_emptyArray_returnsError` 期望 500 实际 400 —— **预存在 regression**，与本次改动无关。已用 `git stash` 在 baseline 上验证：同一测试在 baseline 上甚至更糟（`Failed to load ApplicationContext`），是 upstream 同步 `084d4b5b` 引入的 batch-import 端点的副作用。本次按 lessons.md 2026-04-27 "baseline 已坏不在范围内时分流"原则处理：(a) 我的代码改动正常做、(b) 不在那个坏掉的 controller test 里加新断言、(c) 在此处高优先级标注。
+
+> **修正 (2026-04-28 P0 follow-ups session)**：上面的诊断**两条都是误判**。
+> 1) 测试断言期望 500 是**断言写错了**——`@NotEmpty` 在 record-typed `@RequestBody` 上抛 `MethodArgumentNotValidException` → 400 是 Spring Boot 标准行为，400 才是对的。注释里"Spring Boot 3.2+ raises HandlerMethodValidationException (500)"是写测试的人推断错了框架。
+> 2) baseline 上 `Failed to load ApplicationContext` 的现象不是 upstream 端点副作用，是 `~/.m2` 里的 `skillhub-domain` jar 是旧版（缺 `domain.review.SourceType`），`mvn -DskipTests install` 同步后整套测试 6/6 通过。
+> 已在 commit `2266fd4e` 把断言改成 400，加注释解释为何 400 而非 500。教训沉淀到 `memo/lessons.md` "测试失败先读断言再定性 regression" 一条。
 
 ### 不变量验证（方案 §4.2 列的 4 条）
 
