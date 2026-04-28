@@ -504,7 +504,11 @@
     "commentPlaceholder": "Review comment (optional)",
     "approve": "Approve",
     "reject": "Reject",
-    "empty": "No promotion requests"
+    "empty": "No promotion requests",
+    "sourceType": {
+      "skill": "Skill",
+      "agent": "Agent"
+    }
   },
   "adminUsers": {
     "title": "User Management",

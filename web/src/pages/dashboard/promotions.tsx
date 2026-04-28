@@ -1,12 +1,43 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApprovePromotion, usePromotionList, useRejectPromotion } from '@/features/promotion/use-promotion-list'
+import type { PromotionTask } from '@/api/types'
 import { formatLocalDateTime } from '@/shared/lib/date-time'
 import { Button } from '@/shared/ui/button'
 import { Card } from '@/shared/ui/card'
 import { Input } from '@/shared/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 import { DashboardPageHeader } from '@/shared/components/dashboard-page-header'
+
+/**
+ * Small chip rendered before each promotion row's title to differentiate
+ * skill-source vs agent-source promotions in the unified inbox. Uses inline
+ * Tailwind classes (Skills-blue / Agents-purple); design-token extraction is
+ * a follow-up.
+ */
+function SourceTypeBadge({ type }: { type: PromotionTask['sourceType'] }) {
+  const { t } = useTranslation()
+  const label = type === 'AGENT' ? t('promotions.sourceType.agent') : t('promotions.sourceType.skill')
+  const cls = type === 'AGENT'
+    ? 'bg-purple-100 text-purple-800'
+    : 'bg-blue-100 text-blue-800'
+  return (
+    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${cls}`}>
+      {label}
+    </span>
+  )
+}
+
+/**
+ * Returns the human-readable source slug + version for a row, branching by
+ * sourceType so the UI works for both kinds of promotion.
+ */
+function describeSource(item: PromotionTask): { slug: string; version: string } {
+  if (item.sourceType === 'AGENT') {
+    return { slug: item.sourceAgentSlug ?? '?', version: item.sourceAgentVersion ?? '?' }
+  }
+  return { slug: item.sourceSkillSlug ?? '?', version: item.sourceVersion ?? '?' }
+}
 
 /**
  * Renders one promotion queue lane. Pending items expose moderation actions,
@@ -29,13 +60,18 @@ function PromotionSection({ status }: { status: 'PENDING' | 'APPROVED' | 'REJECT
 
   return (
     <div className="space-y-4">
-      {items.map((item) => (
+      {items.map((item) => {
+        const source = describeSource(item)
+        return (
         <Card key={item.id} className="p-5 space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="font-semibold font-heading">{item.sourceNamespace}/{item.sourceSkillSlug}</div>
+              <div className="flex items-center gap-2 font-semibold font-heading">
+                <SourceTypeBadge type={item.sourceType} />
+                <span>{item.sourceNamespace}/{source.slug}</span>
+              </div>
               <div className="text-sm text-muted-foreground">
-                {item.sourceVersion} {'->'} @{item.targetNamespace}
+                {source.version} {'->'} @{item.targetNamespace}
               </div>
             </div>
             <div className="text-sm text-muted-foreground">{formatLocalDateTime(item.submittedAt, i18n.language)}</div>
@@ -67,7 +103,8 @@ function PromotionSection({ status }: { status: 'PENDING' | 'APPROVED' | 'REJECT
             <p className="text-sm text-muted-foreground">{item.reviewComment}</p>
           ) : null}
         </Card>
-      ))}
+        )
+      })}
     </div>
   )
 }

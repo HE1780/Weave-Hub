@@ -504,7 +504,11 @@
     "commentPlaceholder": "审核意见（可选）",
     "approve": "通过",
     "reject": "拒绝",
-    "empty": "暂无提升申请"
+    "empty": "暂无提升申请",
+    "sourceType": {
+      "skill": "技能",
+      "agent": "智能体"
+    }
   },
   "adminUsers": {
     "title": "用户管理",
