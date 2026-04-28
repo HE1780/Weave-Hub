@@ -4,6 +4,51 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-28 — A9 Agent Promotion 落地（19 任务 plan 全部完成）
+
+**Spec:** [docs/superpowers/specs/2026-04-28-agent-promotion-design.md](../docs/superpowers/specs/2026-04-28-agent-promotion-design.md)
+**Plan:** [docs/superpowers/plans/2026-04-28-agent-promotion.md](../docs/superpowers/plans/2026-04-28-agent-promotion.md)
+**ADR:** [docs/adr/0004-agent-promotion.md](../docs/adr/0004-agent-promotion.md)
+
+### What shipped
+
+后端：从 `b3cba0c5`（SourceType enum）到 `ddb82067`（promotions.tsx badge），约 16 个 commits 横跨 backend + web。Discriminator-column schema (V49) + strategy-pattern materializer。
+
+| 层 | 关键改动 |
+|---|---|
+| DB | V49 加 `source_type/source_agent_*/target_agent_id` + CHECK 约束 + 两个 partial unique index 拆分 |
+| Domain | `SourceType` enum、`PromotionMaterializer` 接口、`SkillPromotionMaterializer`（提取）+ `AgentPromotionMaterializer`（新）、`PromotionRequest` 新加工厂 + helper、`PromotionService.submitAgentPromotion` + `approvePromotion` 改 dispatch、`ReviewPermissionChecker.canSubmitPromotion(Agent, ...)` 重载 |
+| Repository | `findBySourceAgentIdAndStatus` + `findByStatusAndSourceType`；`AgentVersionStatsRepository.save()` 在 domain port 上暴露（JPA impl 已经有） |
+| API | DTO 扩字段（向后兼容）；Controller submit 端点按 `dto.sourceType()` 分支；list 端点新增可选 `sourceType` query；mapper 在 `JpaGovernanceQueryRepository` 按 sourceType 双向 dereference |
+| Web | `promotionApi.submitAgent` + types 扩展、`useSubmitAgentPromotion` hook、`PromoteAgentButton` 组件 + i18n、`agent-detail.tsx` 挂载、`promotions.tsx` SourceTypeBadge + 分支字段 |
+
+最终：**backend 554/554**（new domain tests +13），**web 684/684**（+2 module-shape tests）。
+
+### Spec/Plan 偏离与教训（已沉淀到 `memo/lessons.md` + ADR 0004）
+
+1. **Task 2 SKIPPED** — `AgentPublishedEvent` 已存在且被 6 处生产代码用，初次 sub-agent 误覆盖了文件，编译挂掉 3 处 caller。Reverted (`git revert 2efd73c8`)。Lesson：`mvn -q compile` 因为增量编译会用 stale class 文件不可信，验证破坏性改动必须 `mvn clean compile`。
+2. **Task 8 SKIPPED** — 调研步骤改成把事实直接写进 plan，不需要单独 task。
+3. **LabelDefinition 没有 namespace 概念** — spec 原说"按 namespace scope 过滤 label"，发现这是误解，改成全量 copy。
+4. **`AgentLabel` 构造器第 2 参数是 `labelId` 不是 `labelDefinitionId`** — spec 拼错了字段名。
+5. **`PromotionSubmittedEvent` 没有重命名** — plan 想改字段名但有 2 处 caller，决定 agent ids 复用 `skillId/versionId` 字段位置（listener 只读 promotionId）。
+6. **`findByTargetNamespaceIdAndStatusAndSourceType` 改为 `findByStatusAndSourceType`** — 现有 list 端点不按 namespace 过滤。
+
+整个 session 在执行中触发了**两次** "stop and re-plan" — 第一次在 Task 2，第二次在 Task 11 之前的批量 audit。审计后修补再继续是节省时间的正确决策。
+
+### Known follow-ups
+
+1. **PromotionController 的 agent 路径单元测试** — 控制器的 dispatch 分支没有专门的 unit test（依赖现有 PromotionPortalControllerTest 的 skill 路径覆盖 + 手工 e2e）。可补但不阻塞。
+2. **Public `/namespaces/global` 端点** — 现在前端 `PromoteAgentButton` 通过 `useMyNamespaces` 找 GLOBAL ns id；admin 不是 global member 时按钮就不显示。dashboard 入口能补救，但加个公开端点更优雅。
+3. **LandingHotSection 接 promoted agents** — spec §15 显式延后；A9 落地后可做。
+4. **Agent search index 同步** — 同样 spec §3 显式延后（P3-3）。
+5. **Source-type 设计 token** — promotions.tsx badge 用 inline Tailwind colors，`landing` 重设计已经标了 Skills-blue / Agents-purple 应该 tokenize。
+
+### How to resume
+
+backlog 上 A9 这条可以划掉了。下一波建议方向是上面 #1 + #2（短小改动），或者去做更高优先级的 fork roadmap 项。
+
+---
+
 ## 2026-04-27 — Agent–Skill 能力对齐集群（A4/A7/A8/A10 完成，A9 延后）
 
 **Plan:** [docs/plans/2026-04-27-agent-skill-parity-cluster.md](../docs/plans/2026-04-27-agent-skill-parity-cluster.md)
