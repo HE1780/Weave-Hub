@@ -6,6 +6,7 @@ import com.iflytek.skillhub.domain.agent.AgentStatus;
 import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
+import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
@@ -37,6 +38,7 @@ class AgentLifecycleServiceTest {
     @Mock private AgentReviewTaskRepository agentReviewTaskRepository;
     @Mock private ObjectStorageService objectStorageService;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private AuditLogService auditLogService;
 
     @InjectMocks private AgentLifecycleService service;
 

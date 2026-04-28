@@ -387,7 +387,36 @@ export interface SkillReport {
   handledAt?: string
 }
 
+/**
+ * Agent-side admin report summary mirroring {@link SkillReport}. The schema
+ * is parallel — agentId / agentSlug / agentDisplayName replace skillId /
+ * skillSlug / skillDisplayName — so reports.tsx can render either side with
+ * the same card layout.
+ */
+export interface AdminAgentReportSummary {
+  id: number
+  agentId: number
+  namespace?: string
+  agentSlug?: string
+  agentDisplayName?: string
+  reporterId: string
+  reason: string
+  details?: string
+  status: 'PENDING' | 'RESOLVED' | 'DISMISSED' | string
+  handledBy?: string
+  handleComment?: string
+  createdAt: string
+  handledAt?: string
+}
+
 export type ReportDisposition = 'RESOLVE_ONLY' | 'RESOLVE_AND_HIDE' | 'RESOLVE_AND_ARCHIVE'
+
+/**
+ * Agent moderation has no soft-hide path yet, so the admin can either
+ * resolve in place or resolve-and-archive. Mirrors
+ * {@code AgentReportDisposition} on the backend.
+ */
+export type AgentReportDisposition = 'RESOLVE_ONLY' | 'RESOLVE_AND_ARCHIVE'
 
 export interface GovernanceSummary {
   pendingReviews: number

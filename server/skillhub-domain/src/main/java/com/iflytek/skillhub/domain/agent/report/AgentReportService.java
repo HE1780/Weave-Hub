@@ -3,19 +3,30 @@ package com.iflytek.skillhub.domain.agent.report;
 import com.iflytek.skillhub.domain.agent.Agent;
 import com.iflytek.skillhub.domain.agent.AgentRepository;
 import com.iflytek.skillhub.domain.agent.AgentStatus;
+import com.iflytek.skillhub.domain.agent.report.event.AgentReportDismissedEvent;
+import com.iflytek.skillhub.domain.agent.report.event.AgentReportResolvedEvent;
+import com.iflytek.skillhub.domain.agent.service.AgentLifecycleService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Instant;
+
 /**
- * Submit-side service for agent abuse reports. Mirrors the submit path of
- * {@link com.iflytek.skillhub.domain.report.SkillReportService}; the
- * resolve/dismiss admin flow is intentionally deferred until the Agent
- * moderation surface lands (fork-backlog A6 v1 scope).
+ * Submit-side and admin-moderation service for agent abuse reports. Mirrors
+ * {@link com.iflytek.skillhub.domain.report.SkillReportService} — submit
+ * validation matches the skill side, and the admin
+ * resolve / dismiss path emits audit log entries plus
+ * {@link AgentReportResolvedEvent} / {@link AgentReportDismissedEvent} for
+ * downstream listeners (governance counters, notifications).
  *
- * <p>Validation is identical to the Skill side:
+ * <p>Submit validation:
  * <ul>
  *   <li>Reason is required and trimmed.</li>
  *   <li>Target agent must exist and be {@code ACTIVE} (archived agents
@@ -27,7 +38,9 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Audit log entry is recorded under {@code REPORT_AGENT} for the
  * {@code AGENT} target type, matching the Skill side's
- * {@code REPORT_SKILL} / {@code SKILL} pair.
+ * {@code REPORT_SKILL} / {@code SKILL} pair. Admin actions record under
+ * {@code RESOLVE_AGENT_REPORT} / {@code DISMISS_AGENT_REPORT} for the
+ * {@code AGENT_REPORT} target type.
  */
 @Service
 public class AgentReportService {
@@ -35,13 +48,22 @@ public class AgentReportService {
     private final AgentRepository agentRepository;
     private final AgentReportRepository reportRepository;
     private final AuditLogService auditLogService;
+    private final AgentLifecycleService agentLifecycleService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     public AgentReportService(AgentRepository agentRepository,
                               AgentReportRepository reportRepository,
-                              AuditLogService auditLogService) {
+                              AuditLogService auditLogService,
+                              AgentLifecycleService agentLifecycleService,
+                              ApplicationEventPublisher eventPublisher,
+                              Clock clock) {
         this.agentRepository = agentRepository;
         this.reportRepository = reportRepository;
         this.auditLogService = auditLogService;
+        this.agentLifecycleService = agentLifecycleService;
+        this.eventPublisher = eventPublisher;
+        this.clock = clock;
     }
 
     @Transactional
@@ -79,11 +101,81 @@ public class AgentReportService {
         return saved;
     }
 
+    /**
+     * Returns a page of reports filtered by status, used by the admin queue.
+     */
+    public Page<AgentReport> listByStatus(AgentReportStatus status, Pageable pageable) {
+        return reportRepository.findByStatus(status, pageable);
+    }
+
+    @Transactional
+    public AgentReport resolveReport(Long reportId,
+                                     String actorUserId,
+                                     String comment,
+                                     String clientIp,
+                                     String userAgent) {
+        return resolveReport(reportId, actorUserId, AgentReportDisposition.RESOLVE_ONLY, comment, clientIp, userAgent);
+    }
+
+    @Transactional
+    public AgentReport resolveReport(Long reportId,
+                                     String actorUserId,
+                                     AgentReportDisposition disposition,
+                                     String comment,
+                                     String clientIp,
+                                     String userAgent) {
+        AgentReport report = requirePendingReport(reportId);
+        if (disposition == AgentReportDisposition.RESOLVE_AND_ARCHIVE) {
+            agentLifecycleService.archiveAsAdmin(report.getAgentId(), actorUserId, clientIp, userAgent, comment);
+        }
+        report.setStatus(AgentReportStatus.RESOLVED);
+        report.setHandledBy(actorUserId);
+        report.setHandleComment(normalize(comment));
+        report.setHandledAt(currentTime());
+        AgentReport saved = reportRepository.save(report);
+        auditLogService.record(actorUserId, "RESOLVE_AGENT_REPORT", "AGENT_REPORT", reportId, null, clientIp, userAgent, null);
+        eventPublisher.publishEvent(new AgentReportResolvedEvent(
+                saved.getId(), saved.getAgentId(), actorUserId, saved.getReporterId(),
+                disposition.name().toLowerCase()));
+        return saved;
+    }
+
+    @Transactional
+    public AgentReport dismissReport(Long reportId,
+                                     String actorUserId,
+                                     String comment,
+                                     String clientIp,
+                                     String userAgent) {
+        AgentReport report = requirePendingReport(reportId);
+        report.setStatus(AgentReportStatus.DISMISSED);
+        report.setHandledBy(actorUserId);
+        report.setHandleComment(normalize(comment));
+        report.setHandledAt(currentTime());
+        AgentReport saved = reportRepository.save(report);
+        auditLogService.record(actorUserId, "DISMISS_AGENT_REPORT", "AGENT_REPORT", reportId, null, clientIp, userAgent, null);
+        eventPublisher.publishEvent(new AgentReportDismissedEvent(
+                saved.getId(), saved.getAgentId(), actorUserId, saved.getReporterId()));
+        return saved;
+    }
+
+    private AgentReport requirePendingReport(Long reportId) {
+        AgentReport report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new DomainNotFoundException("error.agent.report.notFound", reportId));
+        if (report.getStatus() != AgentReportStatus.PENDING) {
+            throw new DomainBadRequestException("error.agent.report.alreadyHandled");
+        }
+        return report;
+    }
+
     private String normalize(String value) {
         if (value == null) {
             return null;
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private Instant currentTime() {
+        return Instant.now(clock);
     }
 }

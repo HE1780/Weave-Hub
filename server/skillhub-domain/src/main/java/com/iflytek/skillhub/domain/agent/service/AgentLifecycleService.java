@@ -8,6 +8,7 @@ import com.iflytek.skillhub.domain.agent.AgentVersionStatus;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTask;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
+import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.event.AgentPublishedEvent;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
@@ -46,19 +47,22 @@ public class AgentLifecycleService {
     private final AgentReviewTaskRepository agentReviewTaskRepository;
     private final ObjectStorageService objectStorageService;
     private final ApplicationEventPublisher eventPublisher;
+    private final AuditLogService auditLogService;
 
     public AgentLifecycleService(AgentRepository agentRepository,
                                  AgentService agentService,
                                  AgentVersionRepository agentVersionRepository,
                                  AgentReviewTaskRepository agentReviewTaskRepository,
                                  ObjectStorageService objectStorageService,
-                                 ApplicationEventPublisher eventPublisher) {
+                                 ApplicationEventPublisher eventPublisher,
+                                 AuditLogService auditLogService) {
         this.agentRepository = agentRepository;
         this.agentService = agentService;
         this.agentVersionRepository = agentVersionRepository;
         this.agentReviewTaskRepository = agentReviewTaskRepository;
         this.objectStorageService = objectStorageService;
         this.eventPublisher = eventPublisher;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional
@@ -77,6 +81,32 @@ public class AgentLifecycleService {
         Agent agent = loadAndAuthorize(agentId, actorUserId, userNamespaceRoles);
         agent.unarchive();
         return agentRepository.save(agent);
+    }
+
+    /**
+     * Admin-only archive that bypasses the namespace ADMIN/OWNER permission gate.
+     * Mirrors {@code SkillGovernanceService#archiveSkillAsAdmin} — used by the
+     * report-resolution flow when a moderator picks
+     * {@code RESOLVE_AND_ARCHIVE}. Records an {@code ARCHIVE_AGENT} audit log
+     * entry with the optional reason supplied by the moderator.
+     *
+     * <p>Authorization is enforced upstream by the controller's
+     * {@code @PreAuthorize}; this method assumes the caller is already a
+     * platform admin.
+     */
+    @Transactional
+    public Agent archiveAsAdmin(Long agentId,
+                                String actorUserId,
+                                String clientIp,
+                                String userAgent,
+                                String reason) {
+        Agent agent = agentRepository.findById(agentId)
+                .orElseThrow(() -> new DomainNotFoundException("error.agent.notFound", agentId));
+        agent.archive();
+        Agent saved = agentRepository.save(agent);
+        auditLogService.record(actorUserId, "ARCHIVE_AGENT", "AGENT", agent.getId(), null, clientIp, userAgent,
+                reason == null || reason.isBlank() ? null : "{\"reason\":\"" + reason.replace("\"", "\\\"") + "\"}");
+        return saved;
     }
 
     /**

@@ -937,12 +937,15 @@
     }
   },
   "reports": {
-    "title": "Skill Reports",
-    "subtitle": "Handle user-submitted skill reports",
+    "title": "Reports",
+    "subtitle": "Handle user-submitted skill and agent reports",
+    "tabSkillReports": "Skill reports",
+    "tabAgentReports": "Agent reports",
     "tabPending": "Pending",
     "tabResolved": "Resolved",
     "tabDismissed": "Dismissed",
     "empty": "No reports",
+    "openAgent": "Open agent",
     "reporter": "Reporter",
     "handledBy": "Handled by",
     "resolve": "Resolve",

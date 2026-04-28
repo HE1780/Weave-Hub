@@ -19,12 +19,14 @@ import type {
   AuditLogItem,
   SkillSummary,
   SkillReport,
+  AdminAgentReportSummary,
   GovernanceSummary,
   GovernanceInboxItem,
   GovernanceActivityItem,
   GovernanceNotification,
   PagedResponse,
   ReportDisposition,
+  AgentReportDisposition,
   AuthMethod,
   OAuthProvider,
   User,
@@ -989,6 +991,40 @@ export const reportApi = {
 
   async dismissSkillReport(id: number, comment?: string): Promise<void> {
     await fetchJson<void>(`/api/v1/admin/skill-reports/${id}/dismiss`, {
+      method: 'POST',
+      headers: getCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ comment }),
+    })
+  },
+
+  /**
+   * Lists pending / resolved / dismissed agent reports for the admin queue.
+   * Mirrors {@link listSkillReports} but against the agent moderation surface.
+   */
+  async listAdminAgentReports(params: { status?: string; page?: number; size?: number }) {
+    const searchParams = new URLSearchParams()
+    searchParams.set('status', params.status ?? 'PENDING')
+    searchParams.set('page', String(params.page ?? 0))
+    searchParams.set('size', String(params.size ?? 20))
+    return fetchJson<{ items: AdminAgentReportSummary[]; total: number; page: number; size: number }>(
+      `/api/v1/admin/agent-reports?${searchParams.toString()}`,
+    )
+  },
+
+  async resolveAgentReport(id: number, comment?: string, disposition: AgentReportDisposition = 'RESOLVE_ONLY'): Promise<void> {
+    await fetchJson<void>(`/api/v1/admin/agent-reports/${id}/resolve`, {
+      method: 'POST',
+      headers: getCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ comment, disposition }),
+    })
+  },
+
+  async dismissAgentReport(id: number, comment?: string): Promise<void> {
+    await fetchJson<void>(`/api/v1/admin/agent-reports/${id}/dismiss`, {
       method: 'POST',
       headers: getCsrfHeaders({
         'Content-Type': 'application/json',

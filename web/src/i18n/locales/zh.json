@@ -937,12 +937,15 @@
     }
   },
   "reports": {
-    "title": "技能举报",
-    "subtitle": "处理用户提交的技能举报",
+    "title": "举报管理",
+    "subtitle": "处理用户提交的技能与 Agent 举报",
+    "tabSkillReports": "技能举报",
+    "tabAgentReports": "Agent 举报",
     "tabPending": "待处理",
     "tabResolved": "已处理",
     "tabDismissed": "已驳回",
     "empty": "暂无举报记录",
+    "openAgent": "打开 Agent",
     "reporter": "举报人",
     "handledBy": "处理人",
     "resolve": "标记处理",
