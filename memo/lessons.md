@@ -129,3 +129,36 @@
 - **`mvn -q compile` 不可信** — 增量编译会用 stale `.class`，本地修改可能完全没编译。验证 plan 的修改是否破坏 build，必须用 `mvn clean compile`（或至少 `mvn -o test-compile` 后 `mvn test-compile -Dmaven.compiler.useIncrementalCompilation=false`）。
 - sub-agent 报"BUILD SUCCESS"前应被指示用 clean 编译；implementer-prompt 里加一条 "If you modify or replace an existing file in `server/`, run `mvn -pl <module> clean compile` not `mvn ... -q compile`."
 
+
+
+---
+
+## 2026-04-28 — 测试失败先读断言再定性 regression
+
+**症状**：memo 04-28 把 `NamespaceBatchMemberControllerTest.batchAddMembers_emptyArray_returnsError` 标为 "upstream regression"（baseline 上跑得更糟），下一会话审视时发现：测试**断言期望 500，实际 400**，但 400 才是合理结果——`@NotEmpty` 在 record-typed `@RequestBody` 上抛 `MethodArgumentNotValidException` → 400 是 Spring Boot 标准 bean-validation 行为。注释里还自圆其说写了 "Spring Boot 3.2+ raises HandlerMethodValidationException (500) for record bodies"——这是**写测试的人错误推断**了框架行为。
+
+baseline 上"更糟"的现象（`Failed to load ApplicationContext`）也另有原因：`mvn test -pl skillhub-app` 隔离运行时如果 `~/.m2` 里的 `skillhub-domain` jar 是旧版（没有最近改动的类），就会 NoClassDefFoundError；实际跑 `mvn install` 同步 m2 后测试整套 6/6 通过。
+
+**规则**：
+- 测试报错 "expected X but was Y" 时，**第一步问"X 是对的吗？"**，不是 "为什么 Y 不是 X"。读测试自己的注释、比对生产代码行为，断言写错的概率比框架/生产 regression 更高。
+- "baseline 上跑也不通过"**不等于** "本地改动无关"——可能两边都有同一个 m2 stale 或 incremental compile bug。重新装一遍 m2 (`mvn -DskipTests install`) 再跑隔离测试是廉价的鉴别。
+- 把测试失败定性为 "regression" 之前必须给出**机制级解释**：哪个 PR/commit 引入了什么改动 + 改动如何破坏断言。给不出机制就是猜。
+
+---
+
+## 2026-04-28 — sub-agent audit 报告必须人工交叉校验
+
+**症状**：sub-agent 帮做 A2-A6 后端 audit，报告结构清晰看似可信，但发现：
+- 把 `AgentTag.java` 路径说成 `domain/agent/social/`（实际在 `domain/agent/`）；
+- 把 A2 / A3 frontend 报为 ✅ 但落到具体 hook 路径（`useAgentStar` 在 `social/use-agent-star.ts`）漏报或错位；
+- A6 admin moderation dashboard 完全没对齐到 reports.tsx 的 skill-only 现状；
+- 漏报 A1 (Agent 评论) 全栈已完成；
+- 漏报 PromotionPortalControllerTest 文件已存在（虽然测试覆盖不全）。
+
+如果直接拿 audit 报告写 backlog 校正，会把多处状态写错。
+
+**规则**：
+- sub-agent 给的"路径 + 状态"清单**必须**用 `ls`/`find`/`grep` 抽样核 3-5 个再引用。一次 grep 命中或失误就能识别 sub-agent 的精度上限。
+- 让 sub-agent **引用 commit hash 或文件行号**，而不是泛泛说"已完成"。无引用的判断不要直接采信。
+- 用 sub-agent 做 audit 时，prompt 里就指定 "report file paths I can verify with `ls`" — 给它压力让它必须输出可验证证据，比让它自由叙述准确率高。
+- audit 找到的"前端缺失"还要做一步反向校验：**对齐目标本身有没有这个东西**。Skill 侧 `skill_tag` 也没前端 UI 这件事，sub-agent 可能漏了，结果把"Agent 没 UI"当成 gap，但实际没有缺口。
