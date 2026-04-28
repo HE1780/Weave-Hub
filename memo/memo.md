@@ -4,6 +4,60 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-29 — Agent followups bundle (4 tasks 全部完成)
+
+**Spec:** [docs/superpowers/specs/2026-04-29-agent-followups-bundle-design.md](../docs/superpowers/specs/2026-04-29-agent-followups-bundle-design.md)
+**Plan:** [docs/superpowers/plans/2026-04-29-agent-followups-bundle.md](../docs/superpowers/plans/2026-04-29-agent-followups-bundle.md)
+**Branch:** main 直接推（参考 2026-04-27 P3-2a triple-tap 先例）；session 结束时 ahead origin/main 8 commits
+
+### What shipped
+
+| 项 | Commit | 内容 |
+|---|---|---|
+| Task 1 | `2c17ae30` | Agent promotion targetNamespaceId 缺省时 backend resolve `findBySlug("global")`；前端 `PromoteAgentButton` 删 globalNamespaceId prop + agent-detail.tsx 删 useMyNamespaces 依赖；admin-render 测试 |
+| Task 2 | `0ee3b75a` | AgentSummary 加 ratingAvg/ratingCount；`AgentCard` mirror SkillCard 渲染评分 chip；frontend 702 |
+| Task 3 main | `f7329d09` | AdminAgentReportController 全套 backend (controller/appservice/queryrepo/dto×2/disposition enum/2 events) + AgentReportService.{listByStatus, resolveReport×2, dismissReport} + AgentLifecycleService.archiveAsAdmin（plan 假设的 archive(...,Set<String>) 不存在）；前端 reports.tsx 加外层 Skill/Agent Tabs，Agent panel mirror skill panel 用 useAgentReports 系列 hook |
+| Task 3 fix1 | `4cfd8ba8` | revert i18n title/subtitle drift（spec 显式只新增 3 keys）+ 补 4 个 controller 缺失测试 + 补 listByStatus service test |
+| Task 3 fix2 | `dbacc01f` | 补 reporter notification on resolve/dismiss（mirror skill `governanceNotificationService.notifyUser`）+ 5 个 archiveAsAdmin 直接单元测试 |
+| Task 4 main | `38b42297` | MyAgentAppService + AgentSummaryResponse + MeController endpoint `/me/agent-stars`；前端 stars.tsx 加外层 Skills/Agents Tabs + useMyAgentStarsPage hook + slug→name boundary adapter |
+| Task 4 fix | `edc2035d` | `getAgentStarsPage` adapter 加 `Number(ratingAvg)` coercion（mirror useAgents.toSummary 防 BigDecimal-as-string 回归） |
+
+### 测试结果
+
+- Backend: `./mvnw clean test` 578/578 BUILD SUCCESS（baseline 568 → +10：Task 3 共 +6 service/controller，Task 3 fix2 +5 lifecycle/notification verify，Task 4 +5 service/controller，删除老 baseline 数会有些重复——以最终 578 为准）
+- Frontend: `pnpm vitest run` 706/706（baseline 702 → Task 2 +0 module-shape unchanged → Task 3 +2 reports tab cases → Task 4 +2 net stars cases）
+- TS: `pnpm tsc --noEmit` exit 0
+
+### 计划偏离与教训
+
+1. **Plan 给 archiveAsAdmin 写错签名**——plan §3.6 写 `archive(reportId, actor, Map.of(), Set.of("SUPER_ADMIN"))`，实际 `AgentLifecycleService.archive` 只有 3 个参数且只检 namespace role。Implementer 新加 `archiveAsAdmin` 方法 mirror `SkillGovernanceService.archiveSkillAsAdmin`，构造器加 `AuditLogService`。**Plan 错了，实现是对的**。
+2. **Task 3 i18n drift**——initial implementer 把 `reports.title` 从 "Skill Reports" 改成 "Reports"，被 spec reviewer 抓出（spec 明确说只加 3 个 key）。Fix commit `4cfd8ba8` revert。Lesson 已被吸收到 Task 4：Task 4 implementer 主动保留 `stars.title/subtitle/empty` 不动。
+3. **Task 3 reporter notification 漏掉**——code reviewer (I-2) 抓出 AgentReportService 没 mirror skill side 的 `governanceNotificationService.notifyUser`。Fix commit `dbacc01f` 补上。属于 spec §3 line 97 已经预言"if Agent reporter notifications are wired"——确实是 wired 的（`GovernanceNotificationService` 是 namespace-agnostic）。
+4. **AgentCard 没 onClick prop**——plan §4.14b 草图用 `<AgentCard agent onClick={...}/>`，实际 AgentCard 内部包了 TanStack `<Link>`。Implementer 直接 drop onClick 用法。改进而非偏离。
+5. **MeControllerTest 路径**——plan 写 `controller/portal/MeControllerTest.java`，实际在 `controller/MeControllerTest.java`（少了一层）。Implementer 修改实际文件。
+6. **Sub-agent 报告偶有数字误差**：Task 4 implementer 报 backend 574→578 (+4)，code reviewer 数到 +5 个新 @Test（3 service + 2 controller）。代码没问题，是报告 fence-post 错。再次印证 lessons.md 2026-04-28 sub-agent audit 必须人工 cross-check（这次发现的偏差都是无害的）。
+
+### Known follow-ups
+
+1. **Task 3 frontend "agent panel resolve fires mutation" 测试**——spec reviewer 漏报但 code reviewer 没强制，留作 P2 增量。
+2. **`stars.subtitle` / `stars.empty` 文案**——目前还停留在"View your starred skills"（en）/ "查看你标记过的技能"（zh），现在页面跨 Skills+Agents 两个 panel 后描述偏窄。Code reviewer 标 minor，仅文案微调。
+3. **`AgentReport` 软隐藏路径**——`AgentReportDisposition` v1 不带 RESOLVE_AND_HIDE，因为 `Agent` aggregate 没 hidden 字段。等 Agent 加 hidden flag 后再补 enum + button。
+4. **`AgentReportResolvedEvent` / `AgentReportDismissedEvent` 没消费者**——目前 0 listener；spec 没要求 listener，留待治理面板需要 counters 时再补。
+5. **`AgentSummary.name` required vs id/slug optional 不对称**——可考虑后续把前端类型 `name` 整体改名 `slug`（option (b) 取代当前 boundary adapter），但 blast radius 较大，留作 housekeeping refactor。
+
+### How to resume
+
+bundle 已经全部落地。下一会话候选方向：
+- fork-backlog 上其他未做的 P2 项（agent search index 同步、Bean validation 实际生效等）
+- 上面 follow-up #2 文案 + #5 类型清理（小修）
+- 等 Agent hidden flag 落地后回头补 `RESOLVE_AND_HIDE`
+
+### 推送状态
+
+Step 5.5 push origin/main 等用户明确确认才执行——本 session 结束时 main 仍在 origin/main + 8 commits，未推。
+
+---
+
 ## 2026-04-28 — P0 follow-ups + fork-backlog 状态校正
 
 **Spec:** [docs/superpowers/specs/2026-04-28-p0-followups-and-backlog-sync-design.md](../docs/superpowers/specs/2026-04-28-p0-followups-and-backlog-sync-design.md)
