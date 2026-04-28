@@ -398,9 +398,11 @@ Note the existing method names. The new methods to add are:
 
 ```java
 Optional<PromotionRequest> findBySourceAgentIdAndStatus(Long agentId, ReviewTaskStatus status);
-Page<PromotionRequest> findByTargetNamespaceIdAndStatusAndSourceType(
-    Long namespaceId, ReviewTaskStatus status, SourceType sourceType, Pageable pageable);
+Page<PromotionRequest> findByStatusAndSourceType(
+    ReviewTaskStatus status, SourceType sourceType, Pageable pageable);
 ```
+
+**Repository-shape note (verified 2026-04-28)**: The existing list endpoints use `findByStatus(status, pageable)` — there is NO namespace dimension. The new method mirrors that shape, just adding a `sourceType` filter. The plan originally proposed `findByTargetNamespaceIdAndStatusAndSourceType` but the current `PromotionService` and `PromotionPortalAppService` don't filter by namespace. Tasks 13 (controller) is updated below to match.
 
 - [ ] **Step 3: Add to the domain interface**
 
@@ -423,9 +425,9 @@ public Optional<PromotionRequest> findBySourceAgentIdAndStatus(Long agentId, Rev
 }
 
 @Override
-public Page<PromotionRequest> findByTargetNamespaceIdAndStatusAndSourceType(
-        Long namespaceId, ReviewTaskStatus status, SourceType sourceType, Pageable pageable) {
-    // Spring-Data-derived if applicable; else manual JPQL with COUNT query for total.
+public Page<PromotionRequest> findByStatusAndSourceType(
+        ReviewTaskStatus status, SourceType sourceType, Pageable pageable) {
+    // Spring-Data-derived from method name; no manual JPQL needed for the JpaRepository case.
 }
 ```
 
@@ -445,13 +447,13 @@ void findBySourceAgentIdAndStatusReturnsMatchingPending() {
 }
 
 @Test
-void findByTargetNamespaceIdAndStatusAndSourceTypeFiltersByType() {
+void findByStatusAndSourceTypeFiltersByType() {
     promotionRequestRepository.save(PromotionRequest.forSkill(1L, 2L, 99L, "u"));
     promotionRequestRepository.save(PromotionRequest.forAgent(3L, 4L, 99L, "u"));
 
     Page<PromotionRequest> agents = promotionRequestRepository
-            .findByTargetNamespaceIdAndStatusAndSourceType(
-                    99L, ReviewTaskStatus.PENDING, SourceType.AGENT, Pageable.unpaged());
+            .findByStatusAndSourceType(
+                    ReviewTaskStatus.PENDING, SourceType.AGENT, Pageable.unpaged());
     assertEquals(1, agents.getTotalElements());
     assertEquals(SourceType.AGENT, agents.getContent().get(0).getSourceType());
 }
@@ -1588,8 +1590,7 @@ public Page<PromotionResponseDto> list(
         Authentication auth) {
     if (sourceType != null) {
         Page<PromotionRequest> page = promotionRequestRepository
-                .findByTargetNamespaceIdAndStatusAndSourceType(
-                        currentNamespaceId(auth),
+                .findByStatusAndSourceType(
                         status != null ? status : ReviewTaskStatus.PENDING,
                         sourceType, pageable);
         return page.map(promotionMapper::toResponseDto);
@@ -1598,7 +1599,7 @@ public Page<PromotionResponseDto> list(
 }
 ```
 
-(Adjust `currentNamespaceId` to whatever the existing controller does for namespace scoping.)
+(The existing list endpoints in `PromotionPortalAppService` use `findByStatus` with no namespace dimension; the new method mirrors that shape with the added `sourceType` filter.)
 
 - [ ] **Step 3: Add controller tests**
 
@@ -1639,8 +1640,8 @@ void submitWithoutSourceTypeDefaultsToSkill() throws Exception {
 void listWithSourceTypeAgentFilter() throws Exception {
     mockMvc.perform(get("/api/v1/promotions?sourceType=AGENT").with(authenticated("user-1")))
             .andExpect(status().isOk());
-    verify(promotionRequestRepository).findByTargetNamespaceIdAndStatusAndSourceType(
-            anyLong(), any(ReviewTaskStatus.class), eq(SourceType.AGENT), any(Pageable.class));
+    verify(promotionRequestRepository).findByStatusAndSourceType(
+            any(ReviewTaskStatus.class), eq(SourceType.AGENT), any(Pageable.class));
 }
 ```
 
