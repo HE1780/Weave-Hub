@@ -883,13 +883,20 @@ export const promotionApi = {
     })
   },
 
-  async submitAgent(request: { sourceAgentId: number; sourceAgentVersionId: number; targetNamespaceId: number }): Promise<void> {
+  async submitAgent(request: { sourceAgentId: number; sourceAgentVersionId: number; targetNamespaceId?: number }): Promise<void> {
+    // Drop targetNamespaceId from the body when undefined. The backend treats
+    // a missing value as "default to GLOBAL", which lets admins promote
+    // without first joining the GLOBAL namespace.
+    const { targetNamespaceId, ...rest } = request
+    const payload = targetNamespaceId !== undefined
+      ? { ...rest, targetNamespaceId, sourceType: 'AGENT' }
+      : { ...rest, sourceType: 'AGENT' }
     await fetchJson<void>(`${WEB_API_PREFIX}/promotions`, {
       method: 'POST',
       headers: getCsrfHeaders({
         'Content-Type': 'application/json',
       }),
-      body: JSON.stringify({ ...request, sourceType: 'AGENT' }),
+      body: JSON.stringify(payload),
     })
   },
 

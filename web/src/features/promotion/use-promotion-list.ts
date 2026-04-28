@@ -59,7 +59,11 @@ export function useRejectPromotion() {
 export interface SubmitAgentPromotionArgs {
   sourceAgentId: number
   sourceAgentVersionId: number
-  targetNamespaceId: number
+  /**
+   * Optional. When omitted, the backend resolves the GLOBAL namespace
+   * server-side so admins can promote without first joining GLOBAL.
+   */
+  targetNamespaceId?: number
 }
 
 /**

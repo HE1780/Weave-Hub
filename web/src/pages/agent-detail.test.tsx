@@ -83,6 +83,14 @@ i18n.use(initReactI18next).init({
             unarchiveConfirmTitle: 'Unarchive?',
             unarchiveConfirmDescription: 'Restore {{agent}}?',
           },
+          promote: {
+            sectionTitle: 'Promote to global',
+            sectionDescription: 'Submit this version for promotion.',
+            label: 'Promote to global',
+            submitting: 'Submitting…',
+            confirmTitle: 'Promote agent',
+            confirmBody: 'This will submit the current published version.',
+          },
         },
         skillDetail: {
           install: 'Install',
@@ -262,6 +270,39 @@ describe('AgentDetailPage', () => {
 
     await waitFor(() => expect(screen.getByText('Manage agent')).toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Archive' })).toBeInTheDocument()
+  })
+
+  it('renders PromoteAgentButton for a SKILL_ADMIN viewing a non-global agent with a published version, without any GLOBAL namespace membership plumbing', async () => {
+    // Spec: Task 1 of agent-followups bundle — promotion no longer depends on the
+    // viewer being a member of GLOBAL. The backend resolves the GLOBAL namespace
+    // server-side; the UI gate is just (hasRole SKILL_ADMIN/SUPER_ADMIN) + a
+    // published version that is not already in global. This test would fail if
+    // the button silently regressed to requiring `globalNamespaceId` plumbing.
+    useAgentDetailMock.mockReturnValue({
+      data: {
+        name: 'planner',
+        description: 'plans things',
+        agentId: 42,
+        slug: 'planner',
+        displayName: 'Planner',
+        ownerId: 'u-1',
+        status: 'ACTIVE',
+        namespace: 'acme',
+        latestPublishedVersionId: 99,
+      },
+      isLoading: false,
+      isError: false,
+    })
+    useAuthMock.mockReturnValue({
+      user: { userId: 'admin-1' },
+      hasRole: (role: string) => role === 'SKILL_ADMIN',
+    })
+
+    render(<AgentDetailPage namespace="acme" slug="planner" />, { wrapper })
+
+    expect(
+      await screen.findByRole('button', { name: 'Promote to global' }),
+    ).toBeInTheDocument()
   })
 
   it('formats version timestamp with locale instead of rendering raw server time', async () => {

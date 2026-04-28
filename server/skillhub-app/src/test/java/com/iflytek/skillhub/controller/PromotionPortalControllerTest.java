@@ -166,6 +166,37 @@ class PromotionPortalControllerTest {
     }
 
     @Test
+    void submitAgentPromotion_omitsTargetNamespaceId_resolvesToGlobal() throws Exception {
+        PromotionRequest request = createAgentPromotionRequest(2L, "user-1");
+        stubNamespaceRoles("user-1", List.of(new NamespaceMember(5L, "user-1", NamespaceRole.ADMIN)));
+        given(rbacService.getUserRoleCodes("user-1")).willReturn(Set.of());
+        com.iflytek.skillhub.domain.namespace.Namespace globalNs =
+                org.mockito.Mockito.mock(com.iflytek.skillhub.domain.namespace.Namespace.class);
+        given(globalNs.getId()).willReturn(99L);
+        given(namespaceRepository.findBySlug("global")).willReturn(Optional.of(globalNs));
+        given(promotionService.submitAgentPromotion(101L, 202L, 99L, "user-1",
+                Map.of(5L, NamespaceRole.ADMIN), Set.of()))
+                .willReturn(request);
+        stubAgentPromotionResponse(request);
+
+        mockMvc.perform(post("/api/v1/promotions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"sourceType\":\"AGENT\",\"sourceAgentId\":101,\"sourceAgentVersionId\":202}")
+                        .with(csrf())
+                        .with(auth("user-1")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.id").value(2L));
+        verify(promotionService).submitAgentPromotion(
+                org.mockito.ArgumentMatchers.eq(101L),
+                org.mockito.ArgumentMatchers.eq(202L),
+                org.mockito.ArgumentMatchers.eq(99L),
+                org.mockito.ArgumentMatchers.eq("user-1"),
+                org.mockito.ArgumentMatchers.anyMap(),
+                org.mockito.ArgumentMatchers.anySet());
+    }
+
+    @Test
     void submitPromotion_agentBranch_missingSourceAgentVersionId_returns400() throws Exception {
         stubNamespaceRoles("user-1", List.of());
         given(rbacService.getUserRoleCodes("user-1")).willReturn(Set.of());

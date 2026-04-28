@@ -1,8 +1,10 @@
 package com.iflytek.skillhub.controller.portal;
 
 import com.iflytek.skillhub.controller.BaseApiController;
+import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.review.SourceType;
+import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.PageResponse;
@@ -31,11 +33,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class PromotionController extends BaseApiController {
 
     private final GovernanceWorkflowAppService governanceWorkflowAppService;
+    private final NamespaceRepository namespaceRepository;
 
     public PromotionController(GovernanceWorkflowAppService governanceWorkflowAppService,
+                               NamespaceRepository namespaceRepository,
                                ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.governanceWorkflowAppService = governanceWorkflowAppService;
+        this.namespaceRepository = namespaceRepository;
     }
 
     @PostMapping
@@ -50,12 +55,20 @@ public class PromotionController extends BaseApiController {
                 throw new IllegalArgumentException(
                         "AGENT promotion requires sourceAgentId and sourceAgentVersionId");
             }
+            // AGENT defaults to GLOBAL when caller omits targetNamespaceId; SKILL today
+            // still requires explicit targetNamespaceId -- alignment is a separate follow-up.
+            Long targetNamespaceId = request.targetNamespaceId();
+            if (targetNamespaceId == null) {
+                targetNamespaceId = namespaceRepository.findBySlug("global")
+                        .map(ns -> ns.getId())
+                        .orElseThrow(() -> new DomainBadRequestException("error.namespace.slug.notFound", "global"));
+            }
             return ok(
                     "response.success.created",
                     governanceWorkflowAppService.submitAgentPromotion(
                             request.sourceAgentId(),
                             request.sourceAgentVersionId(),
-                            request.targetNamespaceId(),
+                            targetNamespaceId,
                             userId,
                             userNsRoles,
                             AuditRequestContext.from(httpRequest))

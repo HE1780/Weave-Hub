@@ -14,8 +14,6 @@ interface PromoteAgentButtonProps {
   versionStatus?: string | null
   /** True when the agent already lives in the global namespace. */
   isInGlobalNamespace: boolean
-  /** Resolved global namespace id used as the promotion target. */
-  globalNamespaceId: number | null | undefined
 }
 
 const ADMIN_ROLES = ['SKILL_ADMIN', 'SUPER_ADMIN']
@@ -26,17 +24,19 @@ const ADMIN_ROLES = ['SKILL_ADMIN', 'SUPER_ADMIN']
  *  - viewer lacks SKILL_ADMIN / SUPER_ADMIN
  *  - the source version is not PUBLISHED
  *  - the agent already lives in global
- *  - we don't have a target namespace id resolved
+ *  - the version id has not loaded yet
  *
- * Renders a single confirmation dialog before dispatching the mutation; the
- * mutation invalidates the promotion + governance query keys on success.
+ * The backend resolves the GLOBAL namespace server-side when the request body
+ * omits targetNamespaceId, so the button no longer depends on the viewer
+ * being a member of GLOBAL. Renders a single confirmation dialog before
+ * dispatching the mutation; the mutation invalidates the promotion +
+ * governance query keys on success.
  */
 export function PromoteAgentButton({
   agentId,
   versionId,
   versionStatus,
   isInGlobalNamespace,
-  globalNamespaceId,
 }: PromoteAgentButtonProps) {
   const { t } = useTranslation()
   const { hasRole } = useAuth()
@@ -47,13 +47,12 @@ export function PromoteAgentButton({
   if (!canPromote) return null
   if (versionStatus !== 'PUBLISHED') return null
   if (isInGlobalNamespace) return null
-  if (!versionId || !globalNamespaceId) return null
+  if (!versionId) return null
 
   const handleConfirm = async () => {
     await submit.mutateAsync({
       sourceAgentId: agentId,
       sourceAgentVersionId: versionId,
-      targetNamespaceId: globalNamespaceId,
     })
   }
 
