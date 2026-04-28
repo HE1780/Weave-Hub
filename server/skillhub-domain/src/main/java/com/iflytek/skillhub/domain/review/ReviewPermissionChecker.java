@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.domain.review;
 
+import com.iflytek.skillhub.domain.agent.Agent;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.namespace.NamespaceType;
 import com.iflytek.skillhub.domain.skill.Skill;
@@ -101,6 +102,24 @@ public class ReviewPermissionChecker {
                                       String userId,
                                       Map<Long, NamespaceRole> userNamespaceRoles) {
         return canSubmitPromotion(sourceSkill, userId, userNamespaceRoles, Set.of());
+    }
+
+    /**
+     * Mirror of {@link #canSubmitPromotion(Skill, String, Map, Set)} for agent
+     * sources. Same predicate: owner OR namespace OWNER/ADMIN OR platform review role.
+     */
+    public boolean canSubmitPromotion(Agent sourceAgent,
+                                      String userId,
+                                      Map<Long, NamespaceRole> userNamespaceRoles,
+                                      Set<String> platformRoles) {
+        if (sourceAgent.getOwnerId().equals(userId)) {
+            return true;
+        }
+        if (hasPlatformReviewRole(platformRoles)) {
+            return true;
+        }
+        NamespaceRole role = userNamespaceRoles.get(sourceAgent.getNamespaceId());
+        return role == NamespaceRole.ADMIN || role == NamespaceRole.OWNER;
     }
 
     public boolean canReviewPromotion(
