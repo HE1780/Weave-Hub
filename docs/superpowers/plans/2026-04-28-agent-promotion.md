@@ -117,7 +117,7 @@ ALTER TABLE promotion_request
                             AND source_version_id IS NULL)
   );
 
-DROP INDEX IF EXISTS promotion_request_pending_source_version_uq;
+DROP INDEX IF EXISTS idx_promotion_request_version_pending;
 
 CREATE UNIQUE INDEX promotion_request_pending_skill_version_uq
   ON promotion_request(source_version_id)
@@ -128,7 +128,7 @@ CREATE UNIQUE INDEX promotion_request_pending_agent_version_uq
   WHERE status = 'PENDING' AND source_type = 'AGENT';
 ```
 
-**Note:** If the index `promotion_request_pending_source_version_uq` does not exist (it lives in V3 per audit; double-check by running `grep -r "promotion_request_pending" server/skillhub-app/src/main/resources/db/migration/`), the `DROP INDEX IF EXISTS` is a no-op and the migration still succeeds.
+**Index-name note:** The actual existing index in V3 is named `idx_promotion_request_version_pending` (verified by `grep "UNIQUE INDEX" server/skillhub-app/src/main/resources/db/migration/V3__phase3_review_social_tables.sql`). The DROP statement above uses that exact name — do NOT change it. If you alter the name, the old index will silently survive and create constraint duplication.
 
 - [ ] **Step 2: Verify Flyway can parse & run**
 
