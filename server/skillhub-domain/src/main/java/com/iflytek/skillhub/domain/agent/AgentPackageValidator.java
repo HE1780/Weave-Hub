@@ -35,6 +35,7 @@ public class AgentPackageValidator {
 
     public ValidationResult validate(List<PackageEntry> entries) {
         List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
         Set<String> normalizedPaths = new HashSet<>();
         PackageEntry agentMd = null;
         PackageEntry soulMd = null;
@@ -58,6 +59,16 @@ public class AgentPackageValidator {
                 errors.add("File too large: " + normalized);
             }
             totalSize += entry.size();
+
+            // Mirror Skill side: extension allowlist + magic-byte content/extension match are
+            // surfaced as warnings (publishing still proceeds with confirmWarnings).
+            if (!SkillPackagePolicy.hasAllowedExtension(normalized)) {
+                warnings.add("Disallowed file extension: " + normalized);
+            }
+            String contentMismatch = SkillPackagePolicy.validateContentMatchesExtension(normalized, entry.content());
+            if (contentMismatch != null) {
+                warnings.add(contentMismatch);
+            }
 
             switch (normalized) {
                 case AGENT_MD -> agentMd = entry;
@@ -102,10 +113,14 @@ public class AgentPackageValidator {
             }
         }
 
-        return new ValidationResult(errors, metadata);
+        return new ValidationResult(errors, warnings, metadata);
     }
 
-    public record ValidationResult(List<String> errors, AgentMetadata metadata) {
+    public record ValidationResult(List<String> errors, List<String> warnings, AgentMetadata metadata) {
+        public ValidationResult(List<String> errors, AgentMetadata metadata) {
+            this(errors, List.of(), metadata);
+        }
+
         public boolean isValid() {
             return errors.isEmpty();
         }

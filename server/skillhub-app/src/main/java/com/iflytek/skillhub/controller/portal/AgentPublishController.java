@@ -63,6 +63,7 @@ public class AgentPublishController extends BaseApiController {
             @PathVariable String namespace,
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "visibility", defaultValue = "PRIVATE") String visibility,
+            @RequestParam(value = "confirmWarnings", defaultValue = "false") boolean confirmWarnings,
             @AuthenticationPrincipal PlatformPrincipal principal) throws IOException {
 
         if (principal == null) {
@@ -120,7 +121,9 @@ public class AgentPublishController extends BaseApiController {
                 contents.workflowYaml(),
                 objectKey,
                 size,
-                principal.userId());
+                principal.userId(),
+                validation.warnings(),
+                confirmWarnings);
 
         AgentPublishResponse response = new AgentPublishResponse(
                 version.getAgentId(),
