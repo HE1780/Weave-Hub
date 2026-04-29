@@ -493,7 +493,7 @@
   },
   "stars": {
     "title": "My Stars",
-    "subtitle": "View your starred skills",
+    "subtitle": "View your starred skills and agents",
     "empty": "No starred skills yet",
     "tabSkills": "Starred skills",
     "tabAgents": "Starred agents",
