@@ -120,7 +120,8 @@ class AgentPublishControllerTest {
                 .thenReturn(Optional.of(mock(NamespaceMember.class)));
         when(archiveExtractor.extract(any())).thenReturn(fakeEntries());
         when(agentPackageValidator.validate(any())).thenReturn(okValidation());
-        when(agentPublishService.publish(any(), any(), any(), any(), any(), any(), any(), any(), anyLong(), any()))
+        when(agentPublishService.publish(any(), any(), any(), any(), any(), any(), any(),
+                any(), anyLong(), any(), any(), anyBoolean()))
                 .thenReturn(fakePublishedVersion());
 
         mockMvc.perform(multipart("/api/web/agents/global/publish")
@@ -133,6 +134,43 @@ class AgentPublishControllerTest {
                 .andExpect(jsonPath("$.data.slug").value("agent-a"))
                 .andExpect(jsonPath("$.data.version").value("1.0.0"))
                 .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+    }
+
+    @Test
+    void publish_forwards_warnings_and_confirmWarnings_to_service() throws Exception {
+        when(namespaceMemberRepository.findByNamespaceIdAndUserId(eq(1L), eq("user-1")))
+                .thenReturn(Optional.of(mock(NamespaceMember.class)));
+        when(archiveExtractor.extract(any())).thenReturn(fakeEntries());
+        when(agentPackageValidator.validate(any())).thenReturn(
+                new AgentPackageValidator.ValidationResult(
+                        List.of(),
+                        List.of("Disallowed file extension: extra.bin"),
+                        fakeMetadata()));
+        when(agentPublishService.publish(any(), any(), any(), any(), any(), any(), any(),
+                any(), anyLong(), any(), any(), anyBoolean()))
+                .thenReturn(fakePublishedVersion());
+
+        mockMvc.perform(multipart("/api/web/agents/global/publish")
+                        .file(bundle())
+                        .param("visibility", "PRIVATE")
+                        .param("confirmWarnings", "true")
+                        .with(authentication(auth("user-1", Set.of())))
+                        .with(csrf()))
+                .andExpect(status().isCreated());
+
+        verify(agentPublishService).publish(
+                eq(1L),
+                any(),
+                eq(AgentVisibility.PRIVATE),
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                anyLong(),
+                eq("user-1"),
+                eq(List.of("Disallowed file extension: extra.bin")),
+                eq(true));
     }
 
     @Test

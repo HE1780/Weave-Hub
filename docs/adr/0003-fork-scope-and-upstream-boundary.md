@@ -17,7 +17,7 @@
 - [docs/00-product-direction.md](../00-product-direction.md) — 上游产品定位(Skill Registry 主线)
 - [docs/10-delivery-roadmap.md](../10-delivery-roadmap.md) — 上游交付路线
 - [docs/adr/0001-agent-package-format.md](0001-agent-package-format.md) — Agent 包格式
-- [docs/landing-page-redesign.md](../landing-page-redesign.md) — 双频道愿景文档
+- [docs/_archive/2026-04/landing-page-redesign.md](../_archive/2026-04/landing-page-redesign.md) — 双频道愿景文档(已归档)
 
 ## 背景
 
@@ -29,7 +29,7 @@ Agent、视觉 UI、运行时安全等维度走出独立路线。
 
 - Agent 主线已超额完成(发布/审核/通知/展示闭环),但 [10-delivery-roadmap.md](../10-delivery-roadmap.md)
   仍把 Agent 排除在一期 MVP 外,排期文档与现实脱节。
-- [landing-page-redesign.md](../landing-page-redesign.md) 中的双频道视觉主张
+- [landing-page-redesign.md](../_archive/2026-04/landing-page-redesign.md) 中的双频道视觉主张(已归档)
   (Skills 蓝/Agents 紫、Hero 双入口、统一搜索 Tabs)在 plan 文档里被反复
   deferred,无人接手。
 - 治理/社交/搜索增强等 upstream Phase 5 议题边界不清,容易吸走精力。
@@ -69,8 +69,8 @@ Agent、视觉 UI、运行时安全等维度走出独立路线。
 
 本 fork 的 UI 与 upstream 视觉解耦,允许引入只属于本分支的设计语言。
 
-**设计基线: "知连 WeaveHub" 美学**(详见 [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md)
-和详细设计 [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)):
+**设计基线: "知连 WeaveHub" 美学**(原始资料: [docs/_archive/2026-04/LANDING_PAGE_REDESIGN.md](../_archive/2026-04/LANDING_PAGE_REDESIGN.md)
+和详细设计 [docs/_archive/2026-04/superpowers-specs/2026-04-27-weavehub-visual-overhaul-design.md](../_archive/2026-04/superpowers-specs/2026-04-27-weavehub-visual-overhaul-design.md),均已归档):
 
 - **站名**:知连 WeaveHub(显示侧;代码包名 `skillhub` 不动)
 - **视觉风格**:浅色 + glass-morphism(白色透明 + backdrop-blur)+ 双 radial-gradient 微光背景
@@ -80,26 +80,28 @@ Agent、视觉 UI、运行时安全等维度走出独立路线。
 - **资源类型区分**:不分频道色,卡片右上角 type 灰底文字徽章("skill" / "agent")区分
 - **信息架构**:浅色 + 功能型入口("热门 / 最新 / 工作台" 三段),不堆宣传数字、不堆概念解释
 
-落地状态(2026-04-27 核对):
-- ❌ 当前 `--brand-start` (#6A6DFF indigo) / `--brand-end` (#B85EFF violet) 与新方案冲突,P0-1a 整体替换
-- ❌ Syne / IBM Plex Sans 字体引用要清理,只保留 Inter + JetBrains Mono
-- ❌ glass-morphism 工具类未实现
-- ❌ Landing 当前结构是九段(Hero+Stats+Channels+Popular+QuickStart+Features+CTA+Latest),要重写为 weavehub 四段
-- ❌ 站名仍是 SkillHub
-- ❌ "我的 Weave"路由(`/my-weave`)未创建
+~~落地状态(2026-04-27 核对):~~
+> ✅ **已全部完成 2026-04-27** (P0-1a tokens + P0-1b landing IA),以下 6 项 ❌ 已是历史快照,保留作为决策上下文。绿色 brand 阶 / Inter / glass-morphism / 4 段 IA / "知连 WeaveHub" 站名 / `/my-weave` 路由全部上线。
 
-**待补的视觉/结构性改造**:
+- ~~❌ 当前 `--brand-start` (#6A6DFF indigo) / `--brand-end` (#B85EFF violet) 与新方案冲突,P0-1a 整体替换~~
+- ~~❌ Syne / IBM Plex Sans 字体引用要清理,只保留 Inter + JetBrains Mono~~
+- ~~❌ glass-morphism 工具类未实现~~
+- ~~❌ Landing 当前结构是九段(Hero+Stats+Channels+Popular+QuickStart+Features+CTA+Latest),要重写为 weavehub 四段~~
+- ~~❌ 站名仍是 SkillHub~~
+- ~~❌ "我的 Weave"路由(`/my-weave`)未创建~~
 
-- design tokens 切换到绿色单色阶 + glass-morphism 工具类(`.glass-header` / `.glass-card` / `.brand-gradient` / `.btn-primary` / `.nav-chip`)
-- 字体引用切到 Inter + JetBrains Mono
-- Landing 信息架构重写:Hero(主标题"持续进化的 AI 能力" + 副标"让团队的技能包和智能体在一起协作")+ 热门(混排 + 下划线 Tab)+ 最新 + 工作台
-- 移除全部宣传数字(stats 块整体删)
-- 站名 SkillHub → 知连 WeaveHub(en locale 仍可显示 "WeaveHub")
-- 新增 `/my-weave` 路由(双栏:我的技能 / 我的智能体)
-- nav 项重排:首页 / 发布 ▾ / 技能 / 智能体 / 我的 Weave / 控制台
-- 引入 `motion/react` 替代当前 `useInView` 自定义 hook
-- 新增 `ResourceCard`(landing 用统一资源卡)+ `ResourceTabs`(下划线样式 section tab)
-- AgentCard / SkillCard 视觉迁移到 glass-card,**不合并**为单组件
+~~**待补的视觉/结构性改造**:~~ → ✅ **已全部完成 2026-04-27** (P0-1a + P0-1b)。以下条目保留作为决策上下文,但**不再是待办**:
+
+- ~~design tokens 切换到绿色单色阶 + glass-morphism 工具类~~ ✅
+- ~~字体引用切到 Inter + JetBrains Mono~~ ✅
+- ~~Landing 信息架构重写为 Hero / 热门 / 最新 / 工作台 4 段~~ ✅
+- ~~移除全部宣传数字(stats 块整体删)~~ ✅
+- ~~站名 SkillHub → 知连 WeaveHub~~ ✅
+- ~~新增 `/my-weave` 路由(双栏)~~ ✅
+- ~~nav 项重排~~ ✅
+- ~~引入 `motion/react`~~ ✅
+- ~~新增 `ResourceCard` + `ResourceTabs`~~ ✅
+- ~~AgentCard / SkillCard 视觉迁移到 glass-card,**不合并**为单组件~~ ✅
 
 upstream 若在视觉层做调整,**默认不合并**;只在涉及组件结构或可访问性
 回归时按需 cherry-pick。

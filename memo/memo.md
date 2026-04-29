@@ -4,6 +4,28 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-29 — 文档清理 ABC 全档执行
+
+**Branch:** `feat/spec-archive-cleanup-abc`
+
+承接上一轮的 ledger 建立,本轮执行用户要求的 A+B+C 三档清理:
+
+- **A 档** — 4 月所有 ✅ Shipped 的 21 份 plans + specs 集中归档到 `docs/_archive/2026-04/{plans,superpowers-plans,superpowers-specs}/`。
+- **B 档** — 3 月 phase 1-4 baseline 的 12 份 plans + specs 归档到 `docs/_archive/2026-03/`。`docs/superpowers/` 整目录(含 `.DS_Store`) 已删除。
+- **C 档** — 删除 5 个 landing 组件里指向已不存在的 `web/weavehub---知连/` 的"Visual mirrors"死链注释;归档 2 份重复的 landing 设计文档(`web/LANDING_PAGE_REDESIGN.md` + `docs/landing-page-redesign.md`);修补 ADR 0003 + fork-backlog 中所有指向旧路径的链接(43 处 sed 批量替换)。
+- **ADR 0003 历史快照修订** — 把 2026-04-27 时点的"❌ 落地状态"6 项 + "待补的视觉/结构性改造"10 项加 strikethrough + ✅ 完成横幅,保留作为决策上下文但不再误导。
+
+合并后 `docs/_archive/README.md` 索引同步更新,`2026-03/` + `2026-04/` 两个新子目录全部登记。
+
+### 结果
+
+`docs/plans/` 只剩 2 份: `fork-backlog.md` (living) + `2026-04-29-spec-status-ledger.md` (信源)。
+`docs/superpowers/` 已删除。
+`docs/_archive/` 总计 35 份归档文档 + 1 份 README + 1 份原 pre-fork-todo。
+typecheck clean; landing 相关测试 7/7 passing。
+
+---
+
 ## 2026-04-29 — Spec/Plan 集中清理：建立状态总账 + 归档矛盾文档
 
 **Branch:** `feat/spec-status-cleanup`

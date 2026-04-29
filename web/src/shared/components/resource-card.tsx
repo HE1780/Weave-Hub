@@ -24,9 +24,6 @@ interface ResourceCardProps {
  * Two variants:
  * - `featured` — used in 热门推荐, 3-column grid, large icon container + EXPLORE row
  * - `compact` — used in 全域动态流, 2-column grid, smaller, icon left + title right + type/time row
- *
- * Visual className strings mirror the WeaveHub prototype at
- * web/weavehub---知连/src/App.tsx (lines 70-104 and 267-286).
  */
 export function ResourceCard({ resource, variant, index }: ResourceCardProps) {
   const Icon = resource.icon ?? Grid

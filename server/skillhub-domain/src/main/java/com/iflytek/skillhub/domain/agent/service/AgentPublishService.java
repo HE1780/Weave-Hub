@@ -64,6 +64,10 @@ public class AgentPublishService {
      * @param packageObjectKey object-storage key for the canonical zip
      * @param packageSizeBytes bytes
      * @param publisherUserId  authenticated user submitting the publish
+     * @param packageWarnings  warnings collected upstream by AgentPackageValidator
+     *                         (extension allowlist, magic-byte mismatch); merged with
+     *                         pre-publish secret-scan warnings for the confirm-required path
+     * @param confirmWarnings  caller acknowledges warnings; without this, any warning aborts
      */
     @Transactional
     public AgentVersion publish(Long namespaceId,
@@ -75,7 +79,9 @@ public class AgentPublishService {
                                 String workflowYaml,
                                 String packageObjectKey,
                                 Long packageSizeBytes,
-                                String publisherUserId) {
+                                String publisherUserId,
+                                List<String> packageWarnings,
+                                boolean confirmWarnings) {
         if (publisherUserId == null || publisherUserId.isBlank()) {
             throw new DomainForbiddenException("Publisher must be authenticated");
         }
@@ -87,10 +93,16 @@ public class AgentPublishService {
                     "Agent package failed pre-publish validation: "
                             + String.join(", ", prePublish.errors()));
         }
-        if (prePublish.hasWarnings()) {
+
+        List<String> mergedWarnings = new java.util.ArrayList<>();
+        if (packageWarnings != null) {
+            mergedWarnings.addAll(packageWarnings);
+        }
+        mergedWarnings.addAll(prePublish.warnings());
+        if (!confirmWarnings && !mergedWarnings.isEmpty()) {
             throw new DomainBadRequestException(
-                    "Agent package contains likely secrets: "
-                            + String.join(", ", prePublish.warnings()));
+                    "Agent package has warnings; resubmit with confirmWarnings=true to proceed: "
+                            + String.join(", ", mergedWarnings));
         }
 
         String slug = metadata.name();

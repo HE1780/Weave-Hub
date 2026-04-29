@@ -113,4 +113,57 @@ class AgentPackageValidatorTest {
         var result = validator.validate(entries);
         assertFalse(result.errors().isEmpty());
     }
+
+    @Test
+    void disallowed_extension_is_reported_as_warning() {
+        byte[] elfHeader = new byte[]{0x7f, 'E', 'L', 'F', 0, 0, 0, 0};
+        List<PackageEntry> entries = List.of(
+                entry("AGENT.md", VALID_AGENT_MD),
+                entry("soul.md", "x"),
+                entry("workflow.yaml", VALID_WORKFLOW_YAML),
+                new PackageEntry("payload.bin", elfHeader, elfHeader.length, "application/octet-stream")
+        );
+
+        var result = validator.validate(entries);
+
+        assertTrue(result.errors().isEmpty(), () -> "expected no errors, got: " + result.errors());
+        assertTrue(
+                result.warnings().stream().anyMatch(w -> w.contains("Disallowed file extension")
+                        && w.contains("payload.bin")),
+                () -> "expected disallowed-extension warning, got: " + result.warnings());
+    }
+
+    @Test
+    void content_extension_mismatch_is_reported_as_warning() {
+        // .png path with non-PNG bytes — magic-byte check should warn.
+        byte[] notPng = "this is plainly not png bytes".getBytes();
+        List<PackageEntry> entries = List.of(
+                entry("AGENT.md", VALID_AGENT_MD),
+                entry("soul.md", "x"),
+                entry("workflow.yaml", VALID_WORKFLOW_YAML),
+                new PackageEntry("logo.png", notPng, notPng.length, "image/png")
+        );
+
+        var result = validator.validate(entries);
+
+        assertTrue(result.errors().isEmpty(), () -> "expected no errors, got: " + result.errors());
+        assertTrue(
+                result.warnings().stream().anyMatch(w -> w.contains("logo.png")
+                        && w.contains("does not match")),
+                () -> "expected magic-byte mismatch warning, got: " + result.warnings());
+    }
+
+    @Test
+    void clean_package_has_no_warnings() {
+        List<PackageEntry> entries = List.of(
+                entry("AGENT.md", VALID_AGENT_MD),
+                entry("soul.md", "You are helpful."),
+                entry("workflow.yaml", VALID_WORKFLOW_YAML)
+        );
+
+        var result = validator.validate(entries);
+
+        assertTrue(result.errors().isEmpty(), () -> "expected no errors, got: " + result.errors());
+        assertTrue(result.warnings().isEmpty(), () -> "expected no warnings, got: " + result.warnings());
+    }
 }

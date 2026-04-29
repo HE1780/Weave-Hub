@@ -32,7 +32,6 @@ function relativeTime(iso?: string): string {
 
 /**
  * "最近更新" section — compact grid with 4 newest skill cards.
- * Visual mirrors web/weavehub---知连/src/App.tsx lines 254-291.
  */
 export function LandingRecentSection() {
   const { t } = useTranslation()

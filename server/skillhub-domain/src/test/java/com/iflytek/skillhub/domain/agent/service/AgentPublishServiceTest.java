@@ -93,7 +93,8 @@ class AgentPublishServiceTest {
                 List.of(),
                 "manifest", "soul", "workflow",
                 "ns-1/agents/agent-a/1.0.0/bundle.zip", 1024L,
-                "owner-1");
+                "owner-1",
+                List.of(), false);
 
         assertEquals(AgentVersionStatus.PUBLISHED, result.getStatus());
         assertNotNull(result.getPublishedAt());
@@ -116,7 +117,8 @@ class AgentPublishServiceTest {
                 1L, metadata("agent-b", "1.0.0"),
                 AgentVisibility.PUBLIC,
                 List.of(),
-                "m", "s", "w", "key", 1L, "owner-1");
+                "m", "s", "w", "key", 1L, "owner-1",
+                List.of(), false);
 
         assertEquals(AgentVersionStatus.PENDING_REVIEW, result.getStatus());
         assertNull(result.getPublishedAt());
@@ -138,7 +140,8 @@ class AgentPublishServiceTest {
                 1L, metadata("agent-a", "1.0.0"),
                 AgentVisibility.PUBLIC,
                 List.of(),
-                "m", "s", "w", "key", 1L, "intruder"));
+                "m", "s", "w", "key", 1L, "intruder",
+                List.of(), false));
     }
 
     @Test
@@ -153,7 +156,8 @@ class AgentPublishServiceTest {
                 1L, metadata("agent-a", "1.0.0"),
                 AgentVisibility.PUBLIC,
                 List.of(),
-                "m", "s", "w", "key", 1L, "owner-1"));
+                "m", "s", "w", "key", 1L, "owner-1",
+                List.of(), false));
     }
 
     @Test
@@ -162,7 +166,8 @@ class AgentPublishServiceTest {
                 1L, metadata("agent-a", "1.0.0"),
                 AgentVisibility.PRIVATE,
                 List.of(),
-                "m", "s", "w", "key", 1L, ""));
+                "m", "s", "w", "key", 1L, "",
+                List.of(), false));
     }
 
     @Test
@@ -173,11 +178,12 @@ class AgentPublishServiceTest {
                 1L, metadata("agent-a", null),
                 AgentVisibility.PRIVATE,
                 List.of(),
-                "m", "s", "w", "key", 1L, "owner-1"));
+                "m", "s", "w", "key", 1L, "owner-1",
+                List.of(), false));
     }
 
     @Test
-    void prepublish_validator_warning_aborts_publish() {
+    void prepublish_validator_warning_aborts_publish_without_confirmWarnings() {
         when(prePublishValidator.validateEntries(anyList(), anyString(), anyLong()))
                 .thenReturn(ValidationResult.warn(List.of(
                         "soul.md line 4 contains a value that looks like an API key.")));
@@ -187,8 +193,10 @@ class AgentPublishServiceTest {
                         1L, metadata("agent-a", "1.0.0"),
                         AgentVisibility.PRIVATE,
                         List.of(new PackageEntry("soul.md", "x".getBytes(), 1, "text/markdown")),
-                        "m", "s", "w", "key", 1L, "owner-1"));
+                        "m", "s", "w", "key", 1L, "owner-1",
+                        List.of(), false));
         assertTrue(ex.getMessage().contains("API key"));
+        assertTrue(ex.getMessage().contains("confirmWarnings=true"));
 
         verify(agentRepository, never()).save(any());
         verify(agentVersionRepository, never()).save(any());
@@ -204,9 +212,60 @@ class AgentPublishServiceTest {
                         1L, metadata("agent-a", "1.0.0"),
                         AgentVisibility.PRIVATE,
                         List.of(),
-                        "m", "s", "w", "key", 1L, "owner-1"));
+                        "m", "s", "w", "key", 1L, "owner-1",
+                        List.of(), false));
         assertTrue(ex.getMessage().contains("schema invalid"));
 
         verify(agentRepository, never()).save(any());
+    }
+
+    @Test
+    void package_warnings_abort_publish_without_confirmWarnings() {
+        DomainBadRequestException ex = assertThrows(DomainBadRequestException.class, () ->
+                service.publish(
+                        1L, metadata("agent-a", "1.0.0"),
+                        AgentVisibility.PRIVATE,
+                        List.of(),
+                        "m", "s", "w", "key", 1L, "owner-1",
+                        List.of("Disallowed file extension: extra.bin"), false));
+        assertTrue(ex.getMessage().contains("Disallowed file extension"));
+        assertTrue(ex.getMessage().contains("confirmWarnings=true"));
+
+        verify(agentRepository, never()).save(any());
+    }
+
+    @Test
+    void package_warnings_pass_through_with_confirmWarnings_true() {
+        when(agentRepository.findByNamespaceIdAndSlug(1L, "agent-c")).thenReturn(Optional.empty());
+        when(agentVersionRepository.findByAgentIdAndVersion(eq(7L), eq("1.0.0")))
+                .thenReturn(Optional.empty());
+
+        AgentVersion result = service.publish(
+                1L, metadata("agent-c", "1.0.0"),
+                AgentVisibility.PRIVATE,
+                List.of(),
+                "m", "s", "w", "key", 1L, "owner-1",
+                List.of("Disallowed file extension: extra.bin"), true);
+
+        assertEquals(AgentVersionStatus.PUBLISHED, result.getStatus());
+    }
+
+    @Test
+    void prepublish_warnings_pass_through_with_confirmWarnings_true() {
+        when(prePublishValidator.validateEntries(anyList(), anyString(), anyLong()))
+                .thenReturn(ValidationResult.warn(List.of(
+                        "soul.md line 4 contains a value that looks like an API key.")));
+        when(agentRepository.findByNamespaceIdAndSlug(1L, "agent-d")).thenReturn(Optional.empty());
+        when(agentVersionRepository.findByAgentIdAndVersion(eq(7L), eq("1.0.0")))
+                .thenReturn(Optional.empty());
+
+        AgentVersion result = service.publish(
+                1L, metadata("agent-d", "1.0.0"),
+                AgentVisibility.PRIVATE,
+                List.of(new PackageEntry("soul.md", "x".getBytes(), 1, "text/markdown")),
+                "m", "s", "w", "key", 1L, "owner-1",
+                List.of(), true);
+
+        assertEquals(AgentVersionStatus.PUBLISHED, result.getStatus());
     }
 }

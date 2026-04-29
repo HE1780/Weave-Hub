@@ -3,7 +3,15 @@
 **Date:** 2026-04-29
 **Purpose:** Single source of truth for the status of every spec / plan / design doc in the repo. Replaces ad-hoc "is this done?" archaeology across `git log` + `memo/memo.md`.
 
-**Scope:** `docs/plans/*.md`, `docs/superpowers/plans/*.md`, `docs/superpowers/specs/*.md`. Excludes `docs/diagnosis/` (already snapshot-style) and `docs/adr/` (decisions, not work items).
+**Scope:** `docs/plans/*.md`, ~~`docs/superpowers/plans/*.md`~~, ~~`docs/superpowers/specs/*.md`~~ → 已合并归档。Excludes `docs/diagnosis/` (已 snapshot) and `docs/adr/` (决策,不是工作项)。
+
+> **2026-04-29 归档结构变更:** 所有已完成的 spec/plan 集中迁到 `docs/_archive/`:
+> - 3 月 phase 1-4 baseline → `docs/_archive/2026-03/{superpowers-plans,superpowers-specs}/`
+> - 4 月 agent / weavehub / promotion 全套 → `docs/_archive/2026-04/{plans,superpowers-plans,superpowers-specs}/`
+> - 顶层归档(模板 + superseded): `docs/_archive/2026-04/`
+> - `docs/superpowers/` 目录已删除(空)
+>
+> 下表中所有 `docs/superpowers/...` / `docs/plans/2026-04-26-*` / `docs/plans/2026-04-27-*` / `docs/plans/2026-04-28-*` 路径在 git 上都对应到 `docs/_archive/{2026-0M}/...` 下的同名文件。`git log --follow <path>` 可追溯。
 
 **Convention:**
 - ✅ **Shipped** — feature is in `main`, verified via commits + tests
@@ -12,7 +20,12 @@
 - ⏸ **Deferred** — explicitly out of scope per the doc itself; tracked below
 - 🔧 **Open** — not yet started
 
-**Cleanup 2026-04-29:** 已完成的 4 月 spec/plan **顶部已加 SHIPPED 横幅**指向本 ledger;两份易引起混淆的文件(`2026-04-26-comments-feature-requirements.md` SUPERSEDED、`2026-04-26-agents-frontend-mvp-START-PROMPT.md` Reference 模板)已**移到 `docs/archive/2026-04/`**。`docs/plans/2026-04-27-fork-backlog.md` 顶部 "当前快照" 段已重写,移除矛盾的 2026-04-27 历史 audit 备注(测试 baseline 460/460 / 视觉路线"重置" / P0-2 P2-2 audit 修正等)。
+**Cleanup 2026-04-29 (二轮:A+B+C):**
+- **A 档**: 4 月所有 ✅ Shipped 的 plans + specs(共 21 份)集中归档到 `docs/_archive/2026-04/{plans,superpowers-plans,superpowers-specs}/`,顶部 SHIPPED 横幅保留。
+- **B 档**: 3 月 phase 1-4 baseline plans + 配套 specs(共 12 份)归档到 `docs/_archive/2026-03/`。`docs/superpowers/` 整目录删除。
+- **C 档**: 删除已不存在的 `web/weavehub---知连/` 在 5 个组件 + 3 份文档里的"Visual mirrors"死链注释;归档 2 份重复的 landing 设计文档(`web/LANDING_PAGE_REDESIGN.md` + `docs/landing-page-redesign.md`)。
+- **fork-backlog 顶部"当前快照"段重写**:移除矛盾的 2026-04-27 历史 audit 备注(baseline 460/460 / 视觉路线"重置" / P0-2 P2-2 audit 修正等)。
+- 结果:`docs/plans/` 只剩 fork-backlog (living) + 本 ledger;`docs/superpowers/` 已删除。
 
 ---
 

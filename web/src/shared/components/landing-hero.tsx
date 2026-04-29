@@ -6,8 +6,6 @@ import { normalizeSearchQuery } from '@/shared/lib/search-query'
 
 /**
  * Hero section of the WeaveHub landing page.
- *
- * Visual mirrors web/weavehub---知连/src/App.tsx lines 174-228.
  */
 export function LandingHero() {
   const { t } = useTranslation()
