@@ -47,7 +47,8 @@
   实际工作量比原描述小,只缺 `AgentLifecycleService` + `AgentLifecycleController`(可 mirror SkillLifecycleController)
 - **P3-2 描述纠正**:"PrePublishValidator 从 NoOp 扩展"双重过时 ——
   `BasicPrePublishValidator` 早已是真实实装(密钥扫描 + 占位符检测),问题是 `AgentPublishService` 完全没接它。
-  本项拆为 P3-2a(把 validator 接入 Agent 发布)+ P3-2b(扩 rule 链)
+  本项拆为 P3-2a(把 validator 接入 Agent 发布)+ P3-2b(扩 rule 链)。
+  **P3-2a 已完成(commit `5d62a75b`,2026-04-29 audit 确认),P3-2b 仍未启动**
 - **新增 P2-4 接通 bean validation**:`pom.xml` 缺 `spring-boot-starter-validation`,
   全代码 ~44 处 `@Valid`/`@NotBlank` 静默失效。当前不阻塞,但是潜伏炸弹
 
@@ -274,24 +275,26 @@ fork 内只做"发布、版本管理、团队共享、社交对齐",实际运行
 
 ### P3-2: Agent 包发布前安全扫描
 
-**ADR 0003 §1.3** · 估时 ~0.5 天(接入)+ 未估(扩 rule) · 状态:**Skill 已接,Agent 未接**
+**ADR 0003 §1.3** · 状态:**P3-2a ✅ 已完成,P3-2b 未启动**
 
-代码现状(2026-04-27 audit) —— **原描述"PrePublishValidator 从 NoOp 扩展"是双重过时的**:
-- [BasicPrePublishValidator](../../server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/skill/validation/BasicPrePublishValidator.java)
-  **已是 `@Component` 真实实装**(密钥扫描 + 占位符检测),不是 NoOp
-- 它**只**被注入到
-  [SkillPublishService](../../server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/skill/service/SkillPublishService.java)
-- [AgentPublishService](../../server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/agent/service/AgentPublishService.java)
-  **完全不调用任何 validator** —— Agent 包当前在发布前没有任何安全前置校验
+#### ~~P3-2a: BasicPrePublishValidator 接入 AgentPublishService~~ ✅ 已完成 (commit `5d62a75b`)
 
-本项的真正工作:
-1. **(P3-2a 必做)** 把 `BasicPrePublishValidator`(或更通用的 validator interface)注入到 `AgentPublishService`,
-   在 `publish()` 提交前执行扫描;失败抛 `DomainBadRequestException` 中止发布。改动很小。
-2. **(P3-2b 选做)** 扩 rule 链:把 validator 改成 `List<PrePublishValidator>` 或 chain,加更多规则
-   (依赖白名单、workflow.yaml schema 校验、可执行权限检查等)。这部分与 upstream Phase 5 重叠,
-   **fork 是否抢先做**取决于安全运行需求紧迫度。
+把 `PrePublishValidator` 注入到
+[AgentPublishService](../../server/skillhub-domain/src/main/java/com/iflytek/skillhub/domain/agent/service/AgentPublishService.java);
+`publish()` 第一步即跑 `validateEntries(...)`,errors **和** warnings 都抛
+`DomainBadRequestException`(比 Skill 严格,无 `confirmWarnings` 放行通道)。
+为 Agent 流程在 `PrePublishValidator` 上加了
+`validateEntries(entries, publisherId, namespaceId)` 默认方法,避免 Agent 端
+被迫构造 `SkillMetadata`。
 
-P3-2a 工作量小可以先做,P3-2b 留独立 brainstorm。
+测试覆盖:[AgentPublishServiceTest.java:180-198](../../server/skillhub-domain/src/test/java/com/iflytek/skillhub/domain/agent/service/AgentPublishServiceTest.java#L180-L198)
+两条 — `prepublish_validator_warning_aborts_publish` + `prepublish_validator_failure_aborts_publish`。
+
+#### P3-2b: 扩 rule 链 — 未启动 · 需独立 brainstorm
+
+把 validator 改成 `List<PrePublishValidator>` 或 chain,加更多规则(依赖白名单、
+workflow.yaml schema 校验、可执行权限检查等)。这部分与 upstream Phase 5 重叠,
+**fork 是否抢先做**取决于安全运行需求紧迫度。
 
 ### P3-3: Agent 后端搜索集成
 
@@ -544,7 +547,7 @@ P0 follow-ups + 后端实际状态校正,详见 `feat/p0-followups-and-backlog-s
 3. **List 卡片平均评分展示** — 扩 `AgentSummary` 字段 + AgentCard 渲染;
 4. **My Stars 页 Agent 段** — dashboard 重设计的一部分;
 5. **P2-4 bean validation 接通** — 后端潜伏炸弹清理;
-6. **P3-2 Agent 发布前安全扫描** — `BasicPrePublishValidator` 接入 `AgentPublishService`。
+6. **P3-2b validator chain 扩展** — `PrePublishValidator` 改 `List<...>` / chain + 加规则;P3-2a 接入工作已完成(commit `5d62a75b`)。
 
 视觉/landing 路线已在 P0-1a/P0-1b/P0-2 完成。下一波若仍需视觉迭代,基于
 [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)
