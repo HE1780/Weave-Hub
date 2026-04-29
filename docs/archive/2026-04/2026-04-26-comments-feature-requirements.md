@@ -1,6 +1,15 @@
 # Comments Feature — Requirements Memo
 
-**Status:** Requirements captured, design pending.
+> ⚠️ **SUPERSEDED — 归档于 2026-04-29。**
+> 本备忘录的 "Open questions" 已在实施时回答(选择独立表方案,非 polymorphic):
+> - Skill 侧:ADR 0002 + V40 `skill_version_comment` + `SkillVersionCommentController`(commits `c8d79c4f` → `503ffa62`)
+> - Agent 侧:V40 sibling 表 + `AgentVersionCommentController`(commit `cc11f651`)
+>
+> 此文件保留作为历史参考(决策上下文),不要据此再起新 plan。
+
+---
+
+**Status:** Requirements captured, design pending. *(原始状态,已被实施替代)*
 **Captured:** 2026-04-26
 **Schedule:** Brainstorm + spec + implementation plan starts AFTER the Agent Frontend MVP (`docs/plans/2026-04-26-agents-frontend-mvp.md`) ships.
 

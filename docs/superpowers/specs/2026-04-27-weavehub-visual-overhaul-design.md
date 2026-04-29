@@ -1,6 +1,8 @@
 # WeaveHub 视觉全面取代 — Design Spec
 
-**Status:** Approved (brainstorming → implementation pending)
+> ✅ **SHIPPED — 实施完成 2026-04-27 (拆为 P0-1a tokens + P0-1b landing IA)。** 详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
+**Status:** Approved (brainstorming → implementation pending) → **Implemented 2026-04-27**
 **Date:** 2026-04-27
 **Owner:** HE1780/Weave-Hub fork 维护者
 **Reference design:** [web/weavehub---知连/](../../../web/weavehub---知连/) (用户提供的 AI Studio prototype + 修订意见)

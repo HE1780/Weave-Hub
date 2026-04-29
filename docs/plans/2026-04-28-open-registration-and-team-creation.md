@@ -1,5 +1,7 @@
 # 开放注册与 Namespace 创建权限下放方案
 
+> ✅ **SHIPPED — 已完成 2026-04-28。** 核心一行改动 in `main`(commit `cc4073f5`):移除 `createNamespace` 的 SKILL_ADMIN gate。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+
 **日期**：2026-04-28  
 **类型**：产品决策 + 代码变更  
 **状态**：待评审

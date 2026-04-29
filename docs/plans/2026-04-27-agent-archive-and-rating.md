@@ -1,5 +1,7 @@
 # Agent 归档按钮 (G5) + Agent 收藏/评分 (G7)
 
+> ✅ **SHIPPED — 已完成 2026-04-27 (2026-04-28 audit 确认全栈到位)。** A0/A2/A3 全部 in `main`(`AgentLifecycleController` + V43 + `AgentStarController` + `AgentRatingController` + 前端集成)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+
 **Date:** 2026-04-27
 **ADR clause:** [ADR 0003](../adr/0003-fork-scope-and-upstream-boundary.md) §1.1 Agent management
 **Diagnosis source:** [docs/diagnosis/2026-04-27-progress-and-gap-analysis.md](../diagnosis/2026-04-27-progress-and-gap-analysis.md) §4.2 G5 + G7

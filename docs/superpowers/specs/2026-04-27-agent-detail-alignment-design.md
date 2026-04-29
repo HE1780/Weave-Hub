@@ -1,5 +1,7 @@
 # 2026-04-27 Agent Detail Alignment Design
 
+> ✅ **SHIPPED — 实施完成 2026-04-27。** Agent 详情页已对齐 skill-detail UX(flex lg:flex-row + Overview/Workflow/Versions Tabs + 侧栏)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 ## 1. Context And Goal
 
 Current `agent-detail` is functional but visually and structurally weaker than `skill-detail`.

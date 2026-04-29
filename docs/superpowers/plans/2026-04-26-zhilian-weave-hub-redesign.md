@@ -1,5 +1,7 @@
 # 知联 Weave Hub Redesign Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-27。** 拆为 P0-1a (tokens) + P0-1b (landing IA) 两份子计划落地;`agents.tsx` 全量页面 + LandingHotSection 混排已替代原 spec 描述的 "Agent column stub"。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Rebrand UI to 知联 / Weave Hub, redesign home page with parallel Skill+Agent channels (green/orange), fix the broken `/agents` route, and replace the Agent stub with a real channel list page — all additively, no backend changes.

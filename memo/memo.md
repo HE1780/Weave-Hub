@@ -4,6 +4,36 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-29 — Spec/Plan 集中清理：建立状态总账 + 归档矛盾文档
+
+**Branch:** `feat/spec-status-cleanup`
+**Ledger (新建):** [docs/plans/2026-04-29-spec-status-ledger.md](../docs/plans/2026-04-29-spec-status-ledger.md) — 全仓 spec/plan 唯一信源
+
+### 盘点结果
+
+全仓 13 spec + 23 plan(含 superpowers/) + fork-backlog,交叉对照 git 历史 + memo 完成记录:
+
+- **✅ Shipped: 31 份**(全部 march phase 1-4 + 4 月所有 agent / weavehub / promotion 工作)
+- **🔁 Living: 1 份**(fork-backlog,持续维护)
+- **📝 Reference: 1 份**(agents-frontend-mvp-START-PROMPT,subagent 启动模板,已归档)
+- **✅ Superseded: 1 份**(comments-feature-requirements,被 ADR 0002 + skill/agent comments 实施,已归档)
+- **🔧 真正待启动: 2 项**(P2-4 bean validation 接通、P3-2b validator chain 扩展)
+- **⏸ 显式延后: 8 项**(全部来自 A9 spec §3/§15 + ADR 0004,需 brainstorm 决定再起 plan)
+
+### 实际清理动作
+
+1. **新建 `docs/archive/2026-04/`** — 归档两份易引起混淆的文件(`comments-feature-requirements.md` 加 SUPERSEDED 横幅;`agents-frontend-mvp-START-PROMPT.md` 是临时模板)。
+2. **fork-backlog 顶部"当前快照"段重写** — 删除矛盾的 2026-04-27 历史 audit 备注:测试 baseline 460/460(早被 578/578 取代)、视觉路线"重置"段(P0-1a/b 完成后已无意义)、"P0-2 改为未启动"等已被 commit 推翻的修正描述。新快照只列已完成范围 + 当前 baseline。
+3. **fork-backlog "启动建议"段更新** — 移除 #1/#2/#3/#4 在 2026-04-29 followups bundle 已完成的 4 项,只留 P2-4 / P3-2b 真未启动 + A9 显式延后项。
+4. **20 份已完成 plan/spec 顶部加 SHIPPED 横幅** — 全部指向 ledger,防止后续会话误以为还要做(覆盖 4 月所有 agent/weavehub/promotion 文件)。March phase 1-4 历史基线**不动**,加横幅是过度处理。
+5. **memo 顶部加本次清理条目**(本条)。
+
+### 教训沉淀
+
+subagent 探查时把 4 项 plan 标错为 PARTIAL/NOT-STARTED(agent-list-search / agent-publish-review-pipeline / weavehub-landing-ia / skill-version-comments),用 `git log --grep` 二次校验后才纠正。**新规则:任何 audit 报告写"未完成"必须用 commit hash 反证,不能只看 plan 内 `- [ ]` 计数**(plan 文件本身可能没回填勾选)。已加到 `memo/lessons.md`。
+
+---
+
 ## 2026-04-29 — Agent followups bundle (4 tasks 全部完成)
 
 **Spec:** [docs/superpowers/specs/2026-04-29-agent-followups-bundle-design.md](../docs/superpowers/specs/2026-04-29-agent-followups-bundle-design.md)

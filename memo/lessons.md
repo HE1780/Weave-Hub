@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-04-29 — Audit 写"未完成"必须有 commit hash 反证
+
+**症状**：跑 spec/plan 状态盘点时,subagent 把 4 份**实际全部完成**的 plan 标为 PARTIAL / NOT-STARTED(`2026-04-27-agent-list-search.md`、`2026-04-27-agent-publish-review-pipeline.md`、`2026-04-27-weavehub-landing-ia.md`、`2026-04-26-skill-version-comments.md`)。差点据此把"未完成项"汇报给用户。
+
+**原因**：subagent 只读了 plan 文件本身的 `- [ ]` 复选框计数,没回填的勾选 = 看起来"未做"。但这些 plan 实施时,执行者通常**不会回头去把原 plan 的 `- [ ]` 改成 `- [x]`** —— 完成证据在 git log + memo,不在 plan 文件里。
+
+**规则**：任何 spec/plan audit 报告里写 PARTIAL / NOT-STARTED 之前,必须用 `git log --all --grep="<feature keyword>"` 或 `git log --oneline --all | grep` 反证一次:
+- 找到匹配 commit → 改判为 SHIPPED
+- 找不到 → 才能写"未启动"
+绝不能只看 plan 内复选框。
+
+**引申**：完成 plan 后**没有动力**回填 `[x]`(因为 commit message 已经记录),这是结构性事实。所以 plan 文件里的复选框状态对 audit **不可靠**,必须以 git/memo 为准。
+
+---
+
 ## 2026-04-26 — web/ 用 pnpm 而非 npm
 
 **症状**: 在 `web/` 跑 `npm install` 报 `Cannot read properties of null (reading 'matches')`（npm arborist crash）。

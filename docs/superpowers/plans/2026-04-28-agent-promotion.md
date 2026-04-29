@@ -1,5 +1,7 @@
 # A9 — Agent Promotion Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-28。** 19 task 全部落地(commits `b3cba0c5` → `ddb82067`),backend 554/554 + web 684/684 passing。**ADR:** [docs/adr/0004-agent-promotion.md](../../adr/0004-agent-promotion.md)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Extend the existing skill-only promotion subsystem to also promote Agents, using a discriminator column + strategy-pattern materializer so the state machine, authorization, audit, events, and notifications are reused unchanged.

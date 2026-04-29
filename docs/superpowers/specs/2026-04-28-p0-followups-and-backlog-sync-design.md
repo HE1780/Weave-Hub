@@ -1,5 +1,7 @@
 # Spec — P0 Follow-ups + Fork Backlog Sync
 
+> ✅ **SHIPPED — 实施完成 2026-04-28。** 见 plan [2026-04-28-p0-followups-and-backlog-sync.md](../plans/2026-04-28-p0-followups-and-backlog-sync.md)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 **Date:** 2026-04-28
 **Author:** session
 **ADR:** 0003 §1.1 (fork 自有路线收尾) + 0004 (agent promotion follow-ups)

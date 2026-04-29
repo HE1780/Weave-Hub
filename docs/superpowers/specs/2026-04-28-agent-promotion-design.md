@@ -1,8 +1,10 @@
 # A9 — Agent Promotion Design
 
+> ✅ **SHIPPED — 实施完成 2026-04-28。** 见 plan [2026-04-28-agent-promotion.md](../plans/2026-04-28-agent-promotion.md) 与 ADR [0004-agent-promotion.md](../../adr/0004-agent-promotion.md)。本 spec §3 / §15 中明确"out of scope"的延后项见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md) 的 ⏸ 段。
+
 **Date**: 2026-04-28
-**Status**: Approved (brainstorm complete)
-**ADR**: To be authored as `docs/adr/0004-agent-promotion.md` during implementation
+**Status**: Approved (brainstorm complete) → **Implemented 2026-04-28**
+**ADR**: [docs/adr/0004-agent-promotion.md](../../adr/0004-agent-promotion.md)
 **ADR 0003 clause**: 1.1 (fork-led Agent management)
 
 ## 1. Context

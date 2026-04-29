@@ -1,5 +1,7 @@
 # Plan — P0 Follow-ups + Fork Backlog Sync
 
+> ✅ **SHIPPED — 已完成 2026-04-28。** 6 任务全部落地(commits `2266fd4e` → `f0a209e6`)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 **Spec:** [docs/superpowers/specs/2026-04-28-p0-followups-and-backlog-sync-design.md](../specs/2026-04-28-p0-followups-and-backlog-sync-design.md)
 **Branch:** `feat/p0-followups-and-backlog-sync`
 **Total:** 8 任务
