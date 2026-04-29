@@ -473,7 +473,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
               </span>
             )}
           </div>
-          <h1 className="text-balance text-4xl font-bold font-heading text-foreground">{agent.slug}</h1>
+          <h1 className="text-balance text-4xl font-bold font-heading text-foreground">{targetName}</h1>
           <p className="text-lg text-muted-foreground leading-relaxed">{agent.description}</p>
         </header>
 

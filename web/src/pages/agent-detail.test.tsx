@@ -161,6 +161,25 @@ describe('AgentDetailPage', () => {
     expect(screen.getByText('Step 1')).toBeInTheDocument()
   })
 
+  it('h1 prefers displayName over slug', async () => {
+    useAgentDetailMock.mockReturnValue({
+      data: {
+        slug: 'customer-support-agent',
+        displayName: 'Customer Support',
+        version: '1.0.0',
+        description: 'Triages tickets',
+      },
+      isLoading: false,
+      isError: false,
+    })
+    useAuthMock.mockReturnValue({ user: null, hasRole: () => false })
+
+    render(<AgentDetailPage namespace="global" slug="customer-support-agent" />, { wrapper })
+
+    const heading = await screen.findByRole('heading', { level: 1 })
+    expect(heading).toHaveTextContent('Customer Support')
+  })
+
   it('renders the load-error message when the agent is unknown', async () => {
     useAgentDetailMock.mockReturnValue({
       data: undefined,
@@ -177,7 +196,6 @@ describe('AgentDetailPage', () => {
   it('shows the manage section with Archive button when the backend says the viewer can manage', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'planner',
         description: 'plans things',
         agentId: 1,
         slug: 'planner',
@@ -201,7 +219,6 @@ describe('AgentDetailPage', () => {
   it('hides the manage section when canManageLifecycle is false', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'planner',
         description: 'plans things',
         agentId: 1,
         slug: 'planner',
@@ -218,7 +235,7 @@ describe('AgentDetailPage', () => {
 
     render(<AgentDetailPage namespace="global" slug="planner" />, { wrapper })
 
-    await waitFor(() => expect(screen.getByText('planner')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Planner')).toBeInTheDocument())
     expect(screen.queryByText('Manage agent')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Archive' })).toBeNull()
   })
@@ -226,7 +243,6 @@ describe('AgentDetailPage', () => {
   it('shows Unarchive button + Archived badge when the agent is archived and viewer can manage', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'planner',
         description: 'plans things',
         agentId: 1,
         slug: 'planner',
@@ -251,7 +267,6 @@ describe('AgentDetailPage', () => {
   it('shows Archive button to a namespace ADMIN who is NOT the owner (canManageLifecycle gates by backend permission, not local owner check)', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'planner',
         description: 'plans things',
         agentId: 1,
         slug: 'planner',
@@ -280,7 +295,6 @@ describe('AgentDetailPage', () => {
     // the button silently regressed to requiring `globalNamespaceId` plumbing.
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'planner',
         description: 'plans things',
         agentId: 42,
         slug: 'planner',
@@ -308,7 +322,6 @@ describe('AgentDetailPage', () => {
   it('formats version timestamp with locale instead of rendering raw server time', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'planner',
         description: 'plans things',
         versions: [
           {
@@ -336,7 +349,6 @@ describe('AgentDetailPage', () => {
   it('renders inline package files and opens preview from files tab', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'planner',
         description: 'plans things',
         body: '# Agent Doc',
         soul: 'Soul text',
@@ -361,7 +373,6 @@ describe('AgentDetailPage', () => {
   it('shows sidebar file browser card and keeps report action outside social card', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'planner',
         description: 'plans things',
         namespace: 'global',
         slug: 'planner',
