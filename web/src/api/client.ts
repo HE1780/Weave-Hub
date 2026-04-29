@@ -1103,17 +1103,15 @@ export const meApi = {
     const searchParams = new URLSearchParams()
     searchParams.set('page', String(params?.page ?? 0))
     searchParams.set('size', String(params?.size ?? 12))
-    // Backend payload exposes `slug`; AgentCard / AgentSummary use `name` as the URL key,
-    // so fold slug → name (preserving slug too) before returning. Also coerce ratingAvg
-    // from BigDecimal-as-string|number to number, matching useAgents.toSummary.
-    const raw = await fetchJson<{ items: Array<AgentSummary & { slug?: string; ratingAvg?: number | string | null }>; total: number; page: number; size: number }>(
+    // Backend exposes ratingAvg as BigDecimal-as-string|number; coerce to number,
+    // matching useAgents.toSummary.
+    const raw = await fetchJson<{ items: Array<AgentSummary & { ratingAvg?: number | string | null }>; total: number; page: number; size: number }>(
       `${WEB_API_PREFIX}/me/agent-stars?${searchParams.toString()}`
     )
     return {
       ...raw,
       items: raw.items.map((item) => ({
         ...item,
-        name: item.name ?? item.slug ?? '',
         ratingAvg:
           item.ratingAvg !== undefined && item.ratingAvg !== null ? Number(item.ratingAvg) : undefined,
       })),

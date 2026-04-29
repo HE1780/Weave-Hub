@@ -40,7 +40,7 @@ describe('useAgents', () => {
 
     expect(result.current.data).toHaveLength(1)
     expect(result.current.data?.[0]).toEqual({
-      name: 'agent-a',
+      slug: 'agent-a',
       displayName: 'Agent A',
       description: 'description-a',
       namespace: 'global',

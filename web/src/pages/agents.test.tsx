@@ -33,8 +33,8 @@ vi.mock('react-i18next', () => ({
 }))
 
 vi.mock('@/features/agent/agent-card', () => ({
-  AgentCard: ({ agent }: { agent: { name: string } }) => (
-    <div data-testid="agent-card">{agent.name}</div>
+  AgentCard: ({ agent }: { agent: { slug: string } }) => (
+    <div data-testid="agent-card">{agent.slug}</div>
   ),
 }))
 

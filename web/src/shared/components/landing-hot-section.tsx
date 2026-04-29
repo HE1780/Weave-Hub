@@ -58,13 +58,13 @@ export function LandingHotSection() {
   }))
 
   const agentCards: ResourceCardData[] = (agents ?? []).slice(0, 3).map((a) => ({
-    id: a.name,
-    title: a.name,
+    id: a.slug,
+    title: a.slug,
     type: 'agent',
     category: a.description,
     updatedAt: '',
-    href: `/agents/${a.namespace ?? 'global'}/${a.name}`,
-    icon: pickIcon(a.name),
+    href: `/agents/${a.namespace ?? 'global'}/${a.slug}`,
+    icon: pickIcon(a.slug),
   }))
 
   // Interleave skills and agents: skill, agent, skill, agent, skill, agent

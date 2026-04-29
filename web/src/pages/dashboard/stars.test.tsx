@@ -70,7 +70,6 @@ describe('MyStarsPage', () => {
         items: [
           {
             id: 7,
-            name: 'agent-alpha',
             slug: 'agent-alpha',
             displayName: 'Agent Alpha',
             description: 'first agent',

@@ -127,7 +127,7 @@ describe('AgentDetailPage', () => {
   it('renders the agent name, description, soul, and workflow when found', async () => {
     useAgentDetailMock.mockReturnValue({
       data: {
-        name: 'customer-support-agent',
+        slug: 'customer-support-agent',
         version: '1.0.0',
         description: 'Triages tickets',
         body: '# Agent Doc\n\nSupports triage.',
