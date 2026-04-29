@@ -4,6 +4,62 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-04-29 — Agent 后续 housekeeping（bundle follow-up #1 #2 #5 + h1 修复）
+
+**Branches:** `feat/agent-followup-housekeeping`（已合 main）、`fix/agent-detail-h1`（已合 main）
+**Push 状态:** 全部已 push 到 origin/main
+
+### What shipped
+
+| Commit | 内容 |
+|---|---|
+| `3c58f304` fix(web): broaden My Stars subtitle to cover skills + agents | en `subtitle`: "View your starred skills" → "View your starred skills and agents"；zh: "查看你标记过的技能" → "查看你收藏的技能与智能体"。`stars.empty` 维持 skill 专用（panel 用各自 empty key，正确） |
+| `15973fb0` test(web): cover agent panel resolve mutation in reports.test | `reports.test.tsx` +1 case：agent panel Resolve 按钮 → ConfirmDialog → `resolveAgentMutateAsync({id:7, disposition:'RESOLVE_ONLY'})` 被调；`dismissAgentMutateAsync` 不被调。ConfirmDialog mock 升级为暴露 confirm 按钮 |
+| `1e6fafe7` refactor(web): rename AgentSummary.name to slug | `AgentSummary.name` → `slug`（slug 设为 required）；删 `AgentDetail.slug?` 重复字段；删 `client.ts:getAgentStarsPage` 的 slug→name 折叠适配；migrate 5 个消费点 + 8 个测试 fixture |
+| `e0f7e7c3` fix(web): agent detail h1 prefers displayName over slug | mirror `skill-detail.tsx:762`；`agent-detail.tsx:476` h1 从直接渲染 `agent.slug` 改用已计算好的 `targetName = displayName ?? slug`。+1 测试 `h1 prefers displayName over slug`，再清掉 8 个测试 fixture 残留的 `name:` 字段 |
+
+### 测试结果
+
+- Frontend: `pnpm vitest run` **218 files / 708 tests** 全过（housekeeping 后 707，h1 修复后 +1）
+- TS: `pnpm tsc --noEmit` exit 0
+
+### 收尾的 follow-up（本 session 完成）
+
+均来自 2026-04-29 bundle session 末尾留下的"intentional defer"：
+- ✅ #1 `stars.subtitle/empty` 文案broaden（commit `3c58f304`）
+- ✅ #2 agent panel resolve fires mutation 测试（commit `15973fb0`）
+- ✅ #5 `AgentSummary.name` vs `slug` 类型清理（commit `1e6fafe7`）
+- ✅ pre-existing h1 bug（无意中在 #5 sweep 时发现，单独修复）
+
+### 仍未做（按 bundle memo 显式延后）
+
+- `RESOLVE_AND_HIDE` disposition（需 Agent.hidden flag 落地后再做）
+- `AgentReportResolvedEvent` / `AgentReportDismissedEvent` 0 listener（spec 没要求）
+- 4 项 Skill↔Agent parity 缺口（agent search index、公开 `/namespaces/global` 端点、agent comment moderation、agent version CSV export）— 都是独立产品方向，不在 housekeeping 范围
+
+### 教训：并行 session 同 worktree 操作很危险
+
+本 session 期间另一个 Claude session 同时在跑（做了 spec-status-cleanup、P3-2b、文档归档），共用同一个工作树。出现两次干扰：
+
+1. **幽灵 stash + 工作区被改写**——发现 `git log --all` 里有 `47a0637c "On fix/agent-detail-h1-uses-targetname: spec-cleanup-WIP"`，但 `git stash list` 是空的；同时工作区出现 6 个我没改过的 Java 文件（P3-2b WIP）。说明那个 session 的 stash/pop 操作把它的 WIP 带到了我当前 checkout 的分支上。
+2. **工作区被 reset 擦掉**——`git stash push -- web/src/pages/agent-detail.{tsx,test.tsx}` + `git checkout main` + `git checkout -b fix/...` + `git stash pop` 之后，那个 session 又跑了一次 `git reset --hard HEAD`，把我的 h1 修改连同 stash 一起擦了。reflog 里能看到 `b99e4963 HEAD@{0}: reset: moving to HEAD`。
+
+**应对策略**（已沉淀）：
+- 多 session 并发同 worktree 时，**任何一方做 stash/checkout/reset 都会污染另一方**。
+- 看到陌生文件第一反应是**先停手报告**，不要 stash / checkout / reset，否则会带走对方的活儿。
+- 用 `git reflog` + `git stash list` + `git status -sb` 三件套交叉验证当前状态再行动。
+- 修复策略：等对方收尾，回到 main 重新起干净分支再做（h1 修复实际只 4 行 + 1 个 test，重做几秒钟）。
+- 长期建议：并发任务用 `git worktree` 隔离物理目录，杜绝交叉污染。
+
+### How to resume
+
+bundle 全部 follow-up 已闭合。下一会话从 fork-backlog 里挑：
+- P2-4 bean validation 接通（潜伏炸弹）
+- P3-2b validator chain 扩展（已经有人在 `feat/p3-2b-agent-package-warnings` 起头，看是否合作）
+- 4 项 Skill↔Agent parity 缺口
+
+---
+
 ## 2026-04-29 — 文档清理 ABC 全档执行
 
 **Branch:** `feat/spec-archive-cleanup-abc`

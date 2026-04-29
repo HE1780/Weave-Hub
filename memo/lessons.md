@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-04-29 — 多 session 并发同 worktree 是危险动作
+
+**症状**：在做 housekeeping 收尾时发现工作树里：
+1. `git log --all` 里有 `47a0637c "On fix/...: spec-cleanup-WIP"`，但 `git stash list` 是空的（幽灵 stash commit）。
+2. 突然出现 6 个我没改过的 Java 文件（P3-2b WIP）混进我的 staging area。
+3. 我自己 stash/checkout/pop 后，工作区又被外部 `git reset --hard HEAD` 擦掉了，h1 修改连同 stash 都没了。
+
+**原因**：另一个 Claude session 在并行操作同一个工作树。它的 `git stash`、`git checkout`、`git reset` 都会立刻反映到我的环境里。它处理它的 spec-cleanup / P3-2b 时，碰巧 stash 了一批文件、又 reset 了一次 HEAD —— 把我同时段的工作擦掉了。
+
+**规则**：
+1. **看到不属于自己的文件改动 → 立刻停手报告**，不 stash / checkout / reset / commit，否则会带走对方的 WIP。
+2. 用 `git reflog` + `git stash list` + `git status -sb` + `git log --all --oneline | head` 四件套交叉验证状态再行动。
+3. **不假设状态稳定**：每个关键操作前重新 `git status -sb`，因为另一个 session 可能在两次命令之间改了状态。
+4. **永远不要 `git reset --hard`** 除非你已经确认工作区 100% 是自己的。
+5. 长期方案：并发任务用 `git worktree add` 隔离物理目录。
+
+**引申**：幽灵 stash commit 的本质是 `refs/stash` 已删但 reflog 里还有引用，等 `git gc` 才彻底消失。看到这种 commit 不要慌——但要意识到对方刚刚 stash/pop 过，状态可能不稳定。
+
+---
+
 ## 2026-04-29 — Audit 写"未完成"必须有 commit hash 反证
 
 **症状**：跑 spec/plan 状态盘点时,subagent 把 4 份**实际全部完成**的 plan 标为 PARTIAL / NOT-STARTED(`2026-04-27-agent-list-search.md`、`2026-04-27-agent-publish-review-pipeline.md`、`2026-04-27-weavehub-landing-ia.md`、`2026-04-26-skill-version-comments.md`)。差点据此把"未完成项"汇报给用户。
