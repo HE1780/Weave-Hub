@@ -1,5 +1,7 @@
 # 2026-04-29 — Agent followups bundle design
 
+> ✅ **SHIPPED — 实施完成 2026-04-29。** 见 plan [2026-04-29-agent-followups-bundle.md](../plans/2026-04-29-agent-followups-bundle.md)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 **ADR clause:** ADR 0003 §1.1 (Agent management is fork-owned)
 **Source:** `memo/memo.md` 2026-04-28 P0 follow-ups list, items #1–#4
 **Plan target:** `docs/plans/2026-04-29-agent-followups-bundle.md` (4 tasks → 4 commits)

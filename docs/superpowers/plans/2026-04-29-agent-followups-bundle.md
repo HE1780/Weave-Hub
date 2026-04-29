@@ -1,5 +1,7 @@
 # Agent Followups Bundle Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-29。** 4 任务全部落地(commits `2c17ae30` → `38b42297`),backend 578/578 + web 706/706 passing。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship the four small follow-ups identified by the 2026-04-28 P0 audit (Agent promotion default-GLOBAL, Agent card rating chip, agent reports moderation tab, My Stars Agents tab) as a single plan with four independent commits.

@@ -1,5 +1,7 @@
 # WeaveHub Design Tokens + Glass-morphism 体系迁移 (P0-1a) Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-27。** Tokens + glass-morphism + 绿色单色品牌全部迁移完成,web 测试 631 → 635 passing。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把 fork web 前端的 design tokens 从 indigo+violet brand-gradient 切换到绿色单色阶 + glass-morphism 工具类 + Inter 字体,既有 Card 类组件视觉迁移,**完全不动版面**。

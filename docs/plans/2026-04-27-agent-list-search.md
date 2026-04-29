@@ -1,5 +1,7 @@
 # P0-2: Agent 列表搜索 + 筛选 Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-27。** Backend `93bfff15` + 前端 `da7e4c68` + memo close-out `d3993cbc`,全部 in `main`。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+
 **ADR 0003 §1.1** (Agent management) · 估时 ~1 天 · 全栈
 **Backlog entry:** [docs/plans/2026-04-27-fork-backlog.md](2026-04-27-fork-backlog.md) §P0-2
 

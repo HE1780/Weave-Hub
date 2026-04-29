@@ -1,5 +1,7 @@
 # Agents Frontend MVP Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-26。** 12 个 task commits `87c361db` → `ba343843` 全部 in `main`。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。本文件保留作为实施过程参考,**不要据此再起新 plan**。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Wire the existing `agents.tsx` placeholder into the router and nav, then render an Agent list and detail page driven by mock data shaped per the locked Agent Package Format v1.

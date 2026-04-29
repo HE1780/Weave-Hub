@@ -1,5 +1,7 @@
 # Skill Version Comments Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-26。** Tasks 1-25 全部落地;V40 表 + `SkillVersionCommentController` + 前端 UI 在 `main`(commits `c8d79c4f` → `503ffa62`,merge `03bb9193`)。**ADR:** [docs/adr/0002-skill-version-comments.md](../adr/0002-skill-version-comments.md)。本文件保留作为实施过程参考,**不要据此再起新 plan**。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship a v1 comment system on skill versions: markdown body, soft-delete, multi-pin, namespace-admin moderation, paginated list endpoint, and a `<VersionCommentsSection>` rendered on the skill-detail page. Web-only, single deploy, no feature flag.

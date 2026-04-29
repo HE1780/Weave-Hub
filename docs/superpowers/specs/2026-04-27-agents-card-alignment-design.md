@@ -1,5 +1,7 @@
 # Agents Card Alignment Design (Skills parity)
 
+> ✅ **SHIPPED — 实施完成 2026-04-27。** AgentCard 已对齐 SkillCard 信息层(namespace badge + version chip + download + star + ratingAvg/Count)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 ## Context
 
 User requested that `/agents` page cards align with `/skills` cards, including:

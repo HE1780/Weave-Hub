@@ -1,5 +1,7 @@
 # Agent Publish & Review Pipeline — Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-27 Phase E 收尾。** 30-task plan 全部落地(`AgentPublishService` / `AgentReviewService` / `AgentReviewController` + agent-publish UI + reviewer inbox)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。本文件保留作为实施过程参考。
+
 **Plan date:** 2026-04-27
 **Status:** Ready for execution. Mirror skill publish/review architecture; no new patterns.
 **Related:**

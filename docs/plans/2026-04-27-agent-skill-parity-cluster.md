@@ -1,5 +1,7 @@
 # Agent–Skill 能力对齐 — 收尾集群（A4 / A7 / A8 / A9 / A10）
 
+> ✅ **SHIPPED — 已完成 2026-04-27 / 2026-04-28。** A4/A7/A8/A10 在 commits `fb592b03` → `8fab7f20` 完成;A9 拆出独立 plan ([2026-04-28-agent-promotion.md](../superpowers/plans/2026-04-28-agent-promotion.md)) 已于 2026-04-28 全栈落地。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+
 **Date:** 2026-04-27
 **ADR:** 0003 §1.1（Agent registry 与 Skill 在能力层面对齐；不引入运行时语义）
 **Status:** A4 / A7 / A8 / A10 ✅ 完成（2026-04-27）；A9 ⏸️ 延后需独立 brainstorm

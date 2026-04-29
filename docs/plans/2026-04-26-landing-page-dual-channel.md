@@ -1,5 +1,7 @@
 # Landing Page — Dual-Channel Redesign (Skills + Agents)
 
+> ✅ **SHIPPED — 已完成 2026-04-26。** 7 commits `f01dcccc` → `f5b58d7c` 全部 in `main`。**注意:** 本方案被 P0-1b WeaveHub Landing IA 重写部分取代(LandingChannelsSection / PopularAgents 已删除)。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+
 **Plan date:** 2026-04-26
 **Status:** Ready for execution
 **Source design:** `docs/landing-page-redesign.md`

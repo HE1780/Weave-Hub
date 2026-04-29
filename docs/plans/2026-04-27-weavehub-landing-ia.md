@@ -1,5 +1,7 @@
 # WeaveHub Landing IA + my-weave + nav 重排 (P0-1b) Implementation Plan
 
+> ✅ **SHIPPED — 已完成 2026-04-27。** P0-1b 全部 task in `main`(commits `9402e3aa` → `60da6145`):landing.tsx 4 段重写、LandingHotSection 混排、/my-weave 路由、nav 重排、站名"知联 WeaveHub"。详见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把 fork landing 页从当前 9 段结构重写为 weavehub 4 段(Hero + 热门推荐 + 全域动态流+工作台 + Footer),新增 `/my-weave` 路由,nav 重排,站名换"知连 WeaveHub",所有 className 直接照搬 prototype。

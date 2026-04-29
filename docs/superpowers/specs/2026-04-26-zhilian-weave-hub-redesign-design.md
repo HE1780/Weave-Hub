@@ -1,5 +1,7 @@
 # 知联 Weave Hub — Home & Agent Channel Redesign Spec
 
+> ✅ **SHIPPED — 实施完成 2026-04-27 (拆为 P0-1a + P0-1b)。** 原 spec 中 "Agent column will render empty state until backend lands" 的 stub 描述**已不适用** — agents.tsx 已是全量列表页 + LandingHotSection 已混排 skill/agent。详见 [docs/plans/2026-04-29-spec-status-ledger.md](../../plans/2026-04-29-spec-status-ledger.md)。
+
 > Source brainstorm plan: `~/.claude/plans/abundant-discovering-wreath.md`
 
 ## 1. Context

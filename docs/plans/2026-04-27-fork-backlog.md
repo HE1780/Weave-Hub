@@ -3,6 +3,7 @@
 **Date:** 2026-04-27
 **Status:** Living document — 每次启动新 plan 前先看,启动后把对应条目标 🔄,完成后标 ✅
 **Owner:** HE1780/Weave-Hub fork 维护者
+**Status ledger (全仓 spec/plan 总账):** [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md) — 已完成 / 延后 / 待启动 集中清单
 **Scope source:** [docs/adr/0003-fork-scope-and-upstream-boundary.md](../adr/0003-fork-scope-and-upstream-boundary.md)
 **Visual baseline:** [web/LANDING_PAGE_REDESIGN.md](../../web/LANDING_PAGE_REDESIGN.md)
 (知连 WeaveHub 美学 — 浅色 glass-morphism + 绿色单色,2026-04-27 取代旧 Tech Weave 路线)
@@ -17,40 +18,28 @@
 4. **fork 与 upstream 隔离**:每条 backlog 标注 ADR 0003 子条款 (§1.1 / §1.2 / §1.3),
    不属于 fork 路线的工作直接拒绝纳入
 
-## 当前快照(2026-04-27 22:00 后,Phase E follow-ups 全部收尾后)
+## 当前快照(2026-04-29 刷新)
 
-测试 baseline:backend **460/460**,web **631/631**,typecheck/lint 仅 registry-skill.tsx 预存在错误。
+> 完整 spec/plan 状态总账 → [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+> 本节只保留 backlog 现状口径;早期 2026-04-27 快照(测试 baseline 460/460、视觉路线"重置"备注、P0-2 / P2-2 audit 修正等)已**全部成为历史**,移除以避免和现状矛盾。
+> 历史 audit 过程的细节记录在 `memo/memo.md` 2026-04-27 / 2026-04-28 / 2026-04-29 条目。
 
-代码层面已完成的部分(不再是 backlog 项):
+**测试 baseline**(2026-04-29):backend **578/578**,web **706/706**,typecheck/lint clean(除 registry-skill.tsx 预存在错误)。
 
-- Agent 后端:数据库 / 实体 / 解析器 / 校验器 / 可见性 / publish service / review service / 通知 / public read endpoints / `/detail` 端点已有 controller test
-- Agent 前端:列表页 / 详情页 / 发布页 / My Agents / 审核 inbox + 详情 / 8 个 hooks(已统一用 `createWrapper` helper)
-- AgentReviewsPage 行展示 agent slug + version(原 P1-1 已完成)
-- AgentCard 用 TanStack `<Link>`(支持 cmd-click / 中键 / 右键打开新标签)
-- Hero CTA:已拆 dropdown(发布 Skill / 发布 Agent)
+**已完成,不再是 backlog 项**:
 
-视觉路线 2026-04-27 重置(brainstorming A 路线)——以下旧状态**不再适用**:
+- Agent 全栈(后端 + 前端 + i18n)
+- Agent 治理:archive / rating / star / comments(skill+agent 双向)
+- Agent 列表搜索 + 筛选(P0-2)
+- Agent Promotion 全链路(A9,含物化拷贝 + 前端 PromoteAgentButton)
+- CLI 兼容层支持 type=agent
+- Stats / download counter
+- WeaveHub 视觉重设计 P0-1a(tokens) + P0-1b(landing IA)+ /my-weave 路由
+- 开放注册 + Team namespace 创建权限下放
+- A6 admin moderation 接 agent reports、AgentSummary ratingAvg、My Stars Agent 段(2026-04-29 followups bundle)
+- P3-2a:`BasicPrePublishValidator` 接入 `AgentPublishService`(commit `5d62a75b`)
 
-- 字体三联 Syne / IBM Plex Sans / JetBrains Mono → P0-1a 改为 Inter + JetBrains Mono
-- `--brand-start` indigo / `--brand-end` violet brand-gradient → P0-1a 改为绿色单色 brand-50/100/200/500/600/700
-- 旧 LandingChannelsSection / PopularAgents / LandingQuickStartSection → P0-1b 删除
-- 站名 SkillHub → P0-1b 改为"知连 WeaveHub"
-
-### 2026-04-27 后端 audit 修正(本次更新)
-
-之前的 backlog 描述与代码实际有偏差,本次更新已对齐:
-
-- **P0-2 状态**:从"立即可启动(看似已规划)"改为"未启动" —— controller 当前只有 page/size,
-  `AgentService` 没有 ILIKE 方法,整条链路要从零写
-- **P2-2 状态**:从"补 service + 4 端点"改为"domain ready, app missing" ——
-  `Agent.archive()` / `AgentVersion.archive()` / `AgentVisibilityChecker` 的 ARCHIVED 屏蔽**已实现**,
-  实际工作量比原描述小,只缺 `AgentLifecycleService` + `AgentLifecycleController`(可 mirror SkillLifecycleController)
-- **P3-2 描述纠正**:"PrePublishValidator 从 NoOp 扩展"双重过时 ——
-  `BasicPrePublishValidator` 早已是真实实装(密钥扫描 + 占位符检测),问题是 `AgentPublishService` 完全没接它。
-  本项拆为 P3-2a(把 validator 接入 Agent 发布)+ P3-2b(扩 rule 链)。
-  **P3-2a 已完成(commit `5d62a75b`,2026-04-29 audit 确认),P3-2b 仍未启动**
-- **新增 P2-4 接通 bean validation**:`pom.xml` 缺 `spring-boot-starter-validation`,
-  全代码 ~44 处 `@Valid`/`@NotBlank` 静默失效。当前不阻塞,但是潜伏炸弹
+**仍未启动的 backlog 项**见文末"启动建议(截至 2026-04-29 刷新)"段。
 
 ---
 
@@ -538,16 +527,26 @@ P0 follow-ups + 后端实际状态校正,详见 `feat/p0-followups-and-backlog-s
 
 ---
 
-## 启动建议
+## 启动建议(截至 2026-04-29 刷新)
 
-下一波**真**剩余项,按可启动度排序:
+> 完整状态总账见 [docs/plans/2026-04-29-spec-status-ledger.md](2026-04-29-spec-status-ledger.md)。
+> 原启动建议中的 #1/#2/#3/#4 已在 2026-04-29 agent followups bundle 全部完成
+> (memo §2026-04-29);Public `/namespaces/global` 端点改用 backend 默认 GLOBAL 方案绕过(commit `2c17ae30`)。
 
-1. **A6 admin moderation dashboard 接 agent reports** — 0.5–1 天,后端齐全,前端只需在 [reports.tsx](../../web/src/pages/dashboard/reports.tsx) 加 type 过滤 + agent reports 列表/处置;
-2. **Public `/namespaces/global` 端点** — A9 follow-up,让 PromoteAgentButton 不再依赖 `useMyNamespaces` 查 GLOBAL ns id;
-3. **List 卡片平均评分展示** — 扩 `AgentSummary` 字段 + AgentCard 渲染;
-4. **My Stars 页 Agent 段** — dashboard 重设计的一部分;
-5. **P2-4 bean validation 接通** — 后端潜伏炸弹清理;
-6. **P3-2b validator chain 扩展** — `PrePublishValidator` 改 `List<...>` / chain + 加规则;P3-2a 接入工作已完成(commit `5d62a75b`)。
+**真正剩余的待启动项**:
+
+1. **P2-4 bean validation 接通** — 后端潜伏炸弹清理;
+2. **P3-2b validator chain 扩展** — `PrePublishValidator` 改 `List<...>` / chain + 加规则;P3-2a 接入工作已完成(commit `5d62a75b`)。
+
+**A9 显式延后项**(spec §3 / §15;启动需 brainstorm):
+
+- LandingHotSection 接 promotion 数据源
+- Agent search index 同步 promotion 状态(P3-3)
+- Source-link `sourceAgentId` 回链字段
+- Per-source-type 通知 / 指标
+- Review queue filter tabs(YAGNI)
+
+详见 ledger 的 ⏸ 段。
 
 视觉/landing 路线已在 P0-1a/P0-1b/P0-2 完成。下一波若仍需视觉迭代,基于
 [docs/superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md](../superpowers/specs/2026-04-27-weavehub-visual-overhaul-design.md)
