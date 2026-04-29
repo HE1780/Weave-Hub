@@ -7,8 +7,7 @@ import { useAgents } from '@/features/agent/use-agents'
 import { SkeletonList } from './skeleton-loader'
 
 /**
- * "热门推荐" section — mixed skill+agent grid (3 + 3 = 6 cards),
- * visual mirrors web/weavehub---知连/src/App.tsx lines 230-250.
+ * "热门推荐" section — mixed skill+agent grid (3 + 3 = 6 cards).
  */
 /**
  * Returns a stable pseudo-random icon based on id/name to keep variety

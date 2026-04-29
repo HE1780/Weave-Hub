@@ -4,9 +4,7 @@ import { LandingRecentSection } from '@/shared/components/landing-recent-section
 import { LandingWorkspace } from '@/shared/components/landing-workspace'
 
 /**
- * 知连 WeaveHub landing page — 4-section IA per spec §3.1.
- *
- * Visual mirrors prototype web/weavehub---知连/src/App.tsx layout.
+ * 知连 WeaveHub landing page — 4-section IA.
  */
 export function LandingPage() {
   return (
