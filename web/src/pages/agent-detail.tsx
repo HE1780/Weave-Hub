@@ -202,7 +202,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const canManageLifecycle = agent.canManageLifecycle ?? false
   const targetNamespace = agent.namespace ?? namespace ?? ''
   const targetSlug = agent.slug ?? slug ?? ''
-  const targetName = agent.displayName ?? agent.name
+  const targetName = agent.displayName ?? agent.slug
 
   /**
    * Maps backend status into translated labels used by the versions tab.
@@ -473,7 +473,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
               </span>
             )}
           </div>
-          <h1 className="text-balance text-4xl font-bold font-heading text-foreground">{agent.name}</h1>
+          <h1 className="text-balance text-4xl font-bold font-heading text-foreground">{agent.slug}</h1>
           <p className="text-lg text-muted-foreground leading-relaxed">{agent.description}</p>
         </header>
 

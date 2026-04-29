@@ -97,7 +97,7 @@ function AgentsStarsPanel() {
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {agents.map((agent) => (
-          <AgentCard key={agent.id ?? agent.name} agent={agent} />
+          <AgentCard key={agent.id ?? agent.slug} agent={agent} />
         ))}
       </div>
       {data && data.total > PAGE_SIZE ? (

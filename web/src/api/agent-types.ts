@@ -7,7 +7,8 @@
  */
 
 export interface AgentSummary {
-  name: string
+  /** URL-key slug. Always required; the backend `agent.slug` column. */
+  slug: string
   displayName?: string
   description: string
   version?: string
@@ -18,8 +19,6 @@ export interface AgentSummary {
   ratingCount?: number
   /** Backend agent.id, present on payloads sourced from real DB rows. */
   id?: number
-  /** Backend agent.slug; equals {@link name} when sourced from packages. */
-  slug?: string
 }
 
 export interface AgentDetail extends AgentSummary {
@@ -29,7 +28,6 @@ export interface AgentDetail extends AgentSummary {
   workflow?: AgentWorkflow
   frontmatter?: Record<string, unknown>
   agentId?: number
-  slug?: string
   displayName?: string
   ownerId?: string
   status?: 'ACTIVE' | 'ARCHIVED'

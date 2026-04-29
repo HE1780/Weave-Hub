@@ -76,7 +76,7 @@ export function AgentsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {agents.map((agent) => (
               <AgentCard
-                key={`${agent.namespace ?? 'global'}/${agent.name}`}
+                key={`${agent.namespace ?? 'global'}/${agent.slug}`}
                 agent={agent}
               />
             ))}

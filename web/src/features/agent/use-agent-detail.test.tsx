@@ -33,7 +33,7 @@ steps:
 `
 
 describe('useAgentDetail', () => {
-  it('hydrates name + soul + workflow steps from the latest PUBLISHED version', async () => {
+  it('hydrates slug + soul + workflow steps from the latest PUBLISHED version', async () => {
     getMock.mockResolvedValueOnce({
       id: 7, namespace: 'global', slug: 'agent-a',
       displayName: 'Agent A', description: 'd',
@@ -57,7 +57,7 @@ describe('useAgentDetail', () => {
     const { result } = renderHook(() => useAgentDetail('global', 'agent-a'), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.data?.name).toBe('agent-a')
+    expect(result.current.data?.slug).toBe('agent-a')
     expect(result.current.data?.soul).toBe('You are helpful.')
     expect(result.current.data?.workflow?.steps?.length).toBe(2)
   })

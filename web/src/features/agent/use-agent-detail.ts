@@ -22,7 +22,7 @@ export function useAgentDetail(namespace: string, slug: string): UseQueryResult<
       }
       const full = await agentsApi.getVersion(namespace, slug, latestPublished.version)
       return {
-        name: agent.slug,
+        slug: agent.slug,
         description: agent.description ?? '',
         version: full.version,
         namespace: agent.namespace,
@@ -32,7 +32,6 @@ export function useAgentDetail(namespace: string, slug: string): UseQueryResult<
         workflow: parseWorkflow(full.workflowYaml),
         frontmatter: undefined,
         agentId: agent.id,
-        slug: agent.slug,
         displayName: agent.displayName,
         ownerId: agent.ownerId,
         status: agent.status,

@@ -32,7 +32,7 @@ afterEach(() => cleanup())
 
 describe('AgentCard', () => {
   const agent = {
-    name: 'demo-agent',
+    slug: 'demo-agent',
     displayName: 'Demo Agent',
     description: 'A demo agent for tests.',
     version: '1.2.3',
@@ -64,7 +64,7 @@ describe('AgentCard', () => {
   })
 
   it('falls back to the global namespace when AgentSummary has none', () => {
-    render(<AgentCard agent={{ name: 'orphan', description: 'no ns' }} />)
+    render(<AgentCard agent={{ slug: 'orphan', description: 'no ns' }} />)
 
     expect(screen.getByRole('link')).toHaveAttribute('href', '/agents/global/orphan')
     expect(screen.getByText('@global')).toBeInTheDocument()

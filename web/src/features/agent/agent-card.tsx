@@ -19,12 +19,12 @@ interface AgentCardProps {
  */
 export function AgentCard({ agent }: AgentCardProps) {
   const namespace = agent.namespace ?? 'global'
-  const displayName = agent.displayName ?? agent.name
+  const displayName = agent.displayName ?? agent.slug
 
   return (
     <Link
       to="/agents/$namespace/$slug"
-      params={{ namespace, slug: agent.name }}
+      params={{ namespace, slug: agent.slug }}
       className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 rounded-xl"
     >
       <Card glass className="h-full min-h-[220px] p-5 group relative overflow-hidden">
