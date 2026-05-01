@@ -163,7 +163,10 @@
     "enterKeyword": "Please enter a search keyword",
     "results": "{{count}} skills found",
     "resultCount": "Found <1>{{count}}</1> results",
-    "loadingMore": "Updating search results..."
+    "loadingMore": "Updating search results...",
+    "tabSkills": "Skills",
+    "tabAgents": "Agents",
+    "emptyAgents": "No agents found"
   },
   "searchBar": {
     "placeholder": "Search skills...",
@@ -1472,6 +1475,17 @@
     "loading": "Loading agents…",
     "loadError": "Failed to load agents.",
     "noPublishedVersion": "This agent has no published version yet.",
+    "versionStatus": {
+      "draft": "Draft",
+      "scanning": "Scanning",
+      "scanFailed": "Scan failed",
+      "uploaded": "Uploaded",
+      "pendingReview": "Pending review",
+      "published": "Published",
+      "rejected": "Rejected",
+      "archived": "Archived",
+      "yanked": "Yanked"
+    },
     "search": {
       "placeholder": "Search agents…",
       "allNamespaces": "All namespaces",
@@ -1603,6 +1617,8 @@
       "withdrawSuccessTitle": "Review withdrawn",
       "withdrawSuccessDescription": "Version {{version}} returned to draft.",
       "withdrawErrorTitle": "Failed to withdraw review",
+      "submitReview": "Submit for review",
+      "confirmPublish": "Confirm publish",
       "rerelease": "Rerelease",
       "rereleaseTitle": "Rerelease as a new version",
       "rereleaseDescription": "Clone version {{source}} into a fresh version with a new version string. PUBLIC/namespace agents go back through review; PRIVATE agents auto-publish.",

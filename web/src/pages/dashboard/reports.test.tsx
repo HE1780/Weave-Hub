@@ -177,4 +177,40 @@ describe('ReportsPage', () => {
     expect(resolveAgentMutateAsync).toHaveBeenCalledWith({ id: 7, disposition: 'RESOLVE_ONLY' })
     expect(dismissAgentMutateAsync).not.toHaveBeenCalled()
   })
+
+  it('agent panel exposes Resolve and hide as a disposition option', async () => {
+    resolveAgentMutateAsync.mockReset().mockResolvedValue({})
+    useSkillReportsMock.mockReturnValue({ data: [], isLoading: false })
+    useAgentReportsMock.mockImplementation((status: string) => {
+      if (status === 'PENDING') {
+        return {
+          data: [
+            {
+              id: 9,
+              agentId: 100,
+              namespace: 'global',
+              agentSlug: 'planner',
+              agentDisplayName: 'Planner Agent',
+              reporterId: 'user-1',
+              reason: 'Spam',
+              details: 'details',
+              status: 'PENDING',
+              createdAt: '2026-04-29T12:00:00Z',
+            },
+          ],
+          isLoading: false,
+        }
+      }
+      return { data: [], isLoading: false }
+    })
+
+    renderPage()
+
+    const hideButtons = screen.getAllByRole('button', { name: /Resolve & hide|解决并隐藏/i })
+    expect(hideButtons.length).toBeGreaterThan(0)
+    fireEvent.click(hideButtons[0])
+    fireEvent.click(await screen.findByTestId('confirm-dialog-confirm'))
+
+    expect(resolveAgentMutateAsync).toHaveBeenCalledWith({ id: 9, disposition: 'RESOLVE_AND_HIDE' })
+  })
 })

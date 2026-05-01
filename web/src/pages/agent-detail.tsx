@@ -16,6 +16,7 @@ import { AgentStarButton } from '@/features/agent/social/agent-star-button'
 import { AgentRatingInput } from '@/features/agent/social/agent-rating-input'
 import { AgentVersionCommentsSection } from '@/features/agent/comments'
 import { AgentLabelPanel } from '@/features/agent/agent-label-panel'
+import { AgentVersionStatusBadge } from '@/features/agent/version-status-badge'
 import { PromoteAgentButton } from '@/features/agent/promotion/promote-agent-button'
 import { useAuth } from '@/features/auth/use-auth'
 import { WorkflowSteps } from '@/features/agent/workflow-steps'
@@ -207,21 +208,6 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const targetNamespace = agent.namespace ?? namespace ?? ''
   const targetSlug = agent.slug ?? slug ?? ''
   const targetName = agent.displayName ?? agent.slug
-
-  /**
-   * Maps backend status into translated labels used by the versions tab.
-   */
-  const resolveVersionStatusLabel = (status?: string) => {
-    if (!status) return ''
-    const statusMap: Record<string, string> = {
-      DRAFT: t('skillDetail.versionStatusDraft'),
-      PENDING_REVIEW: t('skillDetail.versionStatusPendingReview'),
-      PUBLISHED: t('skillDetail.versionStatusPublished'),
-      REJECTED: t('skillDetail.versionStatusRejected'),
-      ARCHIVED: t('skillDetail.statusArchived'),
-    }
-    return statusMap[status] ?? status
-  }
 
   const handleArchive = async () => {
     try {
@@ -554,9 +540,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                           <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-mono">
                             v{version.version}
                           </span>
-                          <span className="rounded-full border border-border/60 bg-secondary/40 px-2.5 py-0.5 text-xs text-muted-foreground">
-                            {resolveVersionStatusLabel(version.status)}
-                          </span>
+                          <AgentVersionStatusBadge status={version.status} />
                         </span>
                         <div className="flex items-center gap-3 flex-shrink-0 text-sm text-muted-foreground">
                           <Clock className="h-4 w-4" />
@@ -591,7 +575,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                                 }
                                 disabled={confirmPublishMutation.isPending}
                               >
-                                {t('agents.lifecycle.confirmPublish', { defaultValue: '确认发布' })}
+                                {t('agents.lifecycle.confirmPublish')}
                               </Button>
                             )}
                             {version.status === 'UPLOADED' && agent.visibility !== 'PRIVATE' && (
@@ -608,7 +592,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                                 }
                                 disabled={submitReviewMutation.isPending}
                               >
-                                {t('agents.lifecycle.submitReview', { defaultValue: '提交审核' })}
+                                {t('agents.lifecycle.submitReview')}
                               </Button>
                             )}
                             {version.status === 'PUBLISHED' && (

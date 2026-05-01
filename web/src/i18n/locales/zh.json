@@ -163,7 +163,10 @@
     "enterKeyword": "请输入搜索关键词",
     "results": "找到 {{count}} 个技能",
     "resultCount": "找到 <1>{{count}}</1> 个结果",
-    "loadingMore": "正在更新搜索结果..."
+    "loadingMore": "正在更新搜索结果...",
+    "tabSkills": "技能",
+    "tabAgents": "智能体",
+    "emptyAgents": "未找到智能体"
   },
   "searchBar": {
     "placeholder": "搜索技能...",
@@ -1472,6 +1475,17 @@
     "loading": "正在加载智能体…",
     "loadError": "加载智能体失败。",
     "noPublishedVersion": "该智能体尚未发布任何版本。",
+    "versionStatus": {
+      "draft": "草稿",
+      "scanning": "安全扫描中",
+      "scanFailed": "扫描失败",
+      "uploaded": "已上传",
+      "pendingReview": "审核中",
+      "published": "已发布",
+      "rejected": "已拒绝",
+      "archived": "已归档",
+      "yanked": "已撤回"
+    },
     "search": {
       "placeholder": "搜索智能体…",
       "allNamespaces": "全部命名空间",
@@ -1602,6 +1616,8 @@
       "withdrawSuccessTitle": "已撤回审核",
       "withdrawSuccessDescription": "版本 {{version}} 已回到草稿。",
       "withdrawErrorTitle": "撤回审核失败",
+      "submitReview": "提交审核",
+      "confirmPublish": "确认发布",
       "rerelease": "重新发布",
       "rereleaseTitle": "克隆为新版本",
       "rereleaseDescription": "基于版本 {{source}} 复制一份新版本。公开/命名空间可见的智能体会重新进入审核；私有智能体会自动发布。",
