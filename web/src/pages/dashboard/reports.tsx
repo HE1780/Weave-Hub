@@ -17,9 +17,9 @@ type Translator = (key: string, options?: Record<string, unknown>) => string
 
 /**
  * Moderation page for skill and agent reports. The outer Tabs split the two
- * report families because they have different disposition options (skill
- * supports {@code RESOLVE_AND_HIDE}; agent does not — {@code AgentLifecycleService}
- * has no hide path yet) and different "open" navigation targets.
+ * report families because they have different "open" navigation targets and
+ * historically had different disposition options. Both now support the full
+ * RESOLVE_ONLY / RESOLVE_AND_HIDE / RESOLVE_AND_ARCHIVE set.
  */
 export function ReportsPage() {
   const { t } = useTranslation()
@@ -338,6 +338,14 @@ function AgentReportsPanel() {
                     {t('reports.resolve')}
                   </Button>
                   <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={resolveMutation.isPending || dismissMutation.isPending}
+                    onClick={() => setPendingAction({ id: report.id, action: 'resolve', disposition: 'RESOLVE_AND_HIDE', agentLabel })}
+                  >
+                    {t('reports.resolveAndHide')}
+                  </Button>
+                  <Button
                     size="sm"
                     disabled={resolveMutation.isPending || dismissMutation.isPending}
                     onClick={() => setPendingAction({ id: report.id, action: 'resolve', disposition: 'RESOLVE_AND_ARCHIVE', agentLabel })}
@@ -442,30 +450,37 @@ function resolveErrorTitle(disposition: ReportDisposition | undefined, t: Transl
 }
 
 /**
- * Agent-side confirmation labels — same shape as skill but a narrower set
- * because agent has no {@code RESOLVE_AND_HIDE}.
+ * Agent-side confirmation labels — mirror skill's options. RESOLVE_AND_HIDE
+ * is now supported on the backend (AgentGovernanceService.hideAgent), but
+ * AdminAgentReportController still allows SKILL_ADMIN to invoke it; the
+ * skill counterpart restricts hide to SUPER_ADMIN. Tracked for follow-up.
  */
 function agentResolveConfirmText(disposition: AgentReportDisposition | undefined, t: Translator) {
+  if (disposition === 'RESOLVE_AND_HIDE') return t('reports.resolveAndHide')
   if (disposition === 'RESOLVE_AND_ARCHIVE') return t('reports.resolveAndArchive')
   return t('reports.resolve')
 }
 
 function agentResolveConfirmDescription(disposition: AgentReportDisposition | undefined, t: Translator, agentLabel: string) {
+  if (disposition === 'RESOLVE_AND_HIDE') return t('reports.resolveAndHideConfirmDescription', { skill: agentLabel })
   if (disposition === 'RESOLVE_AND_ARCHIVE') return t('reports.resolveAndArchiveConfirmDescription', { skill: agentLabel })
   return t('reports.resolveConfirmDescription', { skill: agentLabel })
 }
 
 function agentResolveSuccessTitle(disposition: AgentReportDisposition | undefined, t: Translator) {
+  if (disposition === 'RESOLVE_AND_HIDE') return t('reports.resolveAndHideSuccessTitle')
   if (disposition === 'RESOLVE_AND_ARCHIVE') return t('reports.resolveAndArchiveSuccessTitle')
   return t('reports.resolveSuccessTitle')
 }
 
 function agentResolveSuccessDescription(disposition: AgentReportDisposition | undefined, t: Translator, agentLabel: string) {
+  if (disposition === 'RESOLVE_AND_HIDE') return t('reports.resolveAndHideSuccessDescription', { skill: agentLabel })
   if (disposition === 'RESOLVE_AND_ARCHIVE') return t('reports.resolveAndArchiveSuccessDescription', { skill: agentLabel })
   return t('reports.resolveSuccessDescription', { skill: agentLabel })
 }
 
 function agentResolveErrorTitle(disposition: AgentReportDisposition | undefined, t: Translator) {
+  if (disposition === 'RESOLVE_AND_HIDE') return t('reports.resolveAndHideErrorTitle')
   if (disposition === 'RESOLVE_AND_ARCHIVE') return t('reports.resolveAndArchiveErrorTitle')
   return t('reports.resolveErrorTitle')
 }
