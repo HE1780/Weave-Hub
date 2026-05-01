@@ -6,6 +6,7 @@ import com.iflytek.skillhub.domain.agent.AgentStatus;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.report.event.AgentReportDismissedEvent;
 import com.iflytek.skillhub.domain.agent.report.event.AgentReportResolvedEvent;
+import com.iflytek.skillhub.domain.agent.service.AgentGovernanceService;
 import com.iflytek.skillhub.domain.agent.service.AgentLifecycleService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.governance.GovernanceNotificationService;
@@ -47,6 +48,7 @@ class AgentReportServiceTest {
     @Mock private AgentReportRepository reportRepository;
     @Mock private AuditLogService auditLogService;
     @Mock private AgentLifecycleService agentLifecycleService;
+    @Mock private AgentGovernanceService agentGovernanceService;
     @Mock private GovernanceNotificationService governanceNotificationService;
     @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -56,7 +58,8 @@ class AgentReportServiceTest {
     @BeforeEach
     void setUp() {
         service = new AgentReportService(agentRepository, reportRepository, auditLogService,
-                agentLifecycleService, governanceNotificationService, eventPublisher, clock);
+                agentLifecycleService, agentGovernanceService, governanceNotificationService,
+                eventPublisher, clock);
     }
 
     private Agent active(long namespaceId, long agentId, String slug, String ownerId) {
@@ -197,6 +200,23 @@ class AgentReportServiceTest {
         ArgumentCaptor<AgentReportResolvedEvent> captor = ArgumentCaptor.forClass(AgentReportResolvedEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().dispositionLabel()).isEqualTo("resolve_and_archive");
+    }
+
+    @Test
+    void resolveReport_resolveAndHide_invokesGovernanceHide() {
+        AgentReport report = pending(99L, 10L, "user-1");
+        when(reportRepository.findById(99L)).thenReturn(Optional.of(report));
+        when(reportRepository.save(any(AgentReport.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.resolveReport(99L, "admin-1", AgentReportDisposition.RESOLVE_AND_HIDE, "abuse",
+                "127.0.0.1", "JUnit");
+
+        verify(agentGovernanceService).hideAgent(eq(10L), eq("admin-1"), eq("127.0.0.1"), eq("JUnit"),
+                eq("abuse"));
+        verifyNoInteractions(agentLifecycleService);
+        ArgumentCaptor<AgentReportResolvedEvent> captor = ArgumentCaptor.forClass(AgentReportResolvedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().dispositionLabel()).isEqualTo("resolve_and_hide");
     }
 
     @Test

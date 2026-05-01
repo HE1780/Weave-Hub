@@ -84,7 +84,10 @@ public class AgentPromotionMaterializer implements PromotionMaterializer {
                 request.getSubmittedBy(), sourceVersion.getManifestYaml(),
                 sourceVersion.getSoulMd(), sourceVersion.getWorkflowYaml(),
                 sourceVersion.getPackageObjectKey(), sourceVersion.getPackageSizeBytes());
-        newVersion.autoPublish();   // DRAFT → PUBLISHED + publishedAt
+        // Promotion materializes an already-reviewed source — skip the scan placeholder
+        // and walk straight through SCANNING → UPLOADED → PUBLISHED on the new row.
+        newVersion.markScanPassed();
+        newVersion.autoPublish();
         newVersion = agentVersionRepository.save(newVersion);
 
         // Reset stats for the materialized agent — never inherit source download counts

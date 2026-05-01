@@ -55,6 +55,7 @@ class AgentPromotionMaterializerTest {
         Agent source = new Agent(1L, "review-bot", "Review Bot", "owner-1", AgentVisibility.PRIVATE);
         AgentVersion sourceVersion = new AgentVersion(10L, "1.0.0", "owner-1",
                 "manifest", "soul", "workflow", "objects/abc", 1024L);
+        sourceVersion.markScanPassed();
         sourceVersion.autoPublish();
 
         Agent saved = new Agent(99L, "review-bot", "Review Bot", "owner-1", AgentVisibility.PUBLIC);
@@ -85,6 +86,7 @@ class AgentPromotionMaterializerTest {
         Agent source = new Agent(1L, "review-bot", "Review Bot", "owner-1", AgentVisibility.PRIVATE);
         AgentVersion sourceVersion = new AgentVersion(10L, "1.0.0", "owner-1",
                 "manifest", "soul", "workflow", "objects/abc", 1024L);
+        sourceVersion.markScanPassed();
         sourceVersion.autoPublish();
 
         when(agentRepository.findById(10L)).thenReturn(Optional.of(source));
@@ -102,6 +104,7 @@ class AgentPromotionMaterializerTest {
         Agent source = new Agent(1L, "review-bot", "Review Bot", "owner-1", AgentVisibility.PRIVATE);
         AgentVersion sourceVersion = new AgentVersion(10L, "1.0.0", "owner-1",
                 "manifest", "soul", "workflow", "objects/abc", 1024L);
+        sourceVersion.markScanPassed();
         sourceVersion.autoPublish();
 
         AgentLabel a = new AgentLabel(source.getId(), 100L, "owner-1");

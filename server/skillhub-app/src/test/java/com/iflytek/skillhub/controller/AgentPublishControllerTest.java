@@ -121,7 +121,7 @@ class AgentPublishControllerTest {
         when(archiveExtractor.extract(any())).thenReturn(fakeEntries());
         when(agentPackageValidator.validate(any())).thenReturn(okValidation());
         when(agentPublishService.publish(any(), any(), any(), any(), any(), any(), any(),
-                any(), anyLong(), any(), any(), anyBoolean()))
+                any(), anyLong(), any(), any(), anyBoolean(), anyBoolean()))
                 .thenReturn(fakePublishedVersion());
 
         mockMvc.perform(multipart("/api/web/agents/global/publish")
@@ -147,7 +147,7 @@ class AgentPublishControllerTest {
                         List.of("Disallowed file extension: extra.bin"),
                         fakeMetadata()));
         when(agentPublishService.publish(any(), any(), any(), any(), any(), any(), any(),
-                any(), anyLong(), any(), any(), anyBoolean()))
+                any(), anyLong(), any(), any(), anyBoolean(), anyBoolean()))
                 .thenReturn(fakePublishedVersion());
 
         mockMvc.perform(multipart("/api/web/agents/global/publish")
@@ -170,7 +170,8 @@ class AgentPublishControllerTest {
                 anyLong(),
                 eq("user-1"),
                 eq(List.of("Disallowed file extension: extra.bin")),
-                eq(true));
+                eq(true),
+                eq(false));
     }
 
     @Test
