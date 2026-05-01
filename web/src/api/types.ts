@@ -412,11 +412,11 @@ export interface AdminAgentReportSummary {
 export type ReportDisposition = 'RESOLVE_ONLY' | 'RESOLVE_AND_HIDE' | 'RESOLVE_AND_ARCHIVE'
 
 /**
- * Agent moderation has no soft-hide path yet, so the admin can either
- * resolve in place or resolve-and-archive. Mirrors
- * {@code AgentReportDisposition} on the backend.
+ * Agent moderation supports the same three dispositions as skill: resolve in
+ * place, resolve-and-hide (soft-hide via Agent.hidden), and
+ * resolve-and-archive. Mirrors {@code AgentReportDisposition} on the backend.
  */
-export type AgentReportDisposition = 'RESOLVE_ONLY' | 'RESOLVE_AND_ARCHIVE'
+export type AgentReportDisposition = 'RESOLVE_ONLY' | 'RESOLVE_AND_HIDE' | 'RESOLVE_AND_ARCHIVE'
 
 export interface GovernanceSummary {
   pendingReviews: number

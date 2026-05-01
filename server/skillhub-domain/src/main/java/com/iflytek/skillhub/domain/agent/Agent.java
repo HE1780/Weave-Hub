@@ -47,6 +47,21 @@ public class Agent {
     @Column(name = "download_count", nullable = false)
     private Integer downloadCount = 0;
 
+    @Column(name = "latest_version_id")
+    private Long latestVersionId;
+
+    @Column(nullable = false)
+    private boolean hidden = false;
+
+    @Column(name = "hidden_at")
+    private Instant hiddenAt;
+
+    @Column(name = "hidden_by", length = 128)
+    private String hiddenBy;
+
+    @Column(name = "hide_reason", columnDefinition = "TEXT")
+    private String hideReason;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -76,6 +91,11 @@ public class Agent {
     public BigDecimal getRatingAvg() { return ratingAvg; }
     public Integer getRatingCount() { return ratingCount; }
     public Integer getDownloadCount() { return downloadCount; }
+    public Long getLatestVersionId() { return latestVersionId; }
+    public boolean isHidden() { return hidden; }
+    public Instant getHiddenAt() { return hiddenAt; }
+    public String getHiddenBy() { return hiddenBy; }
+    public String getHideReason() { return hideReason; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 
@@ -86,6 +106,27 @@ public class Agent {
 
     public void setDescription(String description) {
         this.description = description;
+        touch();
+    }
+
+    public void setLatestVersionId(Long latestVersionId) {
+        this.latestVersionId = latestVersionId;
+        touch();
+    }
+
+    public void hide(String by, String reason) {
+        this.hidden = true;
+        this.hiddenAt = Instant.now();
+        this.hiddenBy = by;
+        this.hideReason = reason;
+        touch();
+    }
+
+    public void unhide() {
+        this.hidden = false;
+        this.hiddenAt = null;
+        this.hiddenBy = null;
+        this.hideReason = null;
         touch();
     }
 

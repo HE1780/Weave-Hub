@@ -5,6 +5,7 @@ import com.iflytek.skillhub.domain.agent.AgentRepository;
 import com.iflytek.skillhub.domain.agent.AgentStatus;
 import com.iflytek.skillhub.domain.agent.report.event.AgentReportDismissedEvent;
 import com.iflytek.skillhub.domain.agent.report.event.AgentReportResolvedEvent;
+import com.iflytek.skillhub.domain.agent.service.AgentGovernanceService;
 import com.iflytek.skillhub.domain.agent.service.AgentLifecycleService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.governance.GovernanceNotificationService;
@@ -50,6 +51,7 @@ public class AgentReportService {
     private final AgentReportRepository reportRepository;
     private final AuditLogService auditLogService;
     private final AgentLifecycleService agentLifecycleService;
+    private final AgentGovernanceService agentGovernanceService;
     private final GovernanceNotificationService governanceNotificationService;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
@@ -58,6 +60,7 @@ public class AgentReportService {
                               AgentReportRepository reportRepository,
                               AuditLogService auditLogService,
                               AgentLifecycleService agentLifecycleService,
+                              AgentGovernanceService agentGovernanceService,
                               GovernanceNotificationService governanceNotificationService,
                               ApplicationEventPublisher eventPublisher,
                               Clock clock) {
@@ -65,6 +68,7 @@ public class AgentReportService {
         this.reportRepository = reportRepository;
         this.auditLogService = auditLogService;
         this.agentLifecycleService = agentLifecycleService;
+        this.agentGovernanceService = agentGovernanceService;
         this.governanceNotificationService = governanceNotificationService;
         this.eventPublisher = eventPublisher;
         this.clock = clock;
@@ -131,6 +135,8 @@ public class AgentReportService {
         AgentReport report = requirePendingReport(reportId);
         if (disposition == AgentReportDisposition.RESOLVE_AND_ARCHIVE) {
             agentLifecycleService.archiveAsAdmin(report.getAgentId(), actorUserId, clientIp, userAgent, comment);
+        } else if (disposition == AgentReportDisposition.RESOLVE_AND_HIDE) {
+            agentGovernanceService.hideAgent(report.getAgentId(), actorUserId, clientIp, userAgent, comment);
         }
         report.setStatus(AgentReportStatus.RESOLVED);
         report.setHandledBy(actorUserId);

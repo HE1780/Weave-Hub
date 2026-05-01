@@ -6,6 +6,7 @@ import com.iflytek.skillhub.domain.agent.AgentStatus;
 import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
+import com.iflytek.skillhub.domain.agent.scan.AgentSecurityScanService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -36,8 +36,8 @@ class AgentLifecycleServiceTest {
     @Mock private AgentService agentService;
     @Mock private AgentVersionRepository agentVersionRepository;
     @Mock private AgentReviewTaskRepository agentReviewTaskRepository;
+    @Mock private AgentSecurityScanService agentSecurityScanService;
     @Mock private ObjectStorageService objectStorageService;
-    @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private AuditLogService auditLogService;
 
     @InjectMocks private AgentLifecycleService service;
@@ -138,7 +138,7 @@ class AgentLifecycleServiceTest {
     }
 
     @Test
-    void withdrawReview_pending_version_returns_to_DRAFT_and_deletes_review_task() throws Exception {
+    void withdrawReview_pending_version_returns_to_UPLOADED_and_deletes_review_task() throws Exception {
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
         when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
 
@@ -159,7 +159,7 @@ class AgentLifecycleServiceTest {
         com.iflytek.skillhub.domain.agent.AgentVersion result =
                 service.withdrawReview(7L, "1.0.0", "owner-1", Map.of());
 
-        assertEquals(com.iflytek.skillhub.domain.agent.AgentVersionStatus.DRAFT, result.getStatus());
+        assertEquals(com.iflytek.skillhub.domain.agent.AgentVersionStatus.UPLOADED, result.getStatus());
         verify(agentReviewTaskRepository).delete(task);
     }
 
@@ -183,7 +183,7 @@ class AgentLifecycleServiceTest {
     }
 
     @Test
-    void rereleaseVersion_clones_published_source_to_new_version() throws Exception {
+    void rereleaseVersion_clones_published_source_through_scanner_to_UPLOADED() throws Exception {
         when(agentRepository.findById(7L)).thenReturn(Optional.of(agent));
         when(agentService.canManageLifecycle(eq(agent), eq("owner-1"), anyMap())).thenReturn(true);
 
@@ -200,16 +200,42 @@ class AgentLifecycleServiceTest {
 
         when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.0.0")).thenReturn(Optional.of(source));
         when(agentVersionRepository.findByAgentIdAndVersion(7L, "1.1.0")).thenReturn(Optional.empty());
-        when(agentVersionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(agentVersionRepository.save(any())).thenAnswer(inv -> {
+            com.iflytek.skillhub.domain.agent.AgentVersion v = inv.getArgument(0);
+            try {
+                java.lang.reflect.Field idField =
+                        com.iflytek.skillhub.domain.agent.AgentVersion.class.getDeclaredField("id");
+                idField.setAccessible(true);
+                if (idField.get(v) == null) {
+                    idField.set(v, 200L);
+                }
+            } catch (Exception ignored) {}
+            return v;
+        });
+        // After triggerScan, the post-scan reload returns an UPLOADED clone.
+        when(agentVersionRepository.findById(200L)).thenAnswer(inv -> {
+            com.iflytek.skillhub.domain.agent.AgentVersion uploaded =
+                    new com.iflytek.skillhub.domain.agent.AgentVersion(
+                            7L, "1.1.0", "owner-1",
+                            "---\nname: agent-a\nversion: 1.1.0\n---\nbody",
+                            "soul-content", "workflow-content",
+                            null, 1234L);
+            java.lang.reflect.Field idField =
+                    com.iflytek.skillhub.domain.agent.AgentVersion.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(uploaded, 200L);
+            uploaded.markScanPassed();
+            return Optional.of(uploaded);
+        });
 
         com.iflytek.skillhub.domain.agent.AgentVersion result =
                 service.rereleaseVersion(7L, "1.0.0", "1.1.0", "owner-1", Map.of());
 
         assertEquals("1.1.0", result.getVersion());
-        // PUBLIC visibility → PENDING_REVIEW + new review task
-        assertEquals(com.iflytek.skillhub.domain.agent.AgentVersionStatus.PENDING_REVIEW, result.getStatus());
-        verify(agentReviewTaskRepository).save(any(com.iflytek.skillhub.domain.agent.review.AgentReviewTask.class));
-        // manifest version field rewritten
+        assertEquals(com.iflytek.skillhub.domain.agent.AgentVersionStatus.UPLOADED, result.getStatus());
+        verify(agentSecurityScanService).triggerScan(eq(200L), eq("owner-1"));
+        // No review task is created during rerelease — author drives next step via submit-review.
+        verify(agentReviewTaskRepository, never()).save(any(com.iflytek.skillhub.domain.agent.review.AgentReviewTask.class));
         org.assertj.core.api.Assertions.assertThat(result.getManifestYaml()).contains("version: 1.1.0");
     }
 

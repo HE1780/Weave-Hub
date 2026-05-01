@@ -52,7 +52,16 @@ export interface AgentDetail extends AgentSummary {
 export interface AgentVersionSummary {
   id: number
   version: string
-  status: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'ARCHIVED'
+  status:
+    | 'DRAFT'
+    | 'SCANNING'
+    | 'SCAN_FAILED'
+    | 'UPLOADED'
+    | 'PENDING_REVIEW'
+    | 'PUBLISHED'
+    | 'REJECTED'
+    | 'ARCHIVED'
+    | 'YANKED'
   submittedAt: string
   publishedAt?: string | null
   packageSizeBytes: number

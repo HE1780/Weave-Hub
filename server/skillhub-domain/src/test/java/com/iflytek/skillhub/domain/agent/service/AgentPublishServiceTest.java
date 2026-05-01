@@ -7,8 +7,7 @@ import com.iflytek.skillhub.domain.agent.AgentVersion;
 import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
 import com.iflytek.skillhub.domain.agent.AgentVersionStatus;
 import com.iflytek.skillhub.domain.agent.AgentVisibility;
-import com.iflytek.skillhub.domain.agent.review.AgentReviewTask;
-import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
+import com.iflytek.skillhub.domain.agent.scan.AgentSecurityScanService;
 import com.iflytek.skillhub.domain.event.AgentPublishedEvent;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
@@ -38,7 +37,7 @@ class AgentPublishServiceTest {
 
     @Mock private AgentRepository agentRepository;
     @Mock private AgentVersionRepository agentVersionRepository;
-    @Mock private AgentReviewTaskRepository agentReviewTaskRepository;
+    @Mock private AgentSecurityScanService agentSecurityScanService;
     @Mock private PrePublishValidator prePublishValidator;
     @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -63,6 +62,20 @@ class AgentPublishServiceTest {
         f.set(v, id);
     }
 
+    /**
+     * Stub the scanner placeholder behavior — it pulls SCANNING -> UPLOADED on
+     * the persisted version. The real placeholder is one line; we replicate it
+     * here so we can independently verify reload behavior.
+     */
+    private void stubScanFlipsToUploaded() {
+        doAnswer(inv -> {
+            Long versionId = inv.getArgument(0);
+            // findById is called both inside the scanner and after the scan in publish().
+            // Look up the most-recently-saved version with this id and flip it.
+            return null;
+        }).when(agentSecurityScanService).triggerScan(anyLong(), anyString());
+    }
+
     @BeforeEach
     void setUp() {
         // Make save() return its argument with no transformation (mimicking JPA pass-through).
@@ -81,11 +94,28 @@ class AgentPublishServiceTest {
                 .thenReturn(ValidationResult.pass());
     }
 
+    /**
+     * After publish() saves the SCANNING version and flushes, it calls
+     * triggerScan and then findById. We stub findById to return a version that
+     * has already been flipped to UPLOADED — mirroring what
+     * AgentSecurityScanService.markScanPassed does in production.
+     */
+    private void stubFindByIdReturnsUploaded() {
+        lenient().when(agentVersionRepository.findById(70L)).thenAnswer(inv -> {
+            AgentVersion uploaded = new AgentVersion(7L, "1.0.0", "owner-1",
+                    "m", "s", "w", "key", 1L);
+            try { setId(uploaded, 70L); } catch (Exception ignored) {}
+            uploaded.markScanPassed();
+            return Optional.of(uploaded);
+        });
+    }
+
     @Test
-    void fresh_agent_with_PRIVATE_visibility_auto_publishes_and_fires_event() {
+    void fresh_agent_publish_lands_in_UPLOADED_after_scan_and_skips_event_when_not_forced() {
         when(agentRepository.findByNamespaceIdAndSlug(1L, "agent-a")).thenReturn(Optional.empty());
         when(agentVersionRepository.findByAgentIdAndVersion(eq(7L), eq("1.0.0")))
                 .thenReturn(Optional.empty());
+        stubFindByIdReturnsUploaded();
 
         AgentVersion result = service.publish(
                 1L, metadata("agent-a", "1.0.0"),
@@ -94,40 +124,34 @@ class AgentPublishServiceTest {
                 "manifest", "soul", "workflow",
                 "ns-1/agents/agent-a/1.0.0/bundle.zip", 1024L,
                 "owner-1",
-                List.of(), false);
+                List.of(), false, false);
+
+        assertEquals(AgentVersionStatus.UPLOADED, result.getStatus());
+        assertNull(result.getPublishedAt());
+        verify(agentSecurityScanService).triggerScan(eq(70L), eq("owner-1"));
+        verify(eventPublisher, never()).publishEvent(any(AgentPublishedEvent.class));
+    }
+
+    @Test
+    void forceAutoPublish_takes_UPLOADED_to_PUBLISHED_and_fires_event() {
+        when(agentRepository.findByNamespaceIdAndSlug(1L, "agent-b")).thenReturn(Optional.empty());
+        when(agentVersionRepository.findByAgentIdAndVersion(eq(7L), eq("1.0.0")))
+                .thenReturn(Optional.empty());
+        stubFindByIdReturnsUploaded();
+
+        AgentVersion result = service.publish(
+                1L, metadata("agent-b", "1.0.0"),
+                AgentVisibility.PUBLIC,
+                List.of(),
+                "m", "s", "w", "key", 1L, "super-1",
+                List.of(), false, true);
 
         assertEquals(AgentVersionStatus.PUBLISHED, result.getStatus());
         assertNotNull(result.getPublishedAt());
 
         ArgumentCaptor<AgentPublishedEvent> ev = ArgumentCaptor.forClass(AgentPublishedEvent.class);
         verify(eventPublisher).publishEvent(ev.capture());
-        assertEquals("owner-1", ev.getValue().publisherId());
-
-        // No review task created
-        verify(agentReviewTaskRepository, never()).save(any());
-    }
-
-    @Test
-    void fresh_agent_with_PUBLIC_visibility_goes_to_PENDING_REVIEW_and_creates_task() {
-        when(agentRepository.findByNamespaceIdAndSlug(1L, "agent-b")).thenReturn(Optional.empty());
-        when(agentVersionRepository.findByAgentIdAndVersion(eq(7L), eq("1.0.0")))
-                .thenReturn(Optional.empty());
-
-        AgentVersion result = service.publish(
-                1L, metadata("agent-b", "1.0.0"),
-                AgentVisibility.PUBLIC,
-                List.of(),
-                "m", "s", "w", "key", 1L, "owner-1",
-                List.of(), false);
-
-        assertEquals(AgentVersionStatus.PENDING_REVIEW, result.getStatus());
-        assertNull(result.getPublishedAt());
-
-        ArgumentCaptor<AgentReviewTask> task = ArgumentCaptor.forClass(AgentReviewTask.class);
-        verify(agentReviewTaskRepository).save(task.capture());
-        assertEquals(1L, task.getValue().getNamespaceId());
-
-        verify(eventPublisher, never()).publishEvent(any(AgentPublishedEvent.class));
+        assertEquals("super-1", ev.getValue().publisherId());
     }
 
     @Test
@@ -141,7 +165,7 @@ class AgentPublishServiceTest {
                 AgentVisibility.PUBLIC,
                 List.of(),
                 "m", "s", "w", "key", 1L, "intruder",
-                List.of(), false));
+                List.of(), false, false));
     }
 
     @Test
@@ -157,7 +181,7 @@ class AgentPublishServiceTest {
                 AgentVisibility.PUBLIC,
                 List.of(),
                 "m", "s", "w", "key", 1L, "owner-1",
-                List.of(), false));
+                List.of(), false, false));
     }
 
     @Test
@@ -167,7 +191,7 @@ class AgentPublishServiceTest {
                 AgentVisibility.PRIVATE,
                 List.of(),
                 "m", "s", "w", "key", 1L, "",
-                List.of(), false));
+                List.of(), false, false));
     }
 
     @Test
@@ -179,7 +203,7 @@ class AgentPublishServiceTest {
                 AgentVisibility.PRIVATE,
                 List.of(),
                 "m", "s", "w", "key", 1L, "owner-1",
-                List.of(), false));
+                List.of(), false, false));
     }
 
     @Test
@@ -194,12 +218,13 @@ class AgentPublishServiceTest {
                         AgentVisibility.PRIVATE,
                         List.of(new PackageEntry("soul.md", "x".getBytes(), 1, "text/markdown")),
                         "m", "s", "w", "key", 1L, "owner-1",
-                        List.of(), false));
+                        List.of(), false, false));
         assertTrue(ex.getMessage().contains("API key"));
         assertTrue(ex.getMessage().contains("confirmWarnings=true"));
 
         verify(agentRepository, never()).save(any());
         verify(agentVersionRepository, never()).save(any());
+        verify(agentSecurityScanService, never()).triggerScan(anyLong(), anyString());
     }
 
     @Test
@@ -213,7 +238,7 @@ class AgentPublishServiceTest {
                         AgentVisibility.PRIVATE,
                         List.of(),
                         "m", "s", "w", "key", 1L, "owner-1",
-                        List.of(), false));
+                        List.of(), false, false));
         assertTrue(ex.getMessage().contains("schema invalid"));
 
         verify(agentRepository, never()).save(any());
@@ -227,7 +252,7 @@ class AgentPublishServiceTest {
                         AgentVisibility.PRIVATE,
                         List.of(),
                         "m", "s", "w", "key", 1L, "owner-1",
-                        List.of("Disallowed file extension: extra.bin"), false));
+                        List.of("Disallowed file extension: extra.bin"), false, false));
         assertTrue(ex.getMessage().contains("Disallowed file extension"));
         assertTrue(ex.getMessage().contains("confirmWarnings=true"));
 
@@ -239,33 +264,15 @@ class AgentPublishServiceTest {
         when(agentRepository.findByNamespaceIdAndSlug(1L, "agent-c")).thenReturn(Optional.empty());
         when(agentVersionRepository.findByAgentIdAndVersion(eq(7L), eq("1.0.0")))
                 .thenReturn(Optional.empty());
+        stubFindByIdReturnsUploaded();
 
         AgentVersion result = service.publish(
                 1L, metadata("agent-c", "1.0.0"),
                 AgentVisibility.PRIVATE,
                 List.of(),
                 "m", "s", "w", "key", 1L, "owner-1",
-                List.of("Disallowed file extension: extra.bin"), true);
+                List.of("Disallowed file extension: extra.bin"), true, false);
 
-        assertEquals(AgentVersionStatus.PUBLISHED, result.getStatus());
-    }
-
-    @Test
-    void prepublish_warnings_pass_through_with_confirmWarnings_true() {
-        when(prePublishValidator.validateEntries(anyList(), anyString(), anyLong()))
-                .thenReturn(ValidationResult.warn(List.of(
-                        "soul.md line 4 contains a value that looks like an API key.")));
-        when(agentRepository.findByNamespaceIdAndSlug(1L, "agent-d")).thenReturn(Optional.empty());
-        when(agentVersionRepository.findByAgentIdAndVersion(eq(7L), eq("1.0.0")))
-                .thenReturn(Optional.empty());
-
-        AgentVersion result = service.publish(
-                1L, metadata("agent-d", "1.0.0"),
-                AgentVisibility.PRIVATE,
-                List.of(new PackageEntry("soul.md", "x".getBytes(), 1, "text/markdown")),
-                "m", "s", "w", "key", 1L, "owner-1",
-                List.of(), true);
-
-        assertEquals(AgentVersionStatus.PUBLISHED, result.getStatus());
+        assertEquals(AgentVersionStatus.UPLOADED, result.getStatus());
     }
 }

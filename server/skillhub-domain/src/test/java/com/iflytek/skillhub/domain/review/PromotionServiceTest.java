@@ -380,6 +380,7 @@ class PromotionServiceTest {
             com.iflytek.skillhub.domain.agent.AgentVersion v = new com.iflytek.skillhub.domain.agent.AgentVersion(
                     SOURCE_AGENT_ID, "1.0.0", USER_ID, "manifest", "soul", "workflow", "objects/abc", 1024L);
             setField(v, "id", SOURCE_AGENT_VERSION_ID);
+            v.markScanPassed();
             v.autoPublish();
             return v;
         }

@@ -5,11 +5,9 @@ import com.iflytek.skillhub.domain.agent.AgentRepository;
 import com.iflytek.skillhub.domain.agent.AgentVersion;
 import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
 import com.iflytek.skillhub.domain.agent.AgentVersionStatus;
-import com.iflytek.skillhub.domain.agent.AgentVisibility;
-import com.iflytek.skillhub.domain.agent.review.AgentReviewTask;
 import com.iflytek.skillhub.domain.agent.review.AgentReviewTaskRepository;
+import com.iflytek.skillhub.domain.agent.scan.AgentSecurityScanService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
-import com.iflytek.skillhub.domain.event.AgentPublishedEvent;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
@@ -17,7 +15,6 @@ import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.storage.ObjectStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -45,23 +42,23 @@ public class AgentLifecycleService {
     private final AgentService agentService;
     private final AgentVersionRepository agentVersionRepository;
     private final AgentReviewTaskRepository agentReviewTaskRepository;
+    private final AgentSecurityScanService agentSecurityScanService;
     private final ObjectStorageService objectStorageService;
-    private final ApplicationEventPublisher eventPublisher;
     private final AuditLogService auditLogService;
 
     public AgentLifecycleService(AgentRepository agentRepository,
                                  AgentService agentService,
                                  AgentVersionRepository agentVersionRepository,
                                  AgentReviewTaskRepository agentReviewTaskRepository,
+                                 AgentSecurityScanService agentSecurityScanService,
                                  ObjectStorageService objectStorageService,
-                                 ApplicationEventPublisher eventPublisher,
                                  AuditLogService auditLogService) {
         this.agentRepository = agentRepository;
         this.agentService = agentService;
         this.agentVersionRepository = agentVersionRepository;
         this.agentReviewTaskRepository = agentReviewTaskRepository;
+        this.agentSecurityScanService = agentSecurityScanService;
         this.objectStorageService = objectStorageService;
-        this.eventPublisher = eventPublisher;
         this.auditLogService = auditLogService;
     }
 
@@ -133,17 +130,15 @@ public class AgentLifecycleService {
     }
 
     /**
-     * Rebuilds a new agent version from an already-published version by cloning
-     * its inline manifest/soul/workflow content into a new version row with the
-     * given target version string. Status follows the agent's visibility:
-     * PRIVATE → PUBLISHED, PUBLIC/NAMESPACE_ONLY → PENDING_REVIEW (with a new
-     * review task).
+     * Rebuilds a new agent version by cloning a source version's inline
+     * manifest/soul/workflow into a new row. The source must be in PUBLISHED
+     * or UPLOADED status; the new version goes through SCANNING → UPLOADED via
+     * {@link AgentSecurityScanService} (placeholder synchronously passes), and
+     * the author then uses {@code AgentReviewSubmitService} to either submit
+     * for review or confirm a private publish — same flow as a fresh upload.
      *
-     * <p>Does NOT run the pre-publish secret scanner — the source version was
-     * already validated when it was first published. Mirrors skill rerelease in
-     * intent (clone + rewrite version), simplified for the agent surface
-     * (no per-file rows, no precheck-warning confirmation flow since
-     * {@code AgentPublishService} treats warnings as hard failures).
+     * <p>Does NOT run the pre-publish secret scanner content checks — the
+     * source content was already validated when first published.
      */
     @Transactional
     public AgentVersion rereleaseVersion(Long agentId,
@@ -163,8 +158,9 @@ public class AgentLifecycleService {
         AgentVersion source = agentVersionRepository
                 .findByAgentIdAndVersion(agent.getId(), sourceVersion)
                 .orElseThrow(() -> new DomainNotFoundException("error.agent.version.notFound", sourceVersion));
-        if (source.getStatus() != AgentVersionStatus.PUBLISHED) {
-            throw new DomainBadRequestException("error.agent.version.notPublished", sourceVersion);
+        if (source.getStatus() != AgentVersionStatus.PUBLISHED
+                && source.getStatus() != AgentVersionStatus.UPLOADED) {
+            throw new DomainBadRequestException("error.agent.version.notRereleasable", sourceVersion);
         }
         if (agentVersionRepository.findByAgentIdAndVersion(agent.getId(), targetVersion).isPresent()) {
             throw new DomainBadRequestException("error.agent.version.exists", targetVersion);
@@ -180,22 +176,62 @@ public class AgentLifecycleService {
                 null,
                 source.getPackageSizeBytes()
         );
-        fresh = agentVersionRepository.save(fresh);
+        AgentVersion saved = agentVersionRepository.save(fresh);
+        agentVersionRepository.flush();
+        agentSecurityScanService.triggerScan(saved.getId(), actorUserId);
+        return agentVersionRepository.findById(saved.getId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "AgentVersion vanished after rerelease scan: " + saved.getId()));
+    }
 
-        if (agent.getVisibility() == AgentVisibility.PRIVATE) {
-            fresh.autoPublish();
-            fresh = agentVersionRepository.save(fresh);
-            eventPublisher.publishEvent(new AgentPublishedEvent(
-                    agent.getId(), fresh.getId(), agent.getNamespaceId(),
-                    actorUserId, fresh.getPublishedAt()));
-        } else {
-            fresh.submitForReview();
-            fresh = agentVersionRepository.save(fresh);
-            agentReviewTaskRepository.save(new AgentReviewTask(
-                    fresh.getId(), agent.getNamespaceId(), actorUserId));
+    /**
+     * Yanks a PUBLISHED agent version. Mirrors {@code SkillGovernanceService#yankVersion}.
+     * Pulls download_ready off, records yank metadata on the version, repoints
+     * {@code Agent.latestVersionId} to the next-most-recent PUBLISHED version
+     * (or null if none remain), and writes an audit log entry.
+     */
+    @Transactional
+    public AgentVersion yankVersion(Long versionId,
+                                    String actorUserId,
+                                    String clientIp,
+                                    String userAgent,
+                                    String reason) {
+        AgentVersion version = agentVersionRepository.findById(versionId)
+                .orElseThrow(() -> new DomainNotFoundException("error.agent.version.notFound", versionId));
+        if (version.getStatus() != AgentVersionStatus.PUBLISHED) {
+            throw new DomainBadRequestException("error.agent.version.notPublished", version.getVersion());
         }
+        version.yank(reason, actorUserId);
+        version.setDownloadReady(false);
+        AgentVersion saved = agentVersionRepository.save(version);
 
-        return fresh;
+        agentRepository.findById(version.getAgentId()).ifPresent(agent -> {
+            if (versionId.equals(agent.getLatestVersionId())) {
+                agent.setLatestVersionId(findLatestPublishedVersionId(agent.getId(), versionId));
+                agentRepository.save(agent);
+            }
+        });
+        auditLogService.record(actorUserId, "YANK_AGENT_VERSION", "AGENT_VERSION", versionId, null,
+                clientIp, userAgent,
+                reason == null || reason.isBlank() ? null
+                        : "{\"reason\":\"" + reason.replace("\"", "\\\"") + "\"}");
+        return saved;
+    }
+
+    private Long findLatestPublishedVersionId(Long agentId, Long excludeVersionId) {
+        return agentVersionRepository
+                .findByAgentIdOrderBySubmittedAtDesc(agentId).stream()
+                .filter(v -> v.getStatus() == AgentVersionStatus.PUBLISHED)
+                .filter(v -> excludeVersionId == null || !excludeVersionId.equals(v.getId()))
+                .max(java.util.Comparator
+                        .comparing(AgentVersion::getPublishedAt,
+                                java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                        .thenComparing(AgentVersion::getSubmittedAt,
+                                java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                        .thenComparing(AgentVersion::getId,
+                                java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .map(AgentVersion::getId)
+                .orElse(null);
     }
 
     /**
