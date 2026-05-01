@@ -3,14 +3,20 @@ package com.iflytek.skillhub.controller.portal;
 import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.domain.agent.Agent;
 import com.iflytek.skillhub.domain.agent.AgentVersion;
+import com.iflytek.skillhub.domain.agent.AgentVersionRepository;
+import com.iflytek.skillhub.domain.agent.AgentVisibility;
 import com.iflytek.skillhub.domain.agent.service.AgentLifecycleService;
+import com.iflytek.skillhub.domain.agent.service.AgentReviewSubmitService;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.dto.AdminSkillActionRequest;
+import com.iflytek.skillhub.dto.AgentConfirmPublishRequest;
 import com.iflytek.skillhub.dto.AgentLifecycleMutationResponse;
+import com.iflytek.skillhub.dto.AgentSubmitReviewRequest;
 import com.iflytek.skillhub.dto.AgentVersionMutationResponse;
 import com.iflytek.skillhub.dto.AgentVersionRereleaseRequest;
 import com.iflytek.skillhub.dto.ApiResponse;
@@ -37,19 +43,25 @@ import java.util.Map;
 public class AgentLifecycleController extends BaseApiController {
 
     private final AgentLifecycleService agentLifecycleService;
+    private final AgentReviewSubmitService agentReviewSubmitService;
     private final NamespaceRepository namespaceRepository;
     private final com.iflytek.skillhub.domain.agent.AgentRepository agentRepository;
+    private final AgentVersionRepository agentVersionRepository;
     private final AuditLogService auditLogService;
 
     public AgentLifecycleController(AgentLifecycleService agentLifecycleService,
+                                    AgentReviewSubmitService agentReviewSubmitService,
                                     NamespaceRepository namespaceRepository,
                                     com.iflytek.skillhub.domain.agent.AgentRepository agentRepository,
+                                    AgentVersionRepository agentVersionRepository,
                                     AuditLogService auditLogService,
                                     ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.agentLifecycleService = agentLifecycleService;
+        this.agentReviewSubmitService = agentReviewSubmitService;
         this.namespaceRepository = namespaceRepository;
         this.agentRepository = agentRepository;
+        this.agentVersionRepository = agentVersionRepository;
         this.auditLogService = auditLogService;
     }
 
@@ -162,6 +174,75 @@ public class AgentLifecycleController extends BaseApiController {
                         fresh.getStatus().name()));
     }
 
+    @PostMapping("/{namespace}/{slug}/submit-review")
+    public ApiResponse<AgentVersionMutationResponse> submitForReview(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @Valid @RequestBody AgentSubmitReviewRequest request,
+            @RequestAttribute("userId") String userId,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles,
+            HttpServletRequest httpRequest) {
+
+        Agent agent = resolve(namespace, slug);
+        AgentVersion version = findVersion(agent.getId(), request.version());
+        AgentVisibility targetVisibility;
+        try {
+            targetVisibility = AgentVisibility.valueOf(request.targetVisibility());
+        } catch (IllegalArgumentException ex) {
+            throw new DomainBadRequestException("Invalid target visibility: " + request.targetVisibility());
+        }
+        AgentVersion submitted = agentReviewSubmitService.submitForReview(
+                agent.getId(), version.getId(), targetVisibility, userId, rolesOrEmpty(userNsRoles));
+        auditLogService.record(
+                userId,
+                "SUBMIT_AGENT_REVIEW",
+                "AGENT_VERSION",
+                submitted.getId(),
+                null,
+                AuditRequestContext.from(httpRequest).clientIp(),
+                AuditRequestContext.from(httpRequest).userAgent(),
+                "{\"version\":\"" + request.version().replace("\"", "\\\"")
+                        + "\",\"targetVisibility\":\"" + request.targetVisibility() + "\"}");
+        return ok("response.success.updated",
+                new AgentVersionMutationResponse(
+                        agent.getId(),
+                        submitted.getId(),
+                        submitted.getVersion(),
+                        "SUBMIT_REVIEW",
+                        submitted.getStatus().name()));
+    }
+
+    @PostMapping("/{namespace}/{slug}/confirm-publish")
+    public ApiResponse<AgentVersionMutationResponse> confirmPublish(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @Valid @RequestBody AgentConfirmPublishRequest request,
+            @RequestAttribute("userId") String userId,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles,
+            HttpServletRequest httpRequest) {
+
+        Agent agent = resolve(namespace, slug);
+        AgentVersion version = findVersion(agent.getId(), request.version());
+        AgentVersion published = agentReviewSubmitService.confirmPublish(
+                agent.getId(), version.getId(), userId, rolesOrEmpty(userNsRoles));
+        auditLogService.record(
+                userId,
+                "CONFIRM_AGENT_PUBLISH",
+                "AGENT_VERSION",
+                published.getId(),
+                null,
+                AuditRequestContext.from(httpRequest).clientIp(),
+                AuditRequestContext.from(httpRequest).userAgent(),
+                "{\"version\":\"" + request.version().replace("\"", "\\\"") + "\"}");
+        return ok("response.success.updated",
+                new AgentVersionMutationResponse(
+                        agent.getId(),
+                        published.getId(),
+                        published.getVersion(),
+                        "CONFIRM_PUBLISH",
+                        published.getStatus().name()));
+    }
+
     @DeleteMapping("/{namespace}/{slug}/versions/{version}")
     public ApiResponse<AgentVersionMutationResponse> deleteVersion(
             @PathVariable String namespace,
@@ -190,6 +271,11 @@ public class AgentLifecycleController extends BaseApiController {
                         deleted.getVersion(),
                         "DELETE_VERSION",
                         deleted.getStatus().name()));
+    }
+
+    private AgentVersion findVersion(Long agentId, String version) {
+        return agentVersionRepository.findByAgentIdAndVersion(agentId, version)
+                .orElseThrow(() -> new DomainNotFoundException("Agent version not found: " + version));
     }
 
     private Agent resolve(String namespaceSlug, String slug) {

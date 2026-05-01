@@ -27,9 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
  * reports. Mirrors {@link AdminSkillReportController}.
  *
  * <p>Both {@code SKILL_ADMIN} and {@code SUPER_ADMIN} can view, resolve, and
- * dismiss reports — the agent moderation surface has no equivalent of the
- * skill {@code RESOLVE_AND_HIDE} disposition (no soft-hide path on the
- * agent aggregate yet), so there's no need to gate dispositions by role.
+ * dismiss reports. The {@code RESOLVE_AND_HIDE} disposition routes through
+ * {@code AgentGovernanceService.hideAgent}; {@code RESOLVE_AND_ARCHIVE} stays
+ * on {@code AgentLifecycleService.archiveAsAdmin}.
  */
 @RestController
 @RequestMapping("/api/v1/admin/agent-reports")
