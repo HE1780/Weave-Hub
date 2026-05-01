@@ -123,7 +123,8 @@ public class AgentPublishController extends BaseApiController {
                 size,
                 principal.userId(),
                 validation.warnings(),
-                confirmWarnings);
+                confirmWarnings,
+                isSuperAdmin);
 
         AgentPublishResponse response = new AgentPublishResponse(
                 version.getAgentId(),

@@ -202,7 +202,7 @@ public class AgentDownloadService {
             case PUBLISHED -> {
                 // Anyone with agent access can download.
             }
-            case DRAFT, PENDING_REVIEW, REJECTED -> {
+            case DRAFT, SCANNING, SCAN_FAILED, UPLOADED, PENDING_REVIEW, REJECTED -> {
                 boolean isOwner = currentUserId != null && currentUserId.equals(agent.getOwnerId());
                 NamespaceRole role = normalizeRoles(userNsRoles).get(agent.getNamespaceId());
                 boolean isAdmin = role == NamespaceRole.ADMIN || role == NamespaceRole.OWNER;

@@ -122,8 +122,9 @@ public class AgentService {
     }
 
     /**
-     * Version list for an agent. Public callers see PUBLISHED only; the owner and
-     * namespace admins see all versions including DRAFT/PENDING_REVIEW/REJECTED.
+     * Version list for an agent. Public callers see PUBLISHED only; the owner
+     * and namespace admins (or SUPER_ADMIN) see every status including
+     * SCANNING / SCAN_FAILED / UPLOADED / PENDING_REVIEW / REJECTED / YANKED.
      */
     public List<AgentVersion> listVersions(Agent agent,
                                            String currentUserId,
