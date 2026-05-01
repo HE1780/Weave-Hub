@@ -1472,6 +1472,17 @@
     "loading": "正在加载智能体…",
     "loadError": "加载智能体失败。",
     "noPublishedVersion": "该智能体尚未发布任何版本。",
+    "versionStatus": {
+      "draft": "草稿",
+      "scanning": "安全扫描中",
+      "scanFailed": "扫描失败",
+      "uploaded": "已上传",
+      "pendingReview": "审核中",
+      "published": "已发布",
+      "rejected": "已拒绝",
+      "archived": "已归档",
+      "yanked": "已撤回"
+    },
     "search": {
       "placeholder": "搜索智能体…",
       "allNamespaces": "全部命名空间",

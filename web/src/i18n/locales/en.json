@@ -1472,6 +1472,17 @@
     "loading": "Loading agents…",
     "loadError": "Failed to load agents.",
     "noPublishedVersion": "This agent has no published version yet.",
+    "versionStatus": {
+      "draft": "Draft",
+      "scanning": "Scanning",
+      "scanFailed": "Scan failed",
+      "uploaded": "Uploaded",
+      "pendingReview": "Pending review",
+      "published": "Published",
+      "rejected": "Rejected",
+      "archived": "Archived",
+      "yanked": "Yanked"
+    },
     "search": {
       "placeholder": "Search agents…",
       "allNamespaces": "All namespaces",
