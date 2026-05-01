@@ -163,7 +163,10 @@
     "enterKeyword": "请输入搜索关键词",
     "results": "找到 {{count}} 个技能",
     "resultCount": "找到 <1>{{count}}</1> 个结果",
-    "loadingMore": "正在更新搜索结果..."
+    "loadingMore": "正在更新搜索结果...",
+    "tabSkills": "技能",
+    "tabAgents": "智能体",
+    "emptyAgents": "未找到智能体"
   },
   "searchBar": {
     "placeholder": "搜索技能...",

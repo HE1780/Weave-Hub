@@ -163,7 +163,10 @@
     "enterKeyword": "Please enter a search keyword",
     "results": "{{count}} skills found",
     "resultCount": "Found <1>{{count}}</1> results",
-    "loadingMore": "Updating search results..."
+    "loadingMore": "Updating search results...",
+    "tabSkills": "Skills",
+    "tabAgents": "Agents",
+    "emptyAgents": "No agents found"
   },
   "searchBar": {
     "placeholder": "Search skills...",

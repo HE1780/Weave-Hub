@@ -41,6 +41,28 @@ vi.mock('@/features/skill/skill-card', () => ({
   SkillCard: () => <div>skill-card</div>,
 }))
 
+vi.mock('@/features/agent/agent-card', () => ({
+  AgentCard: () => <div>agent-card</div>,
+}))
+
+const useAgentsMock = vi.fn()
+
+vi.mock('@/features/agent/use-agents', () => ({
+  useAgents: () => useAgentsMock(),
+}))
+
+vi.mock('@/shared/ui/tabs', () => ({
+  Tabs: ({ value, children }: {
+    value: string
+    onValueChange?: (value: string) => void
+    children?: ReactNode
+  }) => <div data-tabs-value={value}>{children}</div>,
+  TabsList: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
+  TabsTrigger: ({ value, children }: { value: string; children?: ReactNode }) => (
+    <button data-tabs-trigger={value}>{children}</button>
+  ),
+}))
+
 vi.mock('@/shared/components/skeleton-loader', () => ({
   SkeletonList: () => <div>skeleton</div>,
 }))
@@ -126,6 +148,7 @@ describe('SearchPage', () => {
       sort: 'downloads',
       page: 1,
       starredOnly: false,
+      tab: 'skills',
     })
     useSearchSkillsMock.mockReturnValue({
       data: {
@@ -134,6 +157,11 @@ describe('SearchPage', () => {
         page: 1,
         size: 12,
       },
+      isLoading: false,
+      isFetching: false,
+    })
+    useAgentsMock.mockReturnValue({
+      data: [],
       isLoading: false,
       isFetching: false,
     })
@@ -160,6 +188,7 @@ describe('SearchPage', () => {
         sort: 'downloads',
         page: 0,
         starredOnly: false,
+        tab: 'skills',
       },
     })
   })
@@ -177,6 +206,7 @@ describe('SearchPage', () => {
         sort: 'newest',
         page: 0,
         starredOnly: false,
+        tab: 'skills',
       },
     })
   })
@@ -195,6 +225,7 @@ describe('SearchPage', () => {
         sort: 'downloads',
         page: 2,
         starredOnly: false,
+        tab: 'skills',
       },
     })
     expect(navigateMock).toHaveBeenNthCalledWith(2, {
@@ -205,6 +236,7 @@ describe('SearchPage', () => {
         sort: 'downloads',
         page: 0,
         starredOnly: true,
+        tab: 'skills',
       },
     })
   })
@@ -216,6 +248,7 @@ describe('SearchPage', () => {
       sort: 'newest',
       page: 0,
       starredOnly: false,
+      tab: 'skills',
     })
     useSearchSkillsMock.mockReturnValue({
       data: {
@@ -241,6 +274,7 @@ describe('SearchPage', () => {
       sort: 'newest',
       page: 0,
       starredOnly: false,
+      tab: 'skills',
     })
     useSearchSkillsMock.mockReturnValue({
       data: {
@@ -258,5 +292,52 @@ describe('SearchPage', () => {
     expect(html).toContain('empty-state')
     expect(html).toContain('search.noResults')
     expect(html).not.toContain('search.enterKeyword')
+  })
+
+  it('renders agent cards on the agents tab', () => {
+    useSearchMock.mockReturnValue({
+      q: 'demo',
+      label: '',
+      sort: 'newest',
+      page: 0,
+      starredOnly: false,
+      tab: 'agents',
+    })
+    useAgentsMock.mockReturnValue({
+      data: [
+        { slug: 'a1', displayName: 'Agent One', namespace: 'team-x' },
+        { slug: 'a2', displayName: 'Agent Two', namespace: 'team-y' },
+      ],
+      isLoading: false,
+      isFetching: false,
+    })
+
+    const html = renderToStaticMarkup(<SearchPage />)
+
+    const agentCards = html.match(/agent-card/g) ?? []
+    expect(agentCards.length).toBe(2)
+    expect(html).not.toContain('skill-card')
+    expect(html).not.toContain('search.sort.label')
+  })
+
+  it('shows the agent empty state when the agents tab returns nothing', () => {
+    useSearchMock.mockReturnValue({
+      q: 'no-match',
+      label: '',
+      sort: 'newest',
+      page: 0,
+      starredOnly: false,
+      tab: 'agents',
+    })
+    useAgentsMock.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isFetching: false,
+    })
+
+    const html = renderToStaticMarkup(<SearchPage />)
+
+    expect(html).toContain('empty-state')
+    expect(html).toContain('search.emptyAgents')
   })
 })
