@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-05-02 — 改 JPA 实体不写 Flyway migration → 测试过、启动崩
+
+**症状**:b250461e 主体改造给 AgentVersion 加了 6 个字段、给 Agent 加了 5 个字段、把 AgentVersionStatus 从 5 值扩到 9 值。所有单元测试 + 集成测试都过(测试用 H2/嵌入式或 mock,绕过 schema validation)。但 polish 阶段我跑 drop 脚本后启动 app,Hibernate 立刻报 `Schema-validation: missing table [agent]`——本质是 b250461e 之后**无人启动过本地 app**。
+
+**根因**:`hibernate.ddl-auto=validate` + Flyway 模式下,JPA 实体改了但没写对应 migration → schema-validation 失败。测试套件不依赖 PG,所以测试绿是假象。
+
+**规则**:
+1. 改 JPA 实体(加字段、改约束、改默认值)→ **必写一份对应的 `V{N+1}__*.sql`**
+2. PR 合并前必须**本地 `mvn package && java -jar ...` 启一次** 验证 Flyway + Hibernate validation 双通过——`mvn test` 不能替代
+3. 改实体时,reviewer 要 grep `db/migration/` 看 PR 里有没有同步 SQL
+4. 现有 enum 加值时,要么 drop+recreate CHECK,要么用 PG enum 类型(本项目用 VARCHAR + CHECK,所以靠 ALTER TABLE ... DROP CONSTRAINT ... ADD CONSTRAINT)
+
+**引申**:F5 这次的 V50 写成"全量重建 agent_* schema"是因为 dev 环境无 agent 数据;生产环境如果已有数据,必须写 alter-only migration。
+
+---
+
+## 2026-05-02 — Handover 中外部路径假设要核验
+
+**症状**:FOLLOWUPS handover 写"i18n key 放在 `web/src/locales/{zh,en}/translation.json`",我开工前差点直接照写。实际目录是 `web/src/i18n/locales/{zh,en}.json`。
+
+**规则**:handover 文档列出的**路径、命令、密码、外部资源名称**都可能因为时间漂移而失真——开工第一步就 `find` 或 `ls` 验一下,别照抄。
+
+**也踩到的坑**:
+- handover 写 PG 密码 `skillhub`,实际 application-local.yml 里是 `skillhub_dev`
+- handover 假设 `hibernate.ddl-auto=update`,实际是 `validate`
+- macOS 默认 pg_dump 14,连 server 16 失败,要走 `/opt/homebrew/Cellar/libpq/17.5/bin/pg_dump`
+
+---
+
 ## 2026-04-29 — 多 session 并发同 worktree 是危险动作
 
 **症状**：在做 housekeeping 收尾时发现工作树里：

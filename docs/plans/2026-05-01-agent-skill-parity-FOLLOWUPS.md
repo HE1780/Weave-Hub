@@ -1,5 +1,7 @@
 # Handover:Agent ↔ Skill Parity 收尾 Polish
 
+> ✅ **SHIPPED 2026-05-02**(merge `93f1f9a0`)。F1-F5 全部交付,F5 范围被扩展(发现 b250461e 主体改造漏写 V50 Flyway migration,顺便修了)。详见 [memo/memo.md 2026-05-02 条目](../../memo/memo.md)。
+
 > 上一会话 [`b250461e`](../../) 已交付 6 步主体改造(state machine / domain service / controller / 测试 / 前端核心通路 / drop 脚本)。这份 handover 列出当时**显式延后**的 5 项,新会话从此文档接手即可独立完成,无需阅读已 SHIPPED 的 [2026-05-01-agent-skill-parity-HANDOVER.md](2026-05-01-agent-skill-parity-HANDOVER.md)。
 
 - **基线分支**:`main`(已含全部主体改造)

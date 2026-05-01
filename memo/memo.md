@@ -4,6 +4,46 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-05-02 — Agent ↔ Skill Parity Polish (F1-F5) + 抢救 V50 migration
+
+**Branch:** `feat/agent-skill-parity-polish`(已合 main + push origin,本地分支已删)
+**Plan:** [docs/plans/2026-05-01-agent-skill-parity-FOLLOWUPS.md](../docs/plans/2026-05-01-agent-skill-parity-FOLLOWUPS.md)(已 SHIPPED)
+
+### What shipped(5 commits + 1 merge `93f1f9a0`)
+
+| Commit | 内容 |
+|---|---|
+| `edce5299` F1 | `AgentVersionStatusBadge` 9 状态徽标;`agents.versionStatus.*` zh/en;替换 agent-detail 旧 5 状态 fallback;12 vitest |
+| `502368a8` F3 | 删 `t(key, { defaultValue: '中文' })` 内联 fallback;补 `agents.lifecycle.submitReview` / `.confirmPublish` zh/en |
+| `926e1cf0` F2 | search 页加 Tabs `[Skills | Agents]`,URL 持久化 `?tab=`;agent tab 用 useAgents({q});skill 页 sort/label/starred 仅 skill tab 渲染;+ 2 vitest |
+| `8dce5d7e` F4 | reports 页 agent panel 加 `RESOLVE_AND_HIDE` 选项;扩 4 个 agent helper 处理 HIDE 分支;+ 1 vitest;commit message 标注 admin role gate 非对称 |
+| `f3f09517` F5 | **抢救:b250461e 漏写 Flyway migration** — 写 `V50__agent_parity_state_machine.sql` 全量重建 agent_* schema;修 drop-agent-tables.sh(去掉不存在表 + 补 agent_version_comment) |
+
+### F5 范围扩展原因
+
+handover 假设 F5 只是"跑 drop 脚本验证 schema 重建"。实际跑下去发现 app 启动报 `Schema-validation: missing table [agent]`——项目用 Flyway+`hibernate.ddl-auto=validate`,b250461e 改了 6 个 AgentVersion 字段、5 个 Agent 字段、status CHECK 从 5 值扩到 9 值,**完全没写对应 Flyway migration**。这是 b250461e 主体改造的隐藏 bug:测试都过了(单元测试不依赖 schema),但本地谁都没启过 app。F5 顺便修掉。
+
+### 验证
+
+- 后端:`./mvnw test` BUILD SUCCESS,584 tests / 0 failures
+- 前端:`pnpm tsc --noEmit` clean;`pnpm vitest run` 219 files / 723 tests;`pnpm build` 通过
+- App 本地启动:Tomcat:8080 6 秒启动,V50 应用成功,/actuator/health UP,/api/web/agents 返回空 PagedResponse
+- dev PG schema:10 张 agent_* 表 + agent_version 9 状态 CHECK + 6 个新列
+
+### 待办(未自动 ship)
+
+- **F4 后端 admin role gate 对齐**:agent 端 `AdminAgentReportController` 允许 SKILL_ADMIN 调 RESOLVE_AND_HIDE;skill 端要求 SUPER_ADMIN-only。后端权限模型不变(本次是 UI polish)。是否对齐由后续 governance plan 决定
+- **stash@{0}**:之前的 docs/0*-*.md IDE 改动(约 20 文件)仍在 stash,本任务不动。可以 `git stash pop` 处理
+- **生产环境 V50**:V50 是 dev-only fresh-rebuild。如果有非 dev 环境部署过 V41-V49 且有数据,需另写 alter-only migration
+
+### Lessons learned(已写入 lessons.md)
+
+- 改 JPA 实体不写 Flyway migration → 测试过、启动崩
+- handover 路径 `web/src/locales/{zh,en}/translation.json` 错的,实际 `web/src/i18n/locales/{zh,en}.json`
+- macOS 客户端 pg_dump 14 不能连 server 16,要走 `/opt/homebrew/Cellar/libpq/17.5/bin/pg_dump`
+
+---
+
 ## 2026-05-01 — Agent ↔ Skill 流程对齐 6 步全程交付
 
 **Branch:** `feat/agent-skill-parity`(已合 main + push origin,本地分支已删)
