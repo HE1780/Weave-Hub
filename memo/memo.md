@@ -4,6 +4,49 @@ Update at session end with what shipped, what was deferred, and what to pick up 
 
 ---
 
+## 2026-05-01 — Agent ↔ Skill 流程对齐 6 步全程交付
+
+**Branch:** `feat/agent-skill-parity`(已合 main + push origin,本地分支已删)
+**Plan:** [docs/plans/2026-04-29-agent-skill-parity.md](../docs/plans/2026-04-29-agent-skill-parity.md) + [HANDOVER](../docs/plans/2026-05-01-agent-skill-parity-HANDOVER.md)
+
+### What shipped(6 commits + 1 merge)
+
+| Commit | 内容 |
+|---|---|
+| `7093ead5` step 1 progress | AgentVersionStatus 加 UPLOADED / SCANNING / SCAN_FAILED / YANKED |
+| `59c5ddd3` step 1 完结 | AgentVersion 默认 SCANNING + 新 state-machine 方法;Agent 加 latestVersionId / hidden / hide reason |
+| `1a67b1c3` step 2 | AgentReviewSubmitService + AgentGovernanceService;Publish 改入 SCANNING → triggerScan;forceAutoPublish for SUPER_ADMIN;rerelease 走同一扫描通道;AgentReportDisposition 加 RESOLVE_AND_HIDE |
+| `c9f81c17` step 3 | AgentLifecycleController 加 submit-review / confirm-publish;AdminAgentController(hide/unhide/yank);4 DTO |
+| `44291a8b` step 4 | 测试套件全面对齐(596 + 584 + 其他模块全过);+16 domain test + 5 admin controller test;顺手修了 AgentPromotionMaterializer 的状态机违例 |
+| `6020bd21` step 5 | web client 加 submit/confirm/hide/unhide/yankAgentVersion;两个 mutation hook;agent-detail UPLOADED 状态按钮(按 visibility 分支) |
+| `cecfe33a` step 6 | drop-agent-tables.sh 重置 schema 脚本(未自动执行) |
+| `b250461e` merge | --no-ff 合 main + push origin |
+
+### 验证
+
+- 后端:`./mvnw test` BUILD SUCCESS;skillhub-domain 596,skillhub-app 584,跨模块全绿
+- 前端:`pnpm tsc --noEmit` clean;`pnpm vitest run` 218 files / 708 tests;`pnpm build` 通过
+
+### 显式延后到 follow-up(commit message 已标注)
+
+1. `web/src/features/agent/version-status-badge.tsx` 专用徽标组件(SCANNING/SCAN_FAILED/UPLOADED/YANKED 当前走 fallback 渲染原始 enum 字符串)
+2. `pages/search.tsx` Skills/Agents tab 切换
+3. agent.status.* + agent.lifecycle.{confirmPublish,submitReview} 正式 i18n key(目前是行内 Chinese default)
+4. AdminAgentReport 面板的 RESOLVE_AND_HIDE picker UI(类型已通,选项还没暴露)
+5. drop-agent-tables.sh 真正跑(脚本就绪未执行,涉及本地 PG 操作)
+
+### 教训沉淀
+
+- HANDOVER 写"新建 AgentLifecycleAppService"我没建,因为 agent 既有 controller 都直调 domain service,新 thin wrapper 只增 mock 层不增功能。spec 是 hint 不是合同。
+- Step 1 的"两处 caller 加 visibility 入参"其实不是临时桥,是合理的过渡——Step 2 把 caller 整段重写时还会用到 visibility 信息。surgical 不等于"绝对不动相关代码",是"动相关代码时代价最小"。
+- AgentPromotionMaterializer 用 `autoPublish()` 直跳 SCANNING→PUBLISHED 是 Step 2 没 catch 的状态机违例,Step 4 跑测试才暴露。**新状态机改动一定要顺手 grep 所有 `autoPublish` / `submitForReview` / `markScanPassed` 的 caller**,不能只看异常 stack 是什么 service 抛的。
+
+### 备忘 stash
+
+`stash@{0}: wip-doc-edits-pre-parity-spec` 仍保留——HANDOVER 标注的 docs/0*-*.md IDE 改动,与本任务无关。下个会话决定是否 pop。
+
+---
+
 ## 2026-04-29 — Agent 后续 housekeeping（bundle follow-up #1 #2 #5 + h1 修复）
 
 **Branches:** `feat/agent-followup-housekeeping`（已合 main）、`fix/agent-detail-h1`（已合 main）

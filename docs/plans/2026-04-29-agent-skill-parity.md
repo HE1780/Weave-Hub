@@ -1,6 +1,8 @@
 # Agent ↔ Skill 流程对齐改造（A2 完整对齐版）
 
-- **分支**：`feat/agent-skill-parity`
+> ✅ **SHIPPED 2026-05-01**(merge `b250461e`)。后端 1180 测试 + 前端 708 测试全过。后续 polish 见 [memo](../../memo/memo.md#2026-05-01)。
+
+- **分支**:`feat/agent-skill-parity`(已合 main 并删除)
 - **创建日期**：2026-04-29（修订 2026-04-30）
 - **关联 ADR**：ADR 0003（fork 主动做：Agent 自有能力补齐）
 - **数据策略**：当前为测试数据，**直接 drop 表重建**，无迁移

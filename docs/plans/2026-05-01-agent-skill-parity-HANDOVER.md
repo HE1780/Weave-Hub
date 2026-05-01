@@ -1,5 +1,7 @@
 # Handover：Agent ↔ Skill 流程对齐改造
 
+> ✅ **SHIPPED 2026-05-01**(merge `b250461e`)。本 handover 已无需新会话接管。延后项见 [memo](../../memo/memo.md#2026-05-01)。
+
 > 新会话从此文档开始即可无缝接管。配合 [docs/plans/2026-04-29-agent-skill-parity.md](2026-04-29-agent-skill-parity.md) 一起读。
 
 ---
