@@ -1298,6 +1298,29 @@ export const adminApi = {
     })
   },
 
+  async hideAgent(agentId: number, reason?: string): Promise<void> {
+    await fetchJson<void>(`/api/v1/admin/agents/${agentId}/hide`, {
+      method: 'POST',
+      headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ reason }),
+    })
+  },
+
+  async unhideAgent(agentId: number): Promise<void> {
+    await fetchJson<void>(`/api/v1/admin/agents/${agentId}/unhide`, {
+      method: 'POST',
+      headers: getCsrfHeaders(),
+    })
+  },
+
+  async yankAgentVersion(versionId: number, reason?: string): Promise<void> {
+    await fetchJson<void>(`/api/v1/admin/agents/versions/${versionId}/yank`, {
+      method: 'POST',
+      headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ reason }),
+    })
+  },
+
   async getProfileReviews(params: { status?: string; page?: number; size?: number; sortDirection?: 'ASC' | 'DESC' }) {
     const searchParams = new URLSearchParams()
     if (params.status) searchParams.set('status', params.status)
@@ -1757,6 +1780,39 @@ export const agentLifecycleApi = {
       {
         method: 'DELETE',
         headers: await ensureCsrfHeaders(),
+      },
+    )
+  },
+
+  async submitAgentReview(
+    namespace: string,
+    slug: string,
+    version: string,
+    targetVisibility: 'PUBLIC' | 'NAMESPACE_ONLY',
+  ): Promise<AgentVersionMutationDto> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    return fetchJson<AgentVersionMutationDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}/submit-review`,
+      {
+        method: 'POST',
+        headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ version, targetVisibility }),
+      },
+    )
+  },
+
+  async confirmAgentPublish(
+    namespace: string,
+    slug: string,
+    version: string,
+  ): Promise<AgentVersionMutationDto> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    return fetchJson<AgentVersionMutationDto>(
+      `${WEB_API_PREFIX}/agents/${encodeURIComponent(cleanNamespace)}/${encodeURIComponent(slug)}/confirm-publish`,
+      {
+        method: 'POST',
+        headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ version }),
       },
     )
   },

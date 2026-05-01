@@ -8,6 +8,8 @@ import { useUnarchiveAgent } from '@/features/agent/use-unarchive-agent'
 import { useReportAgent } from '@/features/agent/use-report-agent'
 import { useDeleteAgent } from '@/features/agent/use-delete-agent'
 import { useWithdrawAgentReview } from '@/features/agent/use-withdraw-agent-review'
+import { useSubmitAgentReview } from '@/features/agent/use-submit-agent-review'
+import { useConfirmAgentPublish } from '@/features/agent/use-confirm-agent-publish'
 import { useRereleaseAgentVersion } from '@/features/agent/use-rerelease-agent-version'
 import { useDeleteAgentVersion } from '@/features/agent/use-delete-agent-version'
 import { AgentStarButton } from '@/features/agent/social/agent-star-button'
@@ -124,6 +126,8 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
   const reportMutation = useReportAgent(namespace ?? '', slug ?? '')
   const deleteMutation = useDeleteAgent()
   const withdrawMutation = useWithdrawAgentReview()
+  const submitReviewMutation = useSubmitAgentReview()
+  const confirmPublishMutation = useConfirmAgentPublish()
   const rereleaseMutation = useRereleaseAgentVersion()
   const deleteVersionMutation = useDeleteAgentVersion()
   const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false)
@@ -573,6 +577,38 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                                 disabled={withdrawMutation.isPending}
                               >
                                 {t('agents.lifecycle.withdraw')}
+                              </Button>
+                            )}
+                            {version.status === 'UPLOADED' && agent.visibility === 'PRIVATE' && (
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  confirmPublishMutation.mutate({
+                                    namespace: namespace ?? '',
+                                    slug: slug ?? '',
+                                    version: version.version,
+                                  })
+                                }
+                                disabled={confirmPublishMutation.isPending}
+                              >
+                                {t('agents.lifecycle.confirmPublish', { defaultValue: '确认发布' })}
+                              </Button>
+                            )}
+                            {version.status === 'UPLOADED' && agent.visibility !== 'PRIVATE' && (
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  submitReviewMutation.mutate({
+                                    namespace: namespace ?? '',
+                                    slug: slug ?? '',
+                                    version: version.version,
+                                    targetVisibility:
+                                      agent.visibility === 'PUBLIC' ? 'PUBLIC' : 'NAMESPACE_ONLY',
+                                  })
+                                }
+                                disabled={submitReviewMutation.isPending}
+                              >
+                                {t('agents.lifecycle.submitReview', { defaultValue: '提交审核' })}
                               </Button>
                             )}
                             {version.status === 'PUBLISHED' && (
