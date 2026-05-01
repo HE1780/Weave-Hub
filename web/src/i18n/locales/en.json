@@ -1614,6 +1614,8 @@
       "withdrawSuccessTitle": "Review withdrawn",
       "withdrawSuccessDescription": "Version {{version}} returned to draft.",
       "withdrawErrorTitle": "Failed to withdraw review",
+      "submitReview": "Submit for review",
+      "confirmPublish": "Confirm publish",
       "rerelease": "Rerelease",
       "rereleaseTitle": "Rerelease as a new version",
       "rereleaseDescription": "Clone version {{source}} into a fresh version with a new version string. PUBLIC/namespace agents go back through review; PRIVATE agents auto-publish.",

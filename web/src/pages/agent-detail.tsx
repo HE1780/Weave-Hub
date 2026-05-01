@@ -575,7 +575,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                                 }
                                 disabled={confirmPublishMutation.isPending}
                               >
-                                {t('agents.lifecycle.confirmPublish', { defaultValue: '确认发布' })}
+                                {t('agents.lifecycle.confirmPublish')}
                               </Button>
                             )}
                             {version.status === 'UPLOADED' && agent.visibility !== 'PRIVATE' && (
@@ -592,7 +592,7 @@ export function AgentDetailPage({ namespace, slug }: AgentDetailPageProps) {
                                 }
                                 disabled={submitReviewMutation.isPending}
                               >
-                                {t('agents.lifecycle.submitReview', { defaultValue: '提交审核' })}
+                                {t('agents.lifecycle.submitReview')}
                               </Button>
                             )}
                             {version.status === 'PUBLISHED' && (

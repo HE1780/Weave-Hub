@@ -1613,6 +1613,8 @@
       "withdrawSuccessTitle": "已撤回审核",
       "withdrawSuccessDescription": "版本 {{version}} 已回到草稿。",
       "withdrawErrorTitle": "撤回审核失败",
+      "submitReview": "提交审核",
+      "confirmPublish": "确认发布",
       "rerelease": "重新发布",
       "rereleaseTitle": "克隆为新版本",
       "rereleaseDescription": "基于版本 {{source}} 复制一份新版本。公开/命名空间可见的智能体会重新进入审核；私有智能体会自动发布。",
