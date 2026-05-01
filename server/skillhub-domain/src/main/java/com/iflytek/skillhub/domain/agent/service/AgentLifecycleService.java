@@ -189,7 +189,7 @@ public class AgentLifecycleService {
                     agent.getId(), fresh.getId(), agent.getNamespaceId(),
                     actorUserId, fresh.getPublishedAt()));
         } else {
-            fresh.submitForReview();
+            fresh.submitForReview(agent.getVisibility());
             fresh = agentVersionRepository.save(fresh);
             agentReviewTaskRepository.save(new AgentReviewTask(
                     fresh.getId(), agent.getNamespaceId(), actorUserId));

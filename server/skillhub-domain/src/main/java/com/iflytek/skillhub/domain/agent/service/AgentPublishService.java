@@ -143,7 +143,7 @@ public class AgentPublishService {
                     agent.getId(), newVersion.getId(), namespaceId,
                     publisherUserId, newVersion.getPublishedAt()));
         } else {
-            newVersion.submitForReview();
+            newVersion.submitForReview(agent.getVisibility());
             agentVersionRepository.save(newVersion);
             AgentReviewTask task = new AgentReviewTask(
                     newVersion.getId(), namespaceId, publisherUserId);
