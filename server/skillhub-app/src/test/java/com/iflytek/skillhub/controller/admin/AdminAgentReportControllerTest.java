@@ -216,12 +216,60 @@ class AdminAgentReportControllerTest {
                 .andExpect(jsonPath("$.code").value(403));
     }
 
+    /**
+     * ADR 0005: RESOLVE_AND_HIDE requires SUPER_ADMIN. SKILL_ADMIN should be
+     * blocked even though it can hit the endpoint for other dispositions.
+     */
+    @Test
+    void resolveReport_withHideDispositionAndSkillAdmin_returns403() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/agent-reports/99/resolve")
+                        .with(authentication(adminAuth()))
+                        .with(csrf())
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"comment\":\"handled\",\"disposition\":\"RESOLVE_AND_HIDE\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+    }
+
+    @Test
+    void resolveReport_withHideDispositionAndSuperAdmin_returns200() throws Exception {
+        AgentReport report = new AgentReport(10L, 1L, "user-1", "Spam", "details");
+        ReflectionTestUtils.setField(report, "id", 99L);
+        report.setStatus(AgentReportStatus.RESOLVED);
+        when(agentReportService.resolveReport(
+                org.mockito.ArgumentMatchers.eq(99L),
+                org.mockito.ArgumentMatchers.eq("super-admin"),
+                org.mockito.ArgumentMatchers.eq(AgentReportDisposition.RESOLVE_AND_HIDE),
+                org.mockito.ArgumentMatchers.eq("hide it"),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()))
+                .thenReturn(report);
+
+        mockMvc.perform(post("/api/v1/admin/agent-reports/99/resolve")
+                        .with(authentication(superAdminAuth()))
+                        .with(csrf())
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"comment\":\"hide it\",\"disposition\":\"RESOLVE_AND_HIDE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.reportId").value(99))
+                .andExpect(jsonPath("$.data.status").value("RESOLVED"));
+    }
+
     private UsernamePasswordAuthenticationToken adminAuth() {
         PlatformPrincipal principal = new PlatformPrincipal(
                 "admin", "admin", "admin@example.com", "", "github", Set.of("SKILL_ADMIN")
         );
         return new UsernamePasswordAuthenticationToken(
                 principal, null, List.of(new SimpleGrantedAuthority("ROLE_SKILL_ADMIN"))
+        );
+    }
+
+    private UsernamePasswordAuthenticationToken superAdminAuth() {
+        PlatformPrincipal principal = new PlatformPrincipal(
+                "super-admin", "super-admin", "admin@example.com", "", "github", Set.of("SUPER_ADMIN")
+        );
+        return new UsernamePasswordAuthenticationToken(
+                principal, null, List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))
         );
     }
 }

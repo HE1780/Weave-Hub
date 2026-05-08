@@ -4,6 +4,7 @@ import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.domain.agent.report.AgentReportDisposition;
 import com.iflytek.skillhub.domain.agent.report.AgentReportService;
+import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.dto.AdminAgentReportActionRequest;
 import com.iflytek.skillhub.dto.AdminAgentReportSummaryResponse;
 import com.iflytek.skillhub.dto.AgentReportMutationResponse;
@@ -27,9 +28,10 @@ import org.springframework.web.bind.annotation.RestController;
  * reports. Mirrors {@link AdminSkillReportController}.
  *
  * <p>Both {@code SKILL_ADMIN} and {@code SUPER_ADMIN} can view, resolve, and
- * dismiss reports. The {@code RESOLVE_AND_HIDE} disposition routes through
- * {@code AgentGovernanceService.hideAgent}; {@code RESOLVE_AND_ARCHIVE} stays
- * on {@code AgentLifecycleService.archiveAsAdmin}.
+ * dismiss reports. The {@code RESOLVE_AND_HIDE} disposition is restricted to
+ * {@code SUPER_ADMIN} only (see ADR 0005 — fail-closed for actions that affect
+ * public visibility); it routes through {@code AgentGovernanceService.hideAgent}.
+ * {@code RESOLVE_AND_ARCHIVE} stays on {@code AgentLifecycleService.archiveAsAdmin}.
  */
 @RestController
 @RequestMapping("/api/v1/admin/agent-reports")
@@ -64,6 +66,9 @@ public class AdminAgentReportController extends BaseApiController {
         AgentReportDisposition disposition = request != null && request.disposition() != null
                 ? AgentReportDisposition.valueOf(request.disposition().trim().toUpperCase())
                 : AgentReportDisposition.RESOLVE_ONLY;
+        if (disposition == AgentReportDisposition.RESOLVE_AND_HIDE && !principal.platformRoles().contains("SUPER_ADMIN")) {
+            throw new DomainForbiddenException("error.agent.lifecycle.noPermission");
+        }
         var report = agentReportService.resolveReport(
                 reportId,
                 principal.userId(),
