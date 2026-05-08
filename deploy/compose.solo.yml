@@ -1,10 +1,13 @@
 # ============================================================
-# SkillHub 精简部署 compose（PG/Redis 复用 1Panel 直装）
+# 知连 WeaveHub — 精简部署 compose（PG/Redis 复用 1Panel 直装）
 # 使用: docker compose -f compose.solo.yml --env-file deploy/.env up -d
+#
+# 镜像默认指向 fork 自有 registry: ghcr.io/he1780/weavehub-*
+# 环境变量名保留 SKILLHUB_* 前缀(代码包名仍为 skillhub,详见 docs/00)
 # ============================================================
 services:
   skill-scanner:
-    image: ${SKILLHUB_SCANNER_IMAGE:-ghcr.io/iflytek/skillhub-scanner}:${SKILLHUB_VERSION:-latest}
+    image: ${SKILLHUB_SCANNER_IMAGE:-ghcr.io/he1780/weavehub-scanner}:${SKILLHUB_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "127.0.0.1:8000:8000"
@@ -23,28 +26,28 @@ services:
       retries: 10
 
   server:
-    image: ${SKILLHUB_SERVER_IMAGE:-ghcr.io/iflytek/skillhub-server}:${SKILLHUB_VERSION:-latest}
+    image: ${SKILLHUB_SERVER_IMAGE:-ghcr.io/he1780/weavehub-server}:${SKILLHUB_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       # PG — 走宿主机 1Panel 直装的 PostgreSQL
-      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/${POSTGRES_DB:-skillhub}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-skillhub}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/${POSTGRES_DB:-weavehub}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-weavehub}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
       # Redis — 走宿主机 1Panel 直装的 Redis
       REDIS_HOST: host.docker.internal
       REDIS_PORT: 6379
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
-      SKILLHUB_PUBLIC_BASE_URL: ${SKILLHUB_PUBLIC_BASE_URL:-https://skillhub.example.com}
-      DEVICE_AUTH_VERIFICATION_URI: ${DEVICE_AUTH_VERIFICATION_URI:-https://skillhub.example.com/cli/auth}
+      SKILLHUB_PUBLIC_BASE_URL: ${SKILLHUB_PUBLIC_BASE_URL:-https://weavehub.example.com}
+      DEVICE_AUTH_VERIFICATION_URI: ${DEVICE_AUTH_VERIFICATION_URI:-https://weavehub.example.com/cli/auth}
       # 阿里云 OSS
       SKILLHUB_STORAGE_PROVIDER: ${SKILLHUB_STORAGE_PROVIDER:-s3}
       STORAGE_BASE_PATH: /var/lib/skillhub/storage
       SKILLHUB_STORAGE_S3_ENDPOINT: ${SKILLHUB_STORAGE_S3_ENDPOINT}
       SKILLHUB_STORAGE_S3_PUBLIC_ENDPOINT: ${SKILLHUB_STORAGE_S3_PUBLIC_ENDPOINT}
-      SKILLHUB_STORAGE_S3_BUCKET: ${SKILLHUB_STORAGE_S3_BUCKET:-skillhub}
+      SKILLHUB_STORAGE_S3_BUCKET: ${SKILLHUB_STORAGE_S3_BUCKET:-weavehub}
       SKILLHUB_STORAGE_S3_ACCESS_KEY: ${SKILLHUB_STORAGE_S3_ACCESS_KEY}
       SKILLHUB_STORAGE_S3_SECRET_KEY: ${SKILLHUB_STORAGE_S3_SECRET_KEY}
       SKILLHUB_STORAGE_S3_REGION: ${SKILLHUB_STORAGE_S3_REGION:-us-east-1}
@@ -73,7 +76,7 @@ services:
       SPRING_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:-false}
       SKILLHUB_AUTH_PASSWORD_RESET_CODE_EXPIRY: ${SKILLHUB_AUTH_PASSWORD_RESET_CODE_EXPIRY:-PT10M}
       SKILLHUB_AUTH_PASSWORD_RESET_FROM_ADDRESS: ${SKILLHUB_AUTH_PASSWORD_RESET_FROM_ADDRESS:-noreply@example.com}
-      SKILLHUB_AUTH_PASSWORD_RESET_FROM_NAME: ${SKILLHUB_AUTH_PASSWORD_RESET_FROM_NAME:-SkillHub}
+      SKILLHUB_AUTH_PASSWORD_RESET_FROM_NAME: ${SKILLHUB_AUTH_PASSWORD_RESET_FROM_NAME:-知连 WeaveHub}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     deploy:
@@ -89,7 +92,7 @@ services:
       start_period: 60s
 
   web:
-    image: ${SKILLHUB_WEB_IMAGE:-ghcr.io/iflytek/skillhub-web}:${SKILLHUB_VERSION:-latest}
+    image: ${SKILLHUB_WEB_IMAGE:-ghcr.io/he1780/weavehub-web}:${SKILLHUB_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "127.0.0.1:80:80"

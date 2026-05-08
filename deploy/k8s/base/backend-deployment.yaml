@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: server
-          image: ghcr.io/iflytek/skillhub-server:edge
+          image: ghcr.io/he1780/weavehub-server:edge
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

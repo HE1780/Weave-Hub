@@ -237,9 +237,9 @@ skillhub-storage-s3-secret-key: your-secret-key
 
 | 组件 | 镜像 |
 |---|---|
-| 后端服务 | ghcr.io/iflytek/skillhub-server:latest |
-| 前端服务 | ghcr.io/iflytek/skillhub-web:latest |
-| 扫描器 | ghcr.io/iflytek/skillhub-scanner:latest |
+| 后端服务 | ghcr.io/he1780/weavehub-server:latest |
+| 前端服务 | ghcr.io/he1780/weavehub-web:latest |
+| 扫描器 | ghcr.io/he1780/weavehub-scanner:latest |
 | PostgreSQL | postgres:16-alpine |
 | Redis | redis:7-alpine |
 
