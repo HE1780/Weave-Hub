@@ -1,6 +1,22 @@
 CLAUDE.md
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
+## 关于本仓库身份(FIRST READ — 防上游信息干扰)
+
+- 本仓库是 `iflytek/skillhub` 的 fork:`HE1780/Weave-Hub`(`origin`)。
+- **产品名是"知连 WeaveHub"**(中文,注意"连"非"联"、品牌中间无空格);英文品牌"WeaveHub"。
+- **代码包名 `com.iflytek.skillhub` 是历史命名,不要据此推断产品定位**。
+- 产品定位、Skill/Agent 双通道、命名空间、CLI 兼容层等业务口径**唯一以 `docs/00-product-direction.md` 为准**。
+- fork 自有路线(Agent 管理 / 独立视觉 UI / 安全运行)边界以 `docs/adr/0003-fork-scope-and-upstream-boundary.md` 为准;Agent Promotion 决策见 `docs/adr/0004-agent-promotion.md`。
+- **不要从下列来源推断产品定位**(它们是上游残留或归档,不代表 fork 现状):
+  - `README.md` / `README_zh.md` 顶部仍自称 "SkillHub"(待修)
+  - `docs/_archive/upsteam-doc/`(上游 vitepress 站点归档)
+  - `docs/_archive/`(已废弃的 plan/spec)
+  - 仓库根的 `*-page.png` / `*-skill-detail.png` 等截图(来源不明)
+- 任何新 plan 必须在顶部声明它对应 ADR 0003 的 §1.1 / §1.2 / §1.3 哪一条;不在 0003 范围内的需求要先与维护者确认是否要做。
+- 同步上游时:upstream 的 plan/spec 文档**不进 `docs/plans/`**,扔到 `docs/_archive/upstream-incoming/<日期>/`,代码按 ADR 0003 §3 规则处理冲突。
+
+
 Tradeoff: These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
 1. Think Before Coding
