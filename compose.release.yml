@@ -1,6 +1,6 @@
 services:
   skill-scanner:
-    image: ${SKILLHUB_SCANNER_IMAGE:-ghcr.io/iflytek/skillhub-scanner}:${SKILLHUB_VERSION:-latest}
+    image: ${SKILLHUB_SCANNER_IMAGE:-ghcr.io/he1780/weavehub-scanner}:${SKILLHUB_VERSION:-latest}
     restart: unless-stopped
     environment:
       SKILL_SCANNER_LLM_API_KEY: ${SKILL_SCANNER_LLM_API_KEY:-}
@@ -44,7 +44,7 @@ services:
       retries: 10
 
   server:
-    image: ${SKILLHUB_SERVER_IMAGE:-ghcr.io/iflytek/skillhub-server}:${SKILLHUB_VERSION:-latest}
+    image: ${SKILLHUB_SERVER_IMAGE:-ghcr.io/he1780/weavehub-server}:${SKILLHUB_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "${API_PORT:-8080}:8080"
@@ -106,7 +106,7 @@ services:
       start_period: 60s
 
   web:
-    image: ${SKILLHUB_WEB_IMAGE:-ghcr.io/iflytek/skillhub-web}:${SKILLHUB_VERSION:-latest}
+    image: ${SKILLHUB_WEB_IMAGE:-ghcr.io/he1780/weavehub-web}:${SKILLHUB_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-80}:80"

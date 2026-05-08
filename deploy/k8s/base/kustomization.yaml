@@ -13,11 +13,11 @@ resources:
   - ingress.yaml
 
 images:
-  - name: ghcr.io/iflytek/skillhub-server
+  - name: ghcr.io/he1780/weavehub-server
     newTag: latest
-  - name: ghcr.io/iflytek/skillhub-web
+  - name: ghcr.io/he1780/weavehub-web
     newTag: latest
-  - name: ghcr.io/iflytek/skillhub-scanner
+  - name: ghcr.io/he1780/weavehub-scanner
     newTag: latest
 
 labels:

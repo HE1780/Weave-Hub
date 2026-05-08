@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/iflytek/skillhub-web:edge
+          image: ghcr.io/he1780/weavehub-web:edge
           imagePullPolicy: IfNotPresent
           env:
             - name: SKILLHUB_API_UPSTREAM
