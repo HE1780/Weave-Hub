@@ -1,33 +1,36 @@
 <div align="center">
-  <img src="./skillhub-logo.svg" alt="SkillHub Logo" width="120" height="120" />
-  <h1>SkillHub</h1>
-  <p>企业级开源智能体技能注册中心 — 在组织内发布、发现和管理可复用的技能包</p>
+  <img src="./skillhub-logo.svg" alt="知连 WeaveHub Logo" width="120" height="120" />
+  <h1>知连 WeaveHub</h1>
+  <p>企业级开源 智能体 + 技能 双注册中心 — 在组织内发布、发现、管理可复用的智能体与技能包</p>
 </div>
 
 <div align="center">
 
-[![文档](https://img.shields.io/badge/docs-zread.ai-4A90E2?logo=gitbook&logoColor=white)](https://zread.ai/iflytek/skillhub)
-[![Discord](https://img.shields.io/badge/discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/qHYvtDNPHS)
 [![许可证](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
-[![构建](https://github.com/iflytek/skillhub/actions/workflows/publish-images.yml/badge.svg)](https://github.com/iflytek/skillhub/actions/workflows/publish-images.yml)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ED?logo=docker&logoColor=white)](https://ghcr.io/iflytek/skillhub)
 [![Java](https://img.shields.io/badge/java-21-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![React](https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![Fork of](https://img.shields.io/badge/fork%20of-iflytek%2Fskillhub-orange)](https://github.com/iflytek/skillhub)
 
 </div>
+
+> **关于本仓库**
+> - **产品名:知连 WeaveHub**(英文 `WeaveHub`,中文"连"非"联"、品牌中间无空格)
+> - **仓库归属:** [`HE1780/Weave-Hub`](https://github.com/HE1780/Weave-Hub),`iflytek/skillhub` 的 fork
+> - **代码包名仍为 `com.iflytek.skillhub`** — 是历史命名,不要据此推断产品定位
+> - **与上游差异:** Agent 完整管理(包格式/审核/治理/搜索/Promotion)、独立视觉 IA(知连 WeaveHub 4 段式首页)、安全运行扩展点占位 — 详见 [`docs/adr/0003-fork-scope-and-upstream-boundary.md`](docs/adr/0003-fork-scope-and-upstream-boundary.md)
+> - **产品口径权威源:** [`docs/00-product-direction.md`](docs/00-product-direction.md)
 
 ---
 
-<div align="center">
-  <img src="https://xfyun-doc.xfyun.cn/lc-sp-skillhub-demo-1775551643410.gif" alt="SkillHub Demo" width="800" />
-</div>
-
-SkillHub 是一个自托管平台，为团队提供私有的、受治理的智能体技能共享空间。发布技能包，推送到命名空间，让其他人通过搜索发现或通过 CLI 安装。专为防火墙后的本地部署而构建，提供与公共注册中心相同的精致体验。
+知连 WeaveHub 是一个自托管平台,把可复用的**智能体(Agent)**和**技能(Skill)**作为一等公民,在组织内提供发布、命名空间隔离、版本管理、举报治理、社交(收藏/评分/评论)的一站式注册中心能力。专为防火墙后的本地部署设计,同时提供与公共注册中心一致的精致体验。
 
 ## 文档
 
-- 📖 **[用户指南](https://iflytek.github.io/skillhub/)** — 技能发布、搜索、CLI 使用等用户操作指南
-- 🛠️ **[开发者文档](https://zread.ai/iflytek/skillhub)** — 架构设计、API 参考、本地开发、部署运维等技术文档
+- 📖 **[产品定位](docs/00-product-direction.md)** — Skill / Agent 双通道、命名空间、CLI 兼容层等业务口径(权威源)
+- 🏗️ **[Fork 范围与上游边界 ADR 0003](docs/adr/0003-fork-scope-and-upstream-boundary.md)** — fork 自有路线 vs 跟随上游
+- 🚀 **[部署文档](deploy/k8s/README.md)** — Kubernetes / Docker Compose 部署指南
+- 📋 **[交付路线](docs/10-delivery-roadmap.md)** + **[当前 plan](docs/plans/)** — 进度与下一步
+- ℹ️ **上游用户指南**(参考):[skillhub user docs](https://iflytek.github.io/skillhub/) — 仅用于 Skill 通道,Agent 通道为 fork 自有
 
 ## 核心特性
 
@@ -57,10 +60,10 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 **配置公网访问地址（生产环境推荐）：**
 
 ```bash
-curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --public-url https://skillhub.your-company.com
+curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --public-url https://weavehub.your-domain.com
 ```
 
-`--public-url` 参数用于设置 SkillHub 实例的公网访问地址。配置后：
+`--public-url` 参数用于设置知连 WeaveHub 实例的公网访问地址。配置后：
 - CLI 安装命令会显示正确的注册中心地址
 - Agent 设置指引会显示正确的 skill.md URL
 - OAuth 回调和设备认证链接能正常工作
@@ -68,7 +71,7 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 **国内用户（阿里云镜像）：**
 
 ```bash
-curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --aliyun --public-url https://skillhub.your-company.com --version latest
+curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --aliyun --public-url https://weavehub.your-domain.com --version latest
 ```
 
 如果部署遇到问题，请清除现有的运行时目录并重试。
@@ -120,8 +123,8 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 
 ```bash
 # 克隆仓库
-git clone https://github.com/iflytek/skillhub.git
-cd skillhub
+git clone https://github.com/HE1780/Weave-Hub.git
+cd Weave-Hub
 
 # 启动完整的本地开发栈（后端 + 前端 + 依赖）
 make dev-all
@@ -175,10 +178,10 @@ skillhub/
 
 ```bash
 # 默认（GHCR 镜像）
-curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --public-url https://skillhub.your-company.com
+curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --public-url https://weavehub.your-domain.com
 
 # 阿里云镜像（国内推荐）
-curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --aliyun --public-url https://skillhub.your-company.com --version latest
+curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --aliyun --public-url https://weavehub.your-domain.com --version latest
 ```
 
 ### 配置参数说明
@@ -250,7 +253,7 @@ Spring Boot 会把这个环境变量绑定到
 
 ## 架构
 
-SkillHub 采用清晰的分层架构：
+知连 WeaveHub 采用清晰的分层架构：
 
 - **表现层**：REST API（Spring Boot）+ React 前端
 - **应用层**：用例编排和 DTO 转换
@@ -314,15 +317,15 @@ SkillHub 采用清晰的分层架构：
 
 ## 与智能体平台集成
 
-SkillHub 设计为与各种智能体平台和框架无缝集成。
+知连 WeaveHub 设计为与各种智能体平台和框架无缝集成。
 
 ### [OpenClaw](https://github.com/openclaw/openclaw)
 
-[OpenClaw](https://github.com/openclaw/openclaw) 是开源的智能体技能 CLI 工具。配置它使用您的 SkillHub 端点作为注册中心：
+[OpenClaw](https://github.com/openclaw/openclaw) 是开源的智能体技能 CLI 工具。配置它使用您的知连 WeaveHub 端点作为注册中心：
 
 ```bash
 # 配置注册中心地址
-export CLAWHUB_REGISTRY=https://skillhub.your-company.com
+export CLAWHUB_REGISTRY=https://weavehub.your-domain.com
 
 # 如需认证，先登录一次
 clawhub login --token YOUR_API_TOKEN
@@ -339,7 +342,7 @@ npx clawhub publish ./my-skill --slug my-skill --version 1.0.0
 npx clawhub publish ./my-skill --slug my-space--my-skill --version 1.0.0
 ```
 
-其中 `my-space--my-skill` 是兼容层使用的 canonical slug，SkillHub 会将其解析为
+其中 `my-space--my-skill` 是兼容层使用的 canonical slug，知连 WeaveHub 会将其解析为
 namespace `my-space` 和 skill slug `my-skill`。
 
 > 💡 **提示**：上述命令不仅适用于 OpenClaw，通过指定安装目录（`--dir`），也可适用于其他的 CLI Coding Agent 或 Agent 助手。例如：`npx clawhub --dir ~/.claude/skills install my-skill`
@@ -348,20 +351,19 @@ namespace `my-space` 和 skill slug `my-skill`。
 
 ### [AstronClaw](https://agent.xfyun.cn/astron-claw)
 
-[AstronClaw](https://agent.xfyun.cn/astron-claw) 是基于 OpenClaw 核心能力打造的云端 AI 助手，提供全天候在线服务，随时随地通过企业微信、钉钉、飞书等渠道提供服务。它内置了丰富的技能系统，您可以将其连接到自托管的 SkillHub 注册中心，支持技能市场一键安装、仓库搜索、对话自动安装，甚至管理和分发组织内部的自定义私有技能。
+[AstronClaw](https://agent.xfyun.cn/astron-claw) 是基于 OpenClaw 核心能力打造的云端 AI 助手，提供全天候在线服务，随时随地通过企业微信、钉钉、飞书等渠道提供服务。它内置了丰富的技能系统，您可以将其连接到自托管的知连 WeaveHub 注册中心，支持技能市场一键安装、仓库搜索、对话自动安装，甚至管理和分发组织内部的自定义私有技能。
 
 ### [Loomy](https://loomy.xunfei.cn/)
 
-[Loomy](https://loomy.xunfei.cn/) 是聚焦真实办公场景的桌面端 AI 工作搭子。它深入打通本地文件和系统工具，为个人及小团队构建高效的自动化工作流。通过将 Loomy 连接到您的 SkillHub 注册中心，您可以轻松发现并安装组织内部的专属技能，从而增强本地桌面端的自动化与协同办公能力。
+[Loomy](https://loomy.xunfei.cn/) 是聚焦真实办公场景的桌面端 AI 工作搭子。它深入打通本地文件和系统工具，为个人及小团队构建高效的自动化工作流。通过将 Loomy 连接到您的知连 WeaveHub 注册中心，您可以轻松发现并安装组织内部的专属技能，从而增强本地桌面端的自动化与协同办公能力。
 
 ### [astron-agent](https://github.com/iflytek/astron-agent)
 
-[astron-agent](https://github.com/iflytek/astron-agent) 是科大讯飞星火智能体框架。存储在 SkillHub 中的技能可以被 astron-agent 引用和加载，实现从开发到生产的受治理、版本化的技能生命周期。
+[astron-agent](https://github.com/iflytek/astron-agent) 是科大讯飞星火智能体框架。存储在知连 WeaveHub 中的技能与智能体可以被 astron-agent 引用和加载，实现从开发到生产的受治理、版本化的资产生命周期。
 
 ---
 
-> 🌟 **展示与分享** — 您使用 SkillHub 构建了什么？我们很想听听！
-> 在 [**Discussions → Show and Tell**](https://github.com/iflytek/skillhub/discussions/categories/show-and-tell) 分类中分享您的用例、集成或部署故事。
+> 🌟 **展示与分享** — 您使用知连 WeaveHub 构建了什么？欢迎在 [HE1780/Weave-Hub Discussions](https://github.com/HE1780/Weave-Hub/discussions) 分享您的用例、集成或部署故事。
 
 ## 贡献
 
@@ -372,9 +374,9 @@ namespace `my-space` 和 skill slug `my-skill`。
 
 ## 📞 支持
 
-- 💬 **社区讨论**：[GitHub Discussions](https://github.com/iflytek/skillhub/discussions)
-- 🐛 **Bug 报告**：[Issues](https://github.com/iflytek/skillhub/issues)
-- 👾 **Discord**：[加入我们的服务器](https://discord.gg/qHYvtDNPHS)
+- 💬 **社区讨论(Fork)**：[HE1780/Weave-Hub Discussions](https://github.com/HE1780/Weave-Hub/discussions)
+- 🐛 **Bug 报告(Fork)**：[HE1780/Weave-Hub Issues](https://github.com/HE1780/Weave-Hub/issues)
+- 🌐 **上游社区(参考)**：[iflytek/skillhub Issues](https://github.com/iflytek/skillhub/issues) / [Discord](https://discord.gg/qHYvtDNPHS) — 仅适用于 Skill 主线问题
 - 👥 **企业微信群**：
 
   ![企业微信群](https://github.com/iflytek/astron-agent/raw/main/docs/imgs/WeCom_Group.png)

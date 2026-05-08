@@ -3,6 +3,14 @@ name: Publish Images
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - main
+    paths:
+      - 'server/**'
+      - 'web/**'
+      - 'scanner/**'
+      - '.github/workflows/publish-images.yml'
   workflow_dispatch:
 
 concurrency:
@@ -31,18 +39,18 @@ jobs:
           - name: server
             context: ./server
             dockerfile: ./server/Dockerfile
-            image: ghcr.io/${{ github.repository_owner }}/skillhub-server
-            mirror_image: skillhub-server
+            image: ghcr.io/${{ github.repository_owner }}/weavehub-server
+            mirror_image: weavehub-server
           - name: web
             context: ./web
             dockerfile: ./web/Dockerfile
-            image: ghcr.io/${{ github.repository_owner }}/skillhub-web
-            mirror_image: skillhub-web
+            image: ghcr.io/${{ github.repository_owner }}/weavehub-web
+            mirror_image: weavehub-web
           - name: scanner
             context: ./scanner
             dockerfile: ./scanner/Dockerfile
-            image: ghcr.io/${{ github.repository_owner }}/skillhub-scanner
-            mirror_image: skillhub-scanner
+            image: ghcr.io/${{ github.repository_owner }}/weavehub-scanner
+            mirror_image: weavehub-scanner
 
     steps:
       - name: Check out repository
